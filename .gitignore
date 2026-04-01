@@ -4,12 +4,12 @@
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
 # Node artifact files
-app/Config/database.php 
+#app/Config/database.php 
 app/tmp/*
 app/webroot/media/* 
-lib/*
-vendors/*
-plugins/*
+#lib/*
+#vendors/*
+#plugins/*
 app/Test/*
 
 # Compiled Java class files
