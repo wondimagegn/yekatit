@@ -1,0 +1,43 @@
+<?php
+App::uses('AppModel', 'Model');
+
+class Employment extends AppModel {
+    	var $name = 'Employment';
+    	var $validate = array(
+		
+		
+		'pension_number' => array(
+			
+            'unique'=>array(
+				 'rule'=>'isUnique',
+				 'message'=>'The pension number is used by someone. Please provide another pension number.',
+				 'on' => 'update',
+			)
+		),
+		'tin' => array(
+			
+            'unique'=>array(
+				 'rule'=>'isUnique',
+				 'message'=>'The tin is used by someone. Please provide another tin number.',
+				 'on' => 'update',
+			)
+		),
+		
+	);
+	public $belongsTo = array(
+		'Student' => array(
+			'className' => 'Student',
+			'foreignKey' => 'student_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		),
+		'Staff' => array(
+			'className' => 'Staff',
+			'foreignKey' => 'staff_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		)
+	);
+}

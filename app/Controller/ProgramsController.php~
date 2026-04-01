@@ -1,0 +1,86 @@
+<?php
+class ProgramsController extends AppController {
+
+	var $name = 'Programs';
+	var $menuOptions = array(
+        'parent' => 'mainDatas',
+        'alias' => array(
+                    'index' => 'View all study level',
+                    'add' => 'Add New Study Level'
+         )
+    );
+    function beforeFilter () {
+        parent::beforeFilter();
+        $this->Auth->Allow('add');
+    }
+    
+	function index() {
+		$this->Program->recursive = 0;
+		$this->set('programs', $this->paginate());
+	}
+
+	function view($id = null) {
+		if (!$id) {
+			$this->Session->setFlash(__('Invalid program'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		$this->set('program', $this->Program->read(null, $id));
+	}
+
+	function add() {
+		if (!empty($this->request->data)) {
+			$this->Program->create();
+			if ($this->Program->save($this->request->data)) {
+				
+				$this->Session->setFlash('<span></span>'.__('The program has been saved'),
+				'default',array('class'=>'success-box success-message'));
+				
+				return $this->redirect(array('action' => 'index'));
+			} else {
+				
+			$this->Session->setFlash('<span></span>'.__('The program could not be saved. Please, try again.'),
+				'default',array('class'=>'error-box error-message'));
+			}
+		}
+	}
+
+	function edit($id = null) {
+		if (!$id && empty($this->request->data)) {
+			$this->Session->setFlash(__('Invalid program'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		if (!empty($this->request->data)) {
+			if ($this->Program->save($this->request->data)) {
+				
+				$this->Session->setFlash('<span></span>'.__('The program has been saved.'),
+				'default',array('class'=>'success-box success-message'));
+				return $this->redirect(array('action' => 'index'));
+			} else {
+				
+				$this->Session->setFlash('<span></span>'.__('The program could not be saved. Please, try again.'),
+				'default',array('class'=>'error-box error-message'));
+				
+			}
+		}
+		if (empty($this->request->data)) {
+			$this->request->data = $this->Program->read(null, $id);
+		}
+	}
+
+	function delete($id = null) {
+		if (!$id) {
+			$this->Session->setFlash(__('Invalid id for program'));
+			return $this->redirect(array('action'=>'index'));
+		}
+		if ($this->Program->delete($id)) {
+			$this->Session->setFlash('<span></span>'.__('Program deleted.'),
+				'default',array('class'=>'success-box success-message'));
+			return $this->redirect(array('action'=>'index'));
+		}
+		
+		$this->Session->setFlash('<span></span>'.__('Program was not deleted.'),
+				'default',array('class'=>'error-box error-message'));
+				
+		return $this->redirect(array('action' => 'index'));
+	}
+}

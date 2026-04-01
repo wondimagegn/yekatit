@@ -1,0 +1,124 @@
+<?php ?>
+<script type='text/javascript'> 
+function getDepartmentList (id) {
+        var cid = $("#college_id_"+id).val();
+        $("#department_id_"+id).attr('disabled', true);
+		$("#department_id_"+id).empty();
+		
+		//get form action
+		var formUrl = '/departments/get_department_combo/'+cid;
+		$.ajax({
+			type: 'get',
+			url: formUrl,
+			data: cid,
+			success: function(data,textStatus,xhr){
+			        $("#department_id_"+id).attr('disabled', false);
+					$("#department_id_"+id).empty();
+					$("#department_id_"+id).append(data);
+					
+			},
+			error: function(xhr,textStatus,error){
+					alert(textStatus);
+			}
+		});
+		
+		return false;
+}
+</script>
+
+<div class="box">
+     <div class="box-header bg-transparent">
+  	 <h1 class="box-title">
+	<?php echo __('Create user account for system access'); ?>
+	</h1>
+     </div>
+     <div class="box-body">
+       <div class="row">
+	    <?php echo $this->Form->create('User');?>
+	  <div class="large-6 columns">
+	     <h6 class="box-title">
+	<?php echo __('Basic Data'); ?>
+	</h6>
+	     <?php 	   
+	     $options=array('male'=>'Male','female'=>'Female');
+	
+		echo $this->Form->input('Staff.0.id');
+                 echo $this->Form->input('Staff.0.title_id',
+            array('label'=>'Title','empty'=>'--select title--'));
+		echo $this->Form->input('Staff.0.position_id',
+            array('label'=>'Position','empty'=>'--select position--'));
+		echo $this->Form->input('Staff.0.education');
+        echo $this->Form->input('Staff.0.servicewing');
+        echo $this->Form->input('Staff.0.staffid');
+
+        echo $this->Form->input('Staff.0.gender',array('options'=>$options,'type'=>'radio','legend'=>false,'separator'=>'','label'=>false));
+
+	   if ($role_id == ROLE_SYSADMIN) {
+              echo $this->Form->input('Staff.0.college_id',
+            array('label'=>'College','id'=>'college_id_1','empty'=>'--select college--',
+            'onchange'=>'getDepartmentList(1)'));
+            echo $this->Form->input('Staff.0.department_id',
+            array('label'=>'Department','id'=>'department_id_1','empty'=>'--select department--'));
+          }
+	  echo $this->Form->hidden('Staff.0.user_id');
+	  echo $this->Form->input('Staff.0.first_name',
+		   array('label'=>'First Name'));
+	  echo $this->Form->input('Staff.0.middle_name',
+		  array('label'=>'Middle Name'));
+	  echo $this->Form->input('Staff.0.last_name',
+            array('label'=>'Last Name'));
+
+            
+          $from = date('Y') - Configure::read('Calendar.birthdayInPast');
+            $to = date('Y') + Configure::read('Calendar.birthdayAhead');
+            $format = Configure::read('Calendar.dateFormat');
+             echo $this->Form->input('Staff.0.birthdate',
+            array('label'=>'Birth Date','dateFormat'=>$format,'minYear'=>$from,'maxYear'=>$to));
+	     
+	    ?>
+	    </div>
+	    
+	     <div class="large-6 columns">
+		<?php 	 	  
+	       echo '<h6 class="box-title">';
+	    echo "Access Data";
+	    echo '</h6>';
+                echo $this->Form->input('User.id');
+                echo $this->Form->input('username');
+		//echo $this->Form->input('passwd',array('label'=>'Password'));	
+	        echo $this->Form->input('role_id',array('empty'=>'--select role--'));
+		
+		 echo '<h6 class="box-title">';
+	    echo "Address Data";
+	    echo '</h6>';
+            echo $this->Form->input('Staff.0.phone_office',
+            array('label'=>'Phone Office'));
+            echo $this->Form->input('Staff.0.phone_mobile',
+            array('label'=>'Phone Mobile'));
+             echo $this->Form->input('Staff.0.address',
+            array('label'=>'Address'));
+	   echo $this->Form->input('Staff.0.email',
+            array('label'=>'Email'));
+
+		?>
+	    </div>
+	</div>
+	<div class="row">
+		<div class="large-12 columns">
+		  <?php 
+echo $this->Form->end(array('label'=>'Submit',
+'class'=>'tiny radius button bg-blue'));?>
+		</div>
+	 </div>	
+     </div>
+</div>
+<script type="text/javascript">
+    (function($) {
+       	 $('#college_id').change(function () { 
+           
+             $('#department_assignment').load('/users/get_department/'+$(this).val());
+
+        });
+    })(jQuery);
+</script>
+

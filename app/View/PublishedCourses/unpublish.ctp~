@@ -1,0 +1,307 @@
+<?php ?>
+<?php echo $this->Form->create('PublishedCourse');?>
+<?php echo $this->Html->script('jquery-selectall'); ?> 
+<?php ?>
+<div class="box">
+     <div class="box-body">
+       <div class="row">
+	  <div class="large-12 columns">
+         <p class='fs16'>
+      Unpublish or publish as drop semester courses
+      </p>
+
+      <div onclick="toggleViewFullId('UnPublishedCourses')"><?php 
+          if (!empty($show_unpublish_page)) {
+              echo $this->Html->image('plus2.gif', array('id' => 'UnPublishedCourseImg')); 
+              ?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="UnPublishedCourseTxt">Display Filter</span><?php
+              }
+          else {
+              echo $this->Html->image('minus2.gif', array('id' => 'UnPublishedCourseImg')); 
+              ?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="UnPublishedCourseTxt">Hide Filter</span><?php
+              }
+      ?>
+      </div>
+      <div id="UnPublishedCourses" style="display:<?php echo (!empty($turn_off_search) ? 'none' : 'display'); ?>">
+  <table cellpadding="0" cellspacing="0">
+
+
+    <tr>
+          
+      <td style="width:15%">Stream:</td>
+      <td style="width:35%">
+      <?php 
+        echo $this->Form->input('PublishedCourse.college_id',array('id'=>'ajax_college_id','label'=>false,
+       'type'=>'select','onchange'=>'getDepartments()','div'=>false));
+      ?>
+      </td>
+      <td style="width:13%"> Department:</td>
+      <td style="width:37%">
+      <?php 
+          echo $this->Form->input('PublishedCourse.department_id',array('id'=>'ajax_department_id','label'=>false,
+       'type'=>'select','onchange'=>'getYearLevel()','div'=>false));
+      ?>
+      
+      </td>
+    </tr>
+     
+    <tr>
+      <td style="width:15%">Academic Year:</td>
+      <td style="width:35%">
+      <?php 
+          echo $this->Form->input('PublishedCourse.academic_year',array(
+            'label' => false,'type'=>'select','options'=>$acyear_array_data,
+          
+                'selected'=>isset($this->request->data['PublishedCourse']['academic_year'])?
+                $this->request->data['PublishedCourse']['academic_year']:
+                (isset($defaultacademicyear) ? $defaultacademicyear:'' )
+            
+            )
+            
+            );
+      ?>
+      </td>
+      <td style="width:13%"> Semester:</td>
+      <td style="width:37%">
+      <?php 
+         echo $this->Form->input('PublishedCourse.semester',array('type'=>'select','options'=>array('I'=>'I','II'=>'II','III'=>'III'),'label'=>false));
+      ?>
+      
+      </td>
+    </tr>
+      
+    <tr>
+      
+      <td style="width:15%"> Program Type:</td>
+      <td style="width:35%">
+      &nbsp;
+      <?php 
+        echo $this->Form->input('PublishedCourse.program_type_id',array('id'=>'ajax_program_type_id','label'=>false,
+       'type'=>'select','div'=>false));
+      
+      ?>    
+      </td>
+      <td style="width:13%"> Program:</td>
+      <td style="width:37%">
+      <?php 
+         echo $this->Form->input('PublishedCourse.program_id',array('id'=>'program_id','label'=>false,
+       'type'=>'select','div'=>false));
+      ?>
+      
+      </td>
+
+    </tr>
+    <tr>
+      
+      <td style="width:13%">Year Level:</td>
+      <td style="width:37%"><?php 
+                echo $this->Form->input('PublishedCourse.year_level_id',array('id'=>'ajax_year_level_id','label'=>false,
+           'type'=>'select','div'=>false));
+      
+       ?>
+      </td>
+    </tr>
+      <tr>
+        <td colspan="4">
+          <?php 
+          echo $this->Form->submit('Continue',array('name'=>'getsection','class'=>'tiny radius button bg-blue','div'=>'false'));
+          ?> 
+
+        </td> 
+
+      </tr>
+    
+</table>
+
+</div>
+
+
+            
+<div class="publishedCourses form">
+
+
+<?php 
+    if (isset($show_unpublish_page)) {
+    
+        if(!empty($publishedcourses)) {
+            
+           
+             // echo $this->Form->input('PublishedCourse.publish_up',array('label'=>'Publish Start'));
+             echo "<table><tr><td><div class='smallheading'>Select the course you want to unpublish/publish as drop/delete </div></td></tr></table>";
+           
+           ?>
+         
+           <?php 
+            
+            echo "<table id='fieldsForm'><tbody>";
+            foreach ($publishedcourses as $section_name=>$sectioned_published_courses) {
+                
+            ?>
+            <tr><td colspan=7><h3><?php echo $section_name;?></h3></td></tr>
+            <tr>
+            <?php 
+            //echo "<th style='padding:0'>Check All/Uncheck All <br/>".$this->Form->checkbox("SelectAll", array('id' => 'select-all','checked'=>''))."</th>";
+            //echo '<th style="padding:0"> Check All/Uncheck All <br/>' . $this->Form->checkbox(null, array('id' => 'select-all')) . '</th>';
+            echo "<th style='padding:0'> Select </th>";
+            echo "<th style='padding:0'> S.No </th>";
+            echo "<th style='padding:0'> Semester </th>";
+            echo "<th style='padding:0'> Year </th>";
+            echo "<th style='padding:0'> Course Title </th>";
+            echo "<th style='padding:0'> Course Code </th>";
+            echo "<th style='padding:0'> Lecture hour </th>";
+            echo "<th style='padding:0'> Tutorial hour </th>"; 
+            echo "<th style='padding:0'> Credit </th></tr>";
+           
+            $count=1;
+            $course_registered_only=0;
+            foreach ($sectioned_published_courses as $kc=>$vc) {
+           
+            ?>
+              <?php 
+	                $red=null;
+	               
+	                if (isset($courses_not_allowed[$vc['PublishedCourse']['section_id']]) && 
+	                in_array($vc['Course']['id'],$courses_not_allowed[$vc['PublishedCourse']['section_id']])) {
+	
+	                    $red='class="redrow"'; 
+	             
+	                } 
+	              
+	  
+	           ?>
+	
+               <tr <?php echo $red;?> >
+                
+                <?php 
+               
+                 //echo '<td>'.$this->Form->checkbox('PublishedCourse.unpublish.'.$vc['Course']['id']).'</td>';
+                 if($vc['PublishedCourse']['unpublish_readOnly']){
+                     echo '<td>**</td>';
+                     $course_registered_only++;
+                 } else {
+                   echo '<td>'.$this->Form->checkbox('Course.pub.'.$vc['PublishedCourse']['section_id'].'.'.$vc['Course']['id']) . '</td>';
+                 }
+                 echo "<td>".$count.'</td>';
+                 echo '<td>'.$vc['Course']['semester'].'</td>';
+                  echo '<td>'.$vc['YearLevel']['name'].'</td>';
+                 echo '<td>'.$vc['Course']['course_title'].'</td>';
+                 echo "<td>".$vc['Course']['course_code']."</td>";
+                 echo "<td>".$vc['Course']['lecture_hours']."</td><td>".$vc['Course']['tutorial_hours']."</td>";
+                 echo "<td>".$vc['Course']['credit']."</td>";
+                 
+                 echo "</tr>";
+                $count++;
+             }
+                 if($course_registered_only>0){ 
+                     echo "<tr><td colspan=5>**: Those courses with ** are not 
+                     allowed to unpublished since students has already registered or 
+                     grade has been submitted.</td></tr>";
+                 }
+            }
+             
+           echo "</tbody></table>";
+             ?>
+              <table>
+            <tr>
+                <td style='padding:0'> <?php 
+                ?></td>
+                   <td style='padding:0'> <?php 
+                  echo $this->Form->submit('Delete Selected',array('name'=>'deleteselected','class'=>'tiny radius button bg-blue','div'=>'false'));?></td>
+                   <td style='padding:0'> <?php 
+                  echo $this->Form->submit('Publish As Drop Selected',array('name'=>'dropselected','class'=>'tiny radius button bg-blue','div'=>'false'));?></td>
+              
+            </tr>
+           
+           </table>
+              
+             <?php 
+             
+        }
+    
+    }
+echo $this->Form->end();
+?>
+
+</div>
+	  </div> <!-- end of columns 12 -->
+	</div> <!-- end of row -->
+      </div> <!-- end of box-body -->
+</div><!-- end of box -->
+
+<script type='text/javascript'>
+$(document).ready(function() { 
+   
+   
+}); 
+
+function toggleView(obj) {
+  if($('#c'+obj.id).css("display") == 'none')
+    $('#i'+obj.id).attr("src", '/img/minus2.gif');
+  else
+    $('#i'+obj.id).attr("src", '/img/plus2.gif');
+  $('#c'+obj.id).toggle("slow");
+}
+
+function toggleViewFullId(id) {
+  if($('#'+id).css("display") == 'none') {
+    $('#'+id+'Img').attr("src", '/img/minus2.gif');
+    $('#'+id+'Txt').empty();
+    $('#'+id+'Txt').append('Hide Filter');
+    }
+  else {
+    $('#'+id+'Img').attr("src", '/img/plus2.gif');
+    $('#'+id+'Txt').empty();
+    $('#'+id+'Txt').append('Display Filter');
+    }
+  $('#'+id).toggle("slow");
+}
+
+function getDepartments() {
+            //serialize form data
+            var col = $("#ajax_college_id").val();
+            $("#ajax_department_id").attr('disabled', true);
+            $("#ajax_department_id").empty();
+            $("#ajax_year_level_id").empty();
+            //get form action
+            var formUrl = '/course_schedules/get_departments/'+col;
+            $.ajax({
+                type: 'get',
+                url: formUrl,
+                data: col,
+                success: function(data,textStatus,xhr){
+                        $("#ajax_department_id").attr('disabled', false);
+                        $("#ajax_department_id").empty();
+                        $("#ajax_department_id").append(data);
+                },
+                error: function(xhr,textStatus,error){
+                        alert(textStatus);
+                }
+            });
+            return false;
+ }
+
+function getYearLevel() {
+            //serialize form data
+            var dept = $("#ajax_department_id").val();
+            $("#ajax_year_level_id").attr('disabled', true);
+            $("#ajax_year_level_id").empty().
+            html('<img src="/img/busy.gif" class="displayed" >');
+            var formUrl = '/dormitory_assignments/get_year_levels/'+dept;
+            $.ajax({
+                type: 'get',
+                url: formUrl,
+                data: dept,
+                success: function(data,textStatus,xhr){
+                    $("#ajax_year_level_id").attr('disabled', false);
+                    $("#ajax_year_level_id").empty();
+                    $("#ajax_year_level_id").append(data);
+                },
+                error: function(xhr,textStatus,error){
+                        alert(textStatus);
+                }
+            });
+            return false;
+ }
+ 
+ 
+</script>
+

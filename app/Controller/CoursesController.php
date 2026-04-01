@@ -1,0 +1,894 @@
+<?php
+class CoursesController extends AppController {
+
+	public $name = 'Courses';
+	public $helpers = array('Xls','Media.Media');
+	public $menuOptions = array(
+             'parent' => 'curriculums',
+             'exclude' => array('index','print_courses_pdf','export_courses_xls',
+             'deleteChildren','search'),
+             'alias' => array(
+                    'add' => 'Add Courses',
+            )
+	);
+	public $paginate=array();
+	public function beforeFilter() {
+	    parent::beforeFilter();
+	    $this->Auth->Allow('search');
+	}	
+   
+	 /*
+	 *Generic search for returned items
+	 */
+	public function search() {
+		// the page we will redirect to
+		$url['action'] = 'index';
+		
+		// build a URL will all the search elements in it
+		// the resulting URL will be 
+		// domain.com/returned_items/index/Search.keywords:mykeyword/Search.tag_id:3
+		foreach ($this->request->data as $k=>$v){ 
+			foreach ($v as $kk=>$vv){ 
+				$url[$k.'.'.$kk]=$vv; 
+			} 
+		}
+
+		// redirect the user to the url
+		return $this->redirect($url, null, true);
+	 }
+	 public function index() {
+	    if(!empty($this->request->data) && isset($this->request->data['search'])) {
+		          $options = array();
+		         if ($this->role_id == ROLE_DEPARTMENT) {
+	                 $options[] = array(
+	                           "Course.department_id"=>$this->department_id
+	                        );
+	             } else if ($this->role_id ==ROLE_COLLEGE ) {
+	                $department_ids = $this->Course->Department->find('list',
+	                array('conditions'=>array('Department.college_id'=>$this->college_id),
+	                'fields'=>array('Department.id','Department.id')));
+	                
+	                if (!empty($this->request->data['Search']['department_id'])) {
+	                        $options[] = array(
+	                           "Course.department_id"=>$this->request->data['Search']['department_id']
+	                        );
+	                } else {
+	                     $options[] = array(
+	                           "Course.department_id"=> $department_ids
+	                        );
+	                }
+	            } else if ($this->role_id == ROLE_REGISTRAR || $this->role_id == $this->Session->read('Auth.User')['Role']['parent_id']) {
+	                  if (!empty($this->request->data['Search']['department_id'])) {
+	                        $options[] = array(
+	                           "Course.department_id"=>$this->request->data['Search']['department_id']
+	                        );
+	                  } else {
+			    if(!empty($this->department_ids)) {
+			   $options[] = array(
+	                           "Course.department_id"=> $this->department_ids
+	                        );
+			    } else if (!empty($this->college_ids)) {
+		  $options[] = array(
+	                           "Course.department_id in (select id from departments where college_id in (".join(',',$this->college_ids).")"
+	                        );
+		
+			   }
+	                      
+	                  }
+	            }
+		        
+	      if (!empty($this->request->data['Search']['semester'])) {
+		$options[] = array(
+		   "Course.semester"=>$this->request->data['Search']['semester']
+		);
+	       }       
+	       if (!empty($this->request->data['Search']['year_level_id'])) {
+	       $options[] = array("Course.year_level_id"=>$this->request->data['Search']['year_level_id']);
+	       }
+	      if (!empty($this->request->data['Search']['curriculum_id'])) {
+			$options[] = array(
+			   "Course.curriculum_id"=>$this->request->data['Search']['curriculum_id']
+			);
+			 $courseCategories=$this->Course->CourseCategory->find('list',
+			array('conditions'=>array(
+			'CourseCategory.curriculum_id'=>$this->request->data['Search']['curriculum_id']),
+			'fields'=>array('CourseCategory.id','CourseCategory.name')));
+			$this->set(compact('courseCategories'));
+	          }
+	                 
+                 if (!empty($this->request->data['Search']['course_category_id'])) {
+                        $options[] = array(
+                           "Course.course_category_id"=>$this->request->data['Search']['course_category_id']
+                        );
+                 }
+	    
+	        $this->paginate = array('limit'=>1000);
+		$this->Course->recursive = 1;
+		$courses = $this->paginate($options);
+		
+		$program_name = null;
+		$program_type_name =null;
+
+		if(!empty($courses)) {
+		$program_name = $this->Course->Curriculum->Program->field('Program.name',array('Program.id'=>
+		$courses[0]['Curriculum']['program_id']));
+		$program_type_name =  $this->Course->Curriculum->ProgramType->field('ProgramType.name',array('ProgramType.id'=>
+		$courses[0]['Curriculum']['program_type_id']));
+		$selected_department=$courses[0]['Curriculum']['department_id'];
+		$course_associate_array = array();
+		foreach($courses as $coursekey=>$coursevalue) {
+		$course_yearlevel = $coursevalue['Course']['year_level_id'];
+		$course_semester = $coursevalue['Course']['semester'];
+		$course_associate_array[$course_yearlevel][$course_semester][] = $coursevalue;
+		}
+
+		$this->Session->write('course_associate_array',$course_associate_array);
+		$this->Session->write('selected_curriculum',$this->request->data['Search']['curriculum_id']);
+		$this->Session->write('program_name',$program_name);
+		$this->Session->write('program_type_name',$program_type_name);
+		$this->Session->write('selected_department',$selected_department);
+
+		$this->set(compact('isbeforesearch','program_name','program_type_name','course_associate_array'));
+		}
+
+		if (empty($courses)) {
+		$this->Session->setFlash('<span></span>'.
+		__('No result is found for the given search criteria.'),
+		'default',array('class'=>'info-box info-message'));
+		}		
+			
+		}
+		
+		if ($this->role_id == ROLE_COLLEGE) {
+		    $departments=$this->Course->Department->find('list',
+		    array('conditions'=>array('Department.college_id'=>$this->college_id)));
+		} else if ($this->role_id == ROLE_DEPARTMENT) {
+		     $departments=$this->Course->Department->find('list',
+		    array('conditions'=>array('Department.id'=>$this->department_id)));
+		    $yearLevels = $this->Course->Department->YearLevel->find('list',
+		array('conditions'=>array('YearLevel.department_id'=>$this->department_id)));
+		    $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array(
+			'Curriculum.department_id'=>$this->department_id,
+			'Curriculum.registrar_approved'=>1
+			
+			)));
+		} else if ($this->role_id == ROLE_REGISTRAR || $this->role_id == $this->Session->read('Auth.User')['Role']['parent_id']) {
+		   if (!empty($this->department_ids)) {
+		         $departments=$this->Course->Department->find('list',array('conditions'=>
+		         array('Department.id'=>$this->department_ids))); 
+		         $college_ids=$this->Course->Department->find('list',
+		         array('conditions'=>array('Department.id'=>$this->department_ids),
+		         'fields'=>array('Department.college_id')));
+		         $colleges=$this->Course->Department->College->find('list',
+		         array('conditions'=>array('College.id'=>$college_ids)));  
+		          $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array('Curriculum.department_id'=>$this->department_ids,
+			'Curriculum.registrar_approved'=>1
+			
+			)));
+		 } else if (!empty($this->college_ids)) {
+		     $colleges=$this->Course->Department->College->find('list',
+		         array('conditions'=>array('College.id'=>$this->college_ids)));
+		     $departments=$this->Course->Department->find('list',array('conditions'=>
+		         array('Department.college_id'=>$this->college_ids)));  
+		    $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),'conditions'=>array('Curriculum.department_id in (select id from departments where college_id in (".join(',',$this->college_ids).")"',
+		    'Curriculum.registrar_approved'=>1
+			
+		    )));
+		}
+	    }
+	    if (isset($this->request->data['Search']['curriculum_id']) && 
+	    !empty($this->request->data['Search']['curriculum_id'])) {
+		         $courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>
+				array('CourseCategory.curriculum_id'=>$this->request->data['Search']['curriculum_id'])));   
+		}
+		if (isset($this->request->data['Search']['department_id']) && 
+		!empty($this->request->data['Search']['department_id'])) {
+		      $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array(
+			'Curriculum.department_id'=>$this->request->data['Search']['department_id'],
+			'Curriculum.registrar_approved'=>1
+			
+			)));
+			 
+			 $yearLevels = $this->Course->Department->YearLevel->find('list',
+		array('conditions'=>array('YearLevel.department_id'=>$this->request->data['Search']['department_id'])));
+		}
+
+
+     
+
+		$this->set(compact('yearLevels','departments','curriculums','colleges','courseCategories'));
+	
+	  if ($this->request->is('ajax')) {
+		$term = $this->request->query('term');
+		$courses = $this->Course->getCourseTitle($term);
+		$this->set(compact('courses'));
+		$this->set('_serialize', 'courses');
+       }       
+
+	}
+	
+	public function list_courses($passed_curriculum_id=null) {
+		if (!empty($passed_curriculum_id)) {
+		    
+		
+		    $curriculum_exist=$this->Course->Curriculum->find('count',array('conditions'=>array('Curriculum.id'=>$passed_curriculum_id)));
+		    if ($curriculum_exist == 0) {
+			    $this->Session->setFlash('<span></span>'.__('Invalid curriculum'),
+			    'default',array('class'=>'warning-box warning-message'));
+			    $this->redirect(array('action' => 'index'));
+		    }
+		    $elgible_user=$this->Course->Curriculum->find('count',array('conditions'=>array('Curriculum.id'=>$passed_curriculum_id,
+		    'Curriculum.department_id'=>$this->department_id)));
+		    if ($elgible_user == 0 ) {
+		       $this->Session->setFlash('<span></span>'.__('You are not elgible to add courses for the selected curriculum'),
+			    'default',array('class'=>'warning-box warning-message'));
+			    $this->redirect(array('action' => 'index'));
+		    }
+		   
+		     $this->request->data['Search']['curriculum_id']=$passed_curriculum_id; 
+		     $this->request->data['search']=true;
+		}
+		
+		if(!empty($this->request->data) && isset($this->request->data['search'])) {
+		          $options = array();
+		         if ($this->role_id == ROLE_DEPARTMENT) {
+	                 $options[] = array(
+	                           "Course.department_id"=>$this->department_id
+	                        );
+	             } else if ($this->role_id == ROLE_COLLEGE ) {
+	                $department_ids = $this->Course->Department->find('list',
+	                array('conditions'=>array('Department.college_id'=>$this->college_id),
+	                'fields'=>array('Department.id','Department.id')));
+	                
+	                if (!empty($this->request->data['Search']['department_id'])) {
+	                        $options[] = array(
+	                           "Course.department_id"=>$this->request->data['Search']['department_id']
+	                        );
+	                } else {
+	                     $options[] = array(
+	                           "Course.department_id"=> $department_ids
+	                        );
+	                }
+	            } else if ($this->role_id == ROLE_REGISTRAR || $this->role_id == $this->Session->read('Auth.User')['Role']['parent_id']) {
+	                  if (!empty($this->request->data['Search']['department_id'])) {
+	                        $options[] = array(
+	                           "Course.department_id"=>$this->request->data['Search']['department_id']
+	                        );
+	                  } else {
+	                    
+			  if(!empty($this->department_ids)) {
+			   $options[] = array(
+	                           "Course.department_id"=> $this->department_ids
+	                        );
+			   } else if (!empty($this->college_ids)) {
+		  $options[] = array(
+	                           "Course.department_id in (select id from departments where college_id in (".join(',',$this->college_ids).")"
+	                        );
+		
+			   }			
+
+	                }
+	            }
+		        
+		        if (!empty($this->request->data['Search']['semester'])) {
+	                        $options[] = array(
+	                           "Course.semester"=>$this->request->data['Search']['semester']
+	                        );
+	            }
+	                 
+	               if (!empty($this->request->data['Search']['year_level_id'])) {
+	                            $options[] = array(
+	                               "Course.year_level_id"=>$this->request->data['Search']['year_level_id']
+	                            );
+	               }
+	               if (!empty($this->request->data['Search']['curriculum_id'])) {
+	                        $options[] = array(
+	                           "Course.curriculum_id"=>$this->request->data['Search']['curriculum_id']
+	                        );
+	                         $courseCategories=$this->Course->CourseCategory->find('list',
+              array('conditions'=>array(
+              'CourseCategory.curriculum_id'=>$this->request->data['Search']['curriculum_id']),
+              'fields'=>array('CourseCategory.id','CourseCategory.name')));
+                             $this->set(compact('courseCategories'));
+              
+	                 }
+	                 
+	                 if (!empty($this->request->data['Search']['course_category_id'])) {
+	                        $options[] = array(
+	                           "Course.course_category_id"=>$this->request->data['Search']['course_category_id']
+	                        );
+	                 }
+	    
+			//$this->paginate = array('limit'=>1000);
+			
+			 $this->paginate = array('order'=>array(
+			  'Course.year_level_id','Course.course_title',
+'Course.semester'),'contain'=>array('Curriculum','CourseCategory','Department','YearLevel','Prerequisite'=>array('PrerequisiteCourse')),'limit'=>50000,'order'=>'Course.semester ASC,Course.year_level_id ASC ,Course.course_title ASC');
+
+            $this->paginate['conditions'][]=$options;
+	  	    $this->Paginator->settings=$this->paginate;
+	        $courses = $this->Paginator->paginate('Course');
+
+			$program_name = null;
+			$program_type_name =null;
+
+			if(!empty($courses)) {
+			    $program_name = $this->Course->Curriculum->Program->field('Program.name',array('Program.id'=>
+						    $courses[0]['Curriculum']['program_id']));
+			    $program_type_name =  $this->Course->Curriculum->ProgramType->field('ProgramType.name',array('ProgramType.id'=>
+						    $courses[0]['Curriculum']['program_type_id']));
+			  if (!empty($this->request->data['Search']['curriculum_id'])) {
+                             $curriculum_type =  $this->Course->Curriculum->field('Curriculum.type_credit',array('Curriculum.id'=>$this->request->data['Search']['curriculum_id']));
+
+			  }
+			
+			   $selected_department=$courses[0]['Curriculum']['department_id'];
+			    $course_associate_array = array();
+			    foreach($courses as $coursekey=>$coursevalue) {
+				    $course_yearlevel = $coursevalue['Course']['year_level_id'];
+				    $course_semester = $coursevalue['Course']['semester'];
+			    $course_associate_array[$course_yearlevel][$course_semester][] = $coursevalue;
+			    }
+
+			    $this->Session->write('course_associate_array',$course_associate_array);
+			    $this->Session->write('selected_curriculum',$this->request->data['Search']['curriculum_id']);
+			    $this->Session->write('program_name',$program_name);
+			    $this->Session->write('program_type_name',$program_type_name);
+			    $this->Session->write('selected_department',$selected_department);
+			    $this->Session->write('curriculum_type',$curriculum_type);
+			
+			    $this->set(compact('isbeforesearch','program_name','program_type_name','curriculum_type','course_associate_array'));
+			}
+			
+			if (empty($courses)) {
+			       $this->Session->setFlash('<span></span>'.
+	                         __('No result is found for the given search criteria.'),
+	                         'default',array('class'=>'info-box info-message'));
+			}		
+			
+		}
+		
+		if ($this->role_id == ROLE_COLLEGE) {
+		    $departments=$this->Course->Department->find('list',
+		    array('conditions'=>array('Department.college_id'=>$this->college_id)));
+		} else if ($this->role_id == ROLE_DEPARTMENT) {
+		     $departments=$this->Course->Department->find('list',
+		    array('conditions'=>array('Department.id'=>$this->department_id)));
+		    $yearLevels = $this->Course->Department->YearLevel->find('list',
+		array('conditions'=>array('YearLevel.department_id'=>$this->department_id)));
+		    $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array
+			('Curriculum.department_id'=>$this->department_id,
+			//'Curriculum.registrar_approved'=>1
+			
+			)));
+		} else if ($this->role_id == ROLE_REGISTRAR || $this->role_id == $this->Session->read('Auth.User')['Role']['parent_id']) {
+		   if (!empty($this->department_ids)) {
+		         $departments=$this->Course->Department->find('list',array('conditions'=>
+		         array('Department.id'=>$this->department_ids))); 
+		         $college_ids=$this->Course->Department->find('list',
+		         array('conditions'=>array('Department.id'=>$this->department_ids),
+		         'fields'=>array('Department.college_id')));
+		         $colleges=$this->Course->Department->College->find('list',
+		         array('conditions'=>array('College.id'=>$college_ids)));  
+		          $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array(
+			'Curriculum.department_id'=>$this->department_ids,
+			'Curriculum.registrar_approved'=>1
+			
+			)));
+		   
+		   } else if (!empty($this->college_ids)) {
+		      $colleges=$this->Course->Department->College->find('list',array('conditions'=>array('College.id'=>$this->college_ids)));
+		     $departments=$this->Course->Department->find('list',array('conditions'=>
+		         array('Department.college_id'=>$this->college_ids)));  
+		    $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),'conditions'=>array('Curriculum.department_id in (select id from departments where college_id in (".join(',',$this->college_ids).")"',
+		    'Curriculum.registrar_approved'=>1
+			
+		    )));
+		   }
+		}
+		
+	    if (isset($this->request->data['Search']['curriculum_id']) && 
+	    !empty($this->request->data['Search']['curriculum_id'])) {
+		         $courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>
+				array('CourseCategory.curriculum_id'=>$this->request->data['Search']['curriculum_id'])));   
+		}
+		if (isset($this->request->data['Search']['department_id']) && 
+		!empty($this->request->data['Search']['department_id'])) {
+		      $curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array('Curriculum.department_id'=>$this->request->data['Search']['department_id'],
+			'Curriculum.registrar_approved'=>1
+			
+			)));
+			 
+			 $yearLevels = $this->Course->Department->YearLevel->find('list',
+		array('conditions'=>array('YearLevel.department_id'=>$this->request->data['Search']['department_id'])));
+		}
+		$this->set(compact('yearLevels','departments','curriculums','colleges','courseCategories'));
+	}
+	function view($id = null) {
+		if (!$id) {
+			$this->Session->setFlash(__('Invalid course'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		$course=$this->Course->find('first',array('conditions'=>array('Course.id'=>$id),
+		'contain'=>array('Book','CourseCategory'=>array('fields'=>array('id','name')),'Prerequisite'=>array('Course','PrerequisiteCourse'),
+'Curriculum','Department'=>array('id','name'),'GradeType'=>array('id','type'),'PublishedCourse'=>array('conditions'=>array('PublishedCourse.course_id'=>$id),'CourseInstructorAssignment'))));
+	
+		$this->set('course',$course);
+	}
+
+	public function add($curriculum_id=null) {
+	   
+		if (!empty($curriculum_id)) {
+		    $curriculum_exist=$this->Course->Curriculum->find('count',array('conditions'=>array('Curriculum.id'=>$curriculum_id)));
+		    if ($curriculum_exist == 0) {
+			    $this->Session->setFlash('<span></span>'.__('Invalid curriculum'),
+			    'default',array('class'=>'warning-box warning-message'));
+			    $this->redirect(array('action' => 'index'));
+		    }
+		    $elgible_user=$this->Course->Curriculum->find('count',array('conditions'=>array('Curriculum.id'=>$curriculum_id,
+		    'Curriculum.department_id'=>$this->department_id)));
+		    if ($elgible_user == 0 ) {
+		       $this->Session->setFlash('<span></span>'.__('You are not elgible to add courses for the selected curriculum'),
+			    'default',array('class'=>'warning-box warning-message'));
+			    $this->redirect(array('action' => 'index'));
+		    }
+		     $this->request->data['Course']['curriculum_id']=$curriculum_id; 
+		     $this->request->data['selectcurriculum']=true;
+		}
+		
+		$curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+			'conditions'=>array('Curriculum.department_id'=>$this->department_id,
+			'Curriculum.registrar_approved'=>0
+			
+			)));
+		$isbeforesearch = 1;
+		$this->set(compact('curriculums','isbeforesearch'));
+		if( !empty($this->request->data) && isset($this->request->data['selectcurriculum'])) {
+			
+			$selected_curriculum_id = $this->request->data['Course']['curriculum_id']; 
+			
+			if(!empty($selected_curriculum_id)) {
+				$isbeforesearch = 0;
+				$creditname = $this->Course->Curriculum->field('type_credit',array('Curriculum.id'=>$selected_curriculum_id));						
+			
+				
+				//To get curriculum list except the selected one 
+				$selected_curriculum_array = array();
+				$selected_curriculum_array[$selected_curriculum_id] = $curriculums[$selected_curriculum_id];
+				$otherCurriculumList = array_diff($curriculums,$selected_curriculum_array);
+				
+				//Check selected curriculum whether have at least one course or not 
+				$is_there_a_course_in_selected_curriculum = $this->Course->find('count',array('conditions'=>array(
+					'Course.curriculum_id'=>$selected_curriculum_id)));
+				
+				$prerequisite_courses = $this->Course->find('list',array('conditions'=>array('Course.curriculum_id'=>
+					$selected_curriculum_id),'fields'=>array('Course.id','Course.course_code_title')));
+				//debug($prerequisite_courses);
+				$semester_array =array();
+				$semester_array['I'] = "I";
+				$semester_array['II'] = "II";
+				$semester_array['III'] = "III";
+				$yearLevels = $this->Course->YearLevel->find('list',array('conditions'=>
+					array('YearLevel.department_id'=>$this->department_id)));
+				$gradeTypes = $this->Course->GradeType->find('list',array('fields'=>'GradeType.type'));
+				//$courseCategorys
+				$courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>
+					array('CourseCategory.curriculum_id'=>$selected_curriculum_id)));
+				$turn_off_search=true;
+				$this->set(compact('turn_off_search','gradeTypes','yearLevels','semester_array','creditname','courseCategories',
+					'prerequisite_courses','creditname','otherCurriculumList','is_there_a_course_in_selected_curriculum'));
+			   
+			} else {
+				 $this->Session->setFlash('<span></span>'.__('Please select curriculum.'),'default',
+					array('class'=>'error-box error-message'));
+			}
+		}
+		//**************************************************
+		//To copy courses from selected curriculum to this curriculum
+		if (!empty($this->request->data) && isset($this->request->data['copycourses'])) {
+			if(!empty($this->request->data['Course']['form_curriculum'])) {
+				$to_curriculum = $this->request->data['Course']['curriculum_id'];
+				unset($this->request->data['Course']['curriculum_id']);
+				
+				$copied_courses['Course'] = $this->Course->find('all',array('conditions'=>array('Course.curriculum_id'=>
+					$this->request->data['Course']['form_curriculum']),'contain'=>array('Prerequisite','Book','Journal','Weblink')));
+				
+				//unset empty prerequisite/Book/Journal and weblink data before save
+				$copied_courses = $this->Course->unset_empty_for_copy($copied_courses);
+				
+				foreach($copied_courses['Course'] as &$each_courses){
+					unset($each_courses['Course']['id']);
+					unset($each_courses['Course']['created']);
+					unset($each_courses['Course']['modified']);
+					$each_courses['Course']['curriculum_id'] = $to_curriculum;	
+				}
+				
+				$issaved =false;
+				foreach($copied_courses['Course'] as $each_courses_data) {
+					if ($this->Course->saveAll($each_courses_data,array('validate'=>false))) {
+						$issaved = true;
+					} else {
+						$issaved = false;
+						break 1;
+					}
+				}
+				if ($issaved==true) {
+					//find the name of curriculum for display purpose
+					$from_curriculum_name = $this->Course->Curriculum->field('Curriculum.curriculum_detail',array('Curriculum.id'=>
+						$this->request->data['Course']['form_curriculum']));
+					$to_curriculum_name = $this->Course->Curriculum->field('Curriculum.curriculum_detail',array('Curriculum.id'=>
+						$to_curriculum));
+					 $this->Session->setFlash('<span></span>'.__('The courses copied from '.$from_curriculum_name.
+						' to '.$to_curriculum_name, true), 'default',array('class'=>'success-box success-message'));
+					 
+					 $this->redirect(array('action'=>'list_courses',$to_curriculum));
+					
+				} else {
+					$this->Session->setFlash('<span></span>'.__('The course could not be copied. Please, try again.'),
+								 'default',array('class'=>'error-box error-message'));
+				}
+				
+			} else {
+				 $this->Session->setFlash('<span></span>'.__('Please select curriculum from which you want to copy courses.'),
+					'default',array('class'=>'error-box error-message'));
+				
+				// Incase of error to redisplay form as it is.
+				$selected_curriculum_id = $this->request->data['Course']['curriculum_id'];
+				$isbeforesearch = 0;
+				$creditname = $this->Course->Curriculum->field('type_credit',
+				array('Curriculum.id'=>$selected_curriculum_id));
+						
+				
+				
+				//To get curriculum list except the selected one 
+				$selected_curriculum_array = array();
+				$selected_curriculum_array[$selected_curriculum_id] = $curriculums[$selected_curriculum_id];
+				$otherCurriculumList = array_diff($curriculums,$selected_curriculum_array);
+				//Check selected curriculum whether have at least one course or not 
+				$is_there_a_course_in_selected_curriculum = $this->Course->find('count',array('conditions'=>array(
+					'Course.curriculum_id'=>$selected_curriculum_id)));
+				
+				$prerequisite_courses = $this->Course->find('list',
+				array('conditions'=>array('Course.curriculum_id'=>
+					$selected_curriculum_id),'fields'=>array('Course.id','Course.course_code_title')));
+				
+				$semester_array =array();
+				$semester_array['I'] = "I";
+				$semester_array['II'] = "II";
+				$semester_array['III'] = "III";
+				$yearLevels = $this->Course->YearLevel->find('list',array('conditions'=>
+					array('YearLevel.department_id'=>$this->department_id)));
+				$gradeTypes = $this->Course->GradeType->find('list',array('fields'=>'GradeType.type'));
+				//$courseCategorys
+				$courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>
+					array('CourseCategory.curriculum_id'=>$selected_curriculum_id)));
+				$turn_off_search=true;
+				$this->set(compact('turn_off_search','gradeTypes','yearLevels','semester_array','creditname','courseCategories',
+					'prerequisite_courses','creditname','otherCurriculumList','is_there_a_course_in_selected_curriculum'));
+				
+				//
+			}
+		}
+		//*************************************///
+		if (!empty($this->request->data) && isset($this->request->data['submit'])) {
+			//unset empty prerequisite/Book/Journal and weblink data before save
+			$this->request->data = $this->Course->unset_empty($this->request->data);
+			//debug($this->Course->not_allow_more_than_one_thesis($this->request->data));
+			if($this->Course->checkAttendanceRequirementValue($this->request->data['Course'])) {
+				//$Prerequisite_is_unique=$this->Course->Prerequisite->prerequisiteCourseCodeUnique($this->request->data);
+				if($this->Course->Prerequisite->prerequisiteCourseCodeUnique($this->request->data)) {
+					$this->Course->create();
+					if ($this->Course->not_allow_more_than_one_thesis($this->request->data)) {
+					    if ($this->Course->saveAll($this->request->data,array('validate'=>'first'))) {
+							     $this->Session->setFlash('<span></span>'.__('The course '.$this->request->data['Course']['course_code'] .
+								    ' has been saved.', true), 'default',array('class'=>'success-box success-message'));
+							     $this->request->data['selectcurriculum']=true;
+							     $curriculum_id= $this->request->data['Course']['curriculum_id'];
+							     $this->request->data=null;
+							     $this->request->data['Course']['curriculum_id']=$curriculum_id;
+							     //$this->redirect(array('action'=>'add',$curriculum_id));
+					    } else {
+						     $this->Session->setFlash('<span></span>'.
+						     __('The course could not be saved. Please, try again.'),
+								     'default',array('class'=>'error-box error-message'));
+								     
+							if (!empty($this->request->data['Course']['curriculum_id'])) {
+							  
+							$prerequisite_courses = $this->Course->find('list',array('conditions'=>array('Course.curriculum_id'=>$this->request->data['Course']['curriculum_id']),'fields'=>array('Course.id','Course.course_code_title')));
+							} else if (isset($selected_curriculum_id))  {
+							  
+							$prerequisite_courses = $this->Course->find('list',
+							array('conditions'=>array('Course.curriculum_id'=>$selected_curriculum_id),
+					        'fields'=>array('Course.id','Course.course_code_title')));
+						
+						   }
+							
+					       $this->set(compact('prerequisite_courses'));
+					    } 
+				   } else {
+				       $error=$this->Course->invalidFields();
+					    if (isset($error['thesis_error'])) {
+						    $this->Session->setFlash('<span></span>'.__($error['thesis_error'][0]),'default',
+						    array('class'=>'error-box error-message'));
+					    }
+				   }	
+				} else {
+					$error=$this->Course->Prerequisite->invalidFields();
+					if (isset($error['prerequisite'])) {
+						$this->Session->setFlash('<span></span>'.__($error['prerequisite'][0]),'default',
+						array('class'=>'error-box error-message'));
+					}
+				}
+			} else {
+			   $error=$this->Course->invalidFields();
+			   if (isset($error['attendance'])) {
+				$this->Session->setFlash('<span></span>'.__($error['attendance'][0]),'default',
+				array('class'=>'error-box error-message'));
+			   }
+			}
+			$turn_off_search=true;	
+		
+			$this->request->data['submit']=true;
+			
+			//To get curriculum list except the selected one 
+			$selected_curriculum_array = array();
+			$selected_curriculum_array[$this->request->data['Course']['curriculum_id']] = $curriculums[$this->request->data['Course']['curriculum_id']];
+			$otherCurriculumList = array_diff($curriculums,$selected_curriculum_array);
+			//Check selected curriculum whether have at least one course or not 
+			$is_there_a_course_in_selected_curriculum = $this->Course->find('count',array('conditions'=>array(
+				'Course.curriculum_id'=>$this->request->data['Course']['curriculum_id'])));
+				
+			$prerequisite_courses = $this->Course->find('list',array('conditions'=>array('Course.curriculum_id'=>
+				$this->request->data['Course']['curriculum_id']),'fields'=>array('Course.course_code_title')));
+			$semester_array =array();
+			$semester_array['I'] = "I";
+			$semester_array['II'] = "II";
+			$semester_array['III'] = "III";
+			$creditname = $this->Course->Curriculum->field('type_credit',
+				array('Curriculum.id'=>$this->request->data['Course']['curriculum_id']));
+			$yearLevels = $this->Course->YearLevel->find('list',array('conditions'=>
+				array('YearLevel.department_id'=>$this->department_id)));
+			$gradeTypes = $this->Course->GradeType->find('list',array('fields'=>'GradeType.type',
+			'conditions'=>array('GradeType.active'=>1)));
+			//$courseCategorys
+			$courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>
+				array('CourseCategory.curriculum_id'=>$this->request->data['Course']['curriculum_id'])));
+			$this->set(compact('gradeTypes','yearLevels','creditname','turn_off_search','semester_array','creditname','courseCategories',
+				'prerequisite_courses','otherCurriculumList','is_there_a_course_in_selected_curriculum'));
+			
+			}
+		
+	}
+
+	function edit($id = null) {
+	    $course_exist=$this->Course->find('count',array('conditions'=>array('Course.id'=>$id)));
+		if ($course_exist == 0) {
+			$this->Session->setFlash('<span></span>'.__('Invalid course'),
+			'default',array('class'=>'warning-box warning-message'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		$elgible_user=$this->Course->find('count',array('conditions'=>array('Course.id'=>$id,
+		'Course.department_id'=>$this->department_id)));
+		if ($elgible_user == 0 ) {
+		   $this->Session->setFlash('<span></span>'.__('You are not elgible to edit this course'),
+			'default',array('class'=>'warning-box warning-message'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		
+		$editingLocked=$this->Course->find('first',array('conditions'=>array('Course.id'=>$id),'contain'=>array('Curriculum')));
+		if ($editingLocked['Curriculum']['lock'] == 1
+		|| $editingLocked['Curriculum']['registrar_approved']==1) {
+			$this->Session->setFlash('<span></span>'.__('You can not edit the selected course. Editing is locked  by registrar.'),'default',array('class'=>'info-box info-message'));
+			return $this->redirect(array('action' => 'view',$id));
+		}
+		
+		if (!empty($this->request->data)) {
+			
+			//unset empty prerequisite/Book/Journal and weblink data before save
+			$this->request->data = $this->Course->unset_empty($this->request->data);
+			
+			if($this->Course->checkAttendanceRequirementValue($this->request->data['Course'])) {	
+				// controller validation 
+				if($this->Course->Prerequisite->prerequisiteCourseCodeUnique($this->request->data)) {
+	if ($this->Course->not_allow_more_than_one_thesis($this->request->data)) {
+	$this->Course->Book->deleteBookList($this->request->data['Course']['id'],$this->request->data);
+	$this->Course->Journal->deleteJournalList($this->request->data['Course']['id'],$this->request->data);
+	$this->Course->Weblink->deleteWeblinkList($this->request->data['Course']['id'],$this->request->data);
+	$this->Course->Prerequisite->deletePrerequisiteList($this->request->data['Course']['id'],$this->request->data);
+	 if ($this->Course->saveAll($this->request->data,array('validate'=>'first'))) {
+		    $this->Session->setFlash('<span></span> '.__('The course '.$this->request->data['Course']['course_title'] .' has been updated', true),'default',array('class'=>'success-box success-message'));
+		   $this->redirect(array('action' => 'list_courses',$this->request->data['Course']['curriculum_id']));
+	} else {
+		$this->Session->setFlash('<span></span> '.__('The course could not be updated. Please, try again.'),
+	'default',array('class'=>'error-box error-message'));
+        }
+     } else {
+	$error=$this->Course->invalidFields();
+	if (isset($error['thesis_error'])) {
+	      $this->Session->setFlash('<span></span>'.__($error['thesis_error'][0]),'default',array('class'=>'error-box error-message'));
+	}
+	$this->request->data = $this->request->data = $this->Course->read(null, $id);
+     }
+    } else {
+	  $error=$this->Course->Prerequisite->invalidFields();
+	  if (isset($error['prerequisite'])) {
+	$this->Session->setFlash('<span></span>'.__($error['prerequisite'][0]),'default',array('class'=>'error-box error-message'));
+	  }
+     }
+  } else {
+	$error=$this->Course->invalidFields();
+	if (isset($error['attendance'])) {
+	$this->Session->setFlash('<span></span>'.__($error['attendance'][0]),'default',array('class'=>'error-box error-message'));
+	}
+  }
+  }
+	if (empty($this->request->data)) {
+	$this->request->data = $this->Course->read(null, $id);
+	}
+	if(!empty($this->request->data['Course']['curriculum_id'])) {
+		$prerequisite_courses = $this->Course->find('list',array('conditions'=>array('Course.curriculum_id'=>$this->request->data['Course']['curriculum_id'],'Course.id <> '=>$this->request->data['Course']['id']),'fields'=>array('Course.id','Course.course_code_title')));
+	        $creditname = $this->Course->Curriculum->field('type_credit',array('Curriculum.id'=>$this->request->data['Course']['curriculum_id']));
+			  
+	} else if (!empty($this->request->data['Curriculum']['id'])) {
+	    $creditname=$this->request->data['Curriculum']['type_credit'];    
+	    $prerequisite_courses = $this->Course->find('list',array('conditions'=>array('Course.curriculum_id'=>$this->request->data['Curriculum']['id'],'Course.id <> '=>$this->request->data['Course']['id']),'fields'=>array('Course.id','Course.course_code_title')));
+	}
+	$semester_array =array();
+	$semester_array['I'] = "I";
+	$semester_array['II'] = "II";
+	$semester_array['III'] = "III";
+	$yearLevels = $this->Course->YearLevel->find('list',array('conditions'=>
+		array('YearLevel.department_id'=>$this->department_id)));
+$gradeTypes = $this->Course->GradeType->find('list',array('fields'=>'GradeType.type',
+	'conditions'=>array('GradeType.active'=>1)));
+	$curriculums = $this->Course->Curriculum->find('list',array('fields'=>array('Curriculum.curriculum_detail'),
+	'conditions'=>array(
+	'Curriculum.department_id'=>$this->department_id,
+	//'Curriculum.registrar_approved'=>1
+			
+	)
+	));
+	$editCredit=$this->Course->denyEditDeleteCredit($id);
+	$editCreditDetail=$this->Course->denyEditDeleteCourseBasicDetailChange($id);
+	$course_code_title=$this->Course->field('course_code_title',array('Course.id'=>$id));
+	$courseCategories= $this->Course->CourseCategory->find('list',array('conditions'=>array('CourseCategory.curriculum_id'=>$this->request->data['Course']['curriculum_id'])));
+	$this->set(compact('gradeTypes','yearLevels','course_code_title','editCreditDetail','editCredit','curriculums','semester_array','creditname','courseCategories','prerequisite_courses'));
+		//$this->render('add');
+	}
+
+	function delete($id = null) {
+	    $course_exist=$this->Course->find('count',array('conditions'=>array('Course.id'=>$id)));
+		if ($course_exist == 0) {
+			$this->Session->setFlash('<span></span>'.__('Invalid course'),
+			'default',array('class'=>'warning-box warning-message'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		$elgible_user=$this->Course->find('count',array('conditions'=>array('Course.id'=>$id,
+		'Course.department_id'=>$this->department_id)));
+		$courseApproved=$this->Course->find('first',array('conditions'=>array('Course.id'=>$id,
+		'Course.department_id'=>$this->department_id),'contain'=>array('Curriculum')));
+		if ($elgible_user == 0 ) {
+		   $this->Session->setFlash('<span></span>'.__('You are not elgible to delete this course'),
+			'default',array('class'=>'warning-box warning-message'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		if($courseApproved['Curriculum']['registrar_approved']==1){
+		 $this->Session->setFlash('<span></span>'.__('The course is approved by registrar and not allowed for deletion.'),'default',array('class'=>'warning-box warning-message'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		
+		//check not related children 
+		
+		if ($this->Course->canItBeDeleted($id)) {
+				if ($this->Course->delete($id)) {
+					$this->Session->setFlash('<span></span> '.__('Course deleted.'),'default',array('class'=>'success-box success-message'));
+					//$this->redirect(array('action'=>'index'));
+				}
+		
+		} else {
+		$this->Session->setFlash('<span></span> '.__('The course was not deleted. It is used by other models.'),'default',array('class'=>'error-box error-message'));
+		
+		}
+		return $this->redirect(array('action' => 'index'));
+	}
+	
+	function print_courses_pdf() {
+		$course_associate_array = $this->Session->read('course_associate_array');
+	    $program_name = $this->Session->read('program_name');
+		$program_type_name =$this->Session->read('program_type_name');
+		$selected_curriculum = $this->Session->read('selected_curriculum');
+		$selected_department =$this->Session->read('selected_department');
+		
+		$selected_department_name = $this->Course->Department->field('Department.name',array('Department.id'=>$selected_department));
+		$selected_curriculum_name = $this->Course->Curriculum->field('Curriculum.name',array('Curriculum.id'=>$selected_curriculum));
+		
+		$college_id = $this->Course->Department->field('Department.college_id',array('Department.id'=>$selected_department));
+		$this_department_college_name = $this->Course->Department->College->field('College.name',array('College.id'=>$college_id));
+	    $university=ClassRegistry::init('University')->find('first',array('contain'=>array('Attachment'=>array('order'=>array('Attachment.created DESC'))),'order'=>array('University.created DESC')));
+	    $this->set(compact('course_associate_array','selected_curriculum_name','program_name','program_type_name',
+			'selected_department_name','university','this_department_college_name'));
+	    $this->response->type('application/pdf');
+	    $this->layout = '/pdf/default';
+	    $this->render();
+	}
+	function export_courses_xls () {
+		$course_associate_array = $this->Session->read('course_associate_array');
+	    $program_name = $this->Session->read('program_name');
+		$program_type_name =$this->Session->read('program_type_name');
+		$selected_curriculum = $this->Session->read('selected_curriculum');
+		$selected_department =$this->Session->read('selected_department');
+		
+		$selected_department_name = $this->Course->Department->field('Department.name',array('Department.id'=>$selected_department));
+		$selected_curriculum_name = $this->Course->Curriculum->field('Curriculum.name',array('Curriculum.id'=>$selected_curriculum));
+		
+		$college_id = $this->Course->Department->field('Department.college_id',array('Department.id'=>$selected_department));
+		$this_department_college_name = $this->Course->Department->College->field('College.name',array('College.id'=>$college_id));
+		
+	    $this->set(compact('course_associate_array','selected_curriculum_name','program_name','program_type_name',
+			'selected_department_name','this_department_college_name'));
+	}
+	
+	 function deleteChildren ($id=null,$action_model_id=null){
+           
+           if (!empty($action_model_id)) {
+	            $course_children=explode('~',$action_model_id);
+	            
+		        $this->Course->$course_children[1]->id = $id;
+		        if(!$this->Course->$course_children[1]->exists()) {
+			        $this->Session->setFlash('<span></span>'.__('Invalid '.$course_children[1].' id.'), 'default', array('class' => 'error-message error-box'));
+			        if (!empty($course_children[0]) && !empty($course_children[1]) && 
+			        !empty($course_children[2])) {
+			            $this->redirect(array('action'=> $course_children[0],$course_children[2]));
+			        } 
+			
+		        }
+		        $elgible_user=$this->Course->find('count',array('conditions'=>array('Course.id'=>$course_children[2],'Course.department_id'=>$this->department_id)));
+		          if($elgible_user>0){
+		                if ($this->Course->$course_children[1]->delete($id)) {
+			                $this->Session->setFlash('<span></span>'.__(' '.$course_children[1].' deleted'),
+			                'default',array('class'=>'success-box success-message'));
+			                  
+			               
+		                } else {
+		                   $this->Session->setFlash('<span></span>'.__(' '.$course_children[1].' could not be deleted'),
+			                'default',array('class'=>'error-box error-message'));
+		                
+		                }
+		              
+		            
+		          }
+		          if (!empty($course_children[0]) && !empty($course_children[1]) && 
+			            !empty($course_children[2])) {
+			                $this->redirect(array('action'=> $course_children[0],$course_children[2]));
+			      } 
+		        
+	      }
+	    
+    }
+    
+    function __init_search() {
+        // We create a search_data session variable when we fill any criteria 
+        // in the search form.
+                if(!empty($this->request->data['Search'])){
+                       
+                            $search_session = $this->request->data['Search'];
+                           // Session variable 'search_data'
+                            $this->Session->write('search_data', $search_session);
+                        
+                } else {
+
+                	$search_session = $this->Session->read('search_data');
+                	$this->request->data['Search'] = $search_session;
+
+                } 
+
+     }
+	
+}
+?>

@@ -1,0 +1,369 @@
+<?php ?>
+<div class="box">
+     <div class="box-body">
+       <div class="row">
+	  <div class="large-12 columns">
+            
+<?php echo $this->Form->create('PublishedCourse', array('action' => 'index'));?> 
+<div class="publishedCourses index">
+<h3>View published courses</h3>
+<p class='fs16'>
+   This tool will help you to view the list of course offering every semester.
+</p>
+<div onclick="toggleViewFullId('ListPublishedCourses')"><?php 
+    if (!empty($publishedCourses)) {
+        echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCoursesImg')); 
+        ?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListDowngradableSectionTxt">Display Filter</span><?php
+        }
+    else {
+        echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCoursesImg')); 
+        ?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCoursesTxt">Hide Filter</span><?php
+        }
+?>
+</div>
+<div id="ListPublishedCourses" style="display:<?php echo (!empty($publishedCourses) ? 'none' : 'display'); ?>">
+
+<table cellpadding="0" cellspacing="0">
+
+ 		<tr>
+       		
+        	<td style="width:15%">Stream:</td>
+			<td style="width:35%">
+			<?php 
+			  echo $this->Form->input('PublishedCourse.college_id',array('id'=>'ajax_college_id','label'=>false,
+			 'type'=>'select','onchange'=>'getDepartments()','div'=>false));
+			?>
+			</td>
+			<td style="width:13%"> Department:</td>
+			<td style="width:37%">
+			<?php 
+			    echo $this->Form->input('PublishedCourse.department_id',array('id'=>'ajax_department_id','label'=>false,
+			 'type'=>'select','onchange'=>'getYearLevel()','div'=>false));
+			?>
+			
+			</td>
+       </tr>
+	   
+		<tr>
+			<td style="width:15%">Academic Year:</td>
+			<td style="width:35%">
+			<?php 
+			    echo $this->Form->input('PublishedCourse.academic_year',array(
+            'label' => false,'type'=>'select','options'=>$acyear_array_data,
+          
+                'selected'=>isset($this->request->data['PublishedCourse']['academic_year'])?
+                $this->request->data['PublishedCourse']['academic_year']:
+                (isset($defaultacademicyear) ? $defaultacademicyear:'' )
+            
+            )
+            
+            );
+			?>
+			</td>
+		    <td style="width:13%"> Semester:</td>
+			<td style="width:37%">
+			<?php 
+			   echo $this->Form->input('PublishedCourse.semester',array('type'=>'select','label'=>false,
+			   'options'=>array('I'=>'I','II'=>'II','III'=>'III')));
+			?>
+			
+			</td>
+		</tr>
+		  
+		<tr>
+			
+			<td style="width:15%"> Program Type:</td>
+			<td style="width:35%">
+			&nbsp;
+			<?php 
+			  echo $this->Form->input('PublishedCourse.program_type_id',array('id'=>'ajax_program_type_id','label'=>false,
+			 'type'=>'select','div'=>false));
+			
+			?>		
+			</td>
+			<td style="width:13%"> Program:</td>
+			<td style="width:37%">
+			<?php 
+			   echo $this->Form->input('PublishedCourse.program_id',array('id'=>'program_id','label'=>false,
+			 'type'=>'select','div'=>false));
+			?>
+			
+			</td>
+
+		</tr>
+		<tr>
+			
+			<td style="width:13%">Year Level:</td>
+			<td style="width:37%"><?php 
+                echo $this->Form->input('PublishedCourse.year_level_id',array('id'=>'ajax_year_level_id','label'=>false,
+			     'type'=>'select','div'=>false));
+			
+			 ?>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="4">
+				<?php 
+				echo $this->Form->end(array('label'=>__('Search'),'class'=>'tiny radius button bg-blue')); 
+				?> 
+
+	 		</td>	
+		
+		</tr>
+
+</table>
+
+
+</div>
+
+<?php 
+
+
+if (isset($publishedCourses)) { 
+ 
+	
+    echo "<table><tbody><tr><td>".$this->Html->link($this->Html->image("pdf_icon.gif",array("alt"=>"Print to PDF")),
+array('action'=>"print_published_pdf"),array('escape'=>false))." Print</td><td>".$this->Html->link($this->Html->image("xls-icon.gif",array('alt'=>'Export To Xls')),array('action'=>"export_published_xls"),array('escape'=>false))." Export</td></tr></tbody></table>";
+
+   foreach($publishedCourses as $sk=>$sv){
+            
+            if (!empty($sv)) {
+                 echo "<div class='fs15' style='font-weight:bold'> Academic Year: ".$academic_year."</div>";
+                echo "<div class='fs15' style='font-weight:bold'> Semester: ".$sk."</div>";
+                $count=1;
+                foreach ($sv as $pk => $pv) {
+                    if (!empty($pk)) {
+                            echo "<div class='fs16'> Program:".$pk."</div>";
+                       foreach ($pv as $ptk=>$ptv) {
+                       
+                         if (!empty($ptk)) {
+                                 echo "<div class='fs16'> Program Type: ".$ptk."</div>";
+                               
+                              foreach ($ptv as $yk=>$yv) {
+                                  if (!empty($yv)) {
+                                     echo "<div class='fs16'> Year Level: ".$yk."</div>";
+                                     foreach ($yv as $section_name=>$section_value) {
+                                      echo "<div class='fs16'> Section : ".$section_name."</div>";
+                                    
+                                      echo "<table cellpadding=0 cellspacing=0>";
+                                      ?>
+                                       <tr>
+                                           <th>S.N<u>o</u></th>
+			      
+			        <th><?php echo 'Course Title';?></th>
+			        <th><?php echo 'Course Code';?></th>
+			        <th><?php echo 'Credit';?></th>
+			        <th><?php echo 'L T L';?></th>
+			</tr>
+                                      <?php  
+                                    foreach ($section_value as $type_index=>$section_value_detail) {
+                                       echo '<tr><td colspan=5 class="fs16">'.$type_index.'</td></tr>';
+                                  
+                                      foreach ($section_value_detail as $publishedCourse) {
+                                          
+                                           ?>
+                                          
+                                           <?php 
+                                            if (!empty($publishedCourse)) {
+                                              
+	                    $i = 0;
+	                 
+	                        
+		                    $class = null;
+		                    if ($i++ % 2 == 0) {
+			                    $class = ' class="altrow"';
+		                    }
+		                    ?>
+		                    <tr<?php echo $class;?>>
+		<td><?php echo $count++; ?>&nbsp;</td>
+				<td>
+			<?php echo $this->Html->link($publishedCourse['Course']['course_title'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		</td>
+		<td>
+			<?php echo $this->Html->link($publishedCourse['Course']['course_code'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		</td>
+		<td>
+			<?php echo $publishedCourse['Course']['credit']; ?>
+		</td>
+		<td>
+			<?php echo $publishedCourse['Course']['course_detail_hours']; ?>
+		</td>
+		
+
+	</tr>
+		                    
+		                    <?php   
+		
+		            
+                                            }
+                                         
+                                       }
+                                       
+                                       } // type
+                                         echo "</table>";
+                                     } 
+                                     
+                                     } //section end 
+                                 } // end year level
+                         }
+                    
+                      }
+                   }
+                }
+         }   
+   }
+
+
+?>  
+
+<?php 
+}
+
+if (isset($publishedCoursesCollege) && !empty($publishedCoursesCollege)) {
+     echo "<div class='largeheading'> Academic Year: ".$academic_year."</div>";
+     echo "<div class='largeheading'> Semester: ".$semester."</div>";    
+     $count=1;
+     foreach ($publishedCoursesCollege as $section_name=>$section_value) {
+                                      echo "<div class='fs16'> Section : ".$section_name."</div>";
+                                      echo "<div class='fs16'> Year Level : Freshman </div>";
+                                      echo "<table cellpadding=0 cellspacing=0>";
+                                      ?>
+                                       <tr>
+                                           <th><?php echo 'Id';?></th>
+			      
+			        <th><?php echo 'Course Title';?></th>
+			        <th><?php echo 'Course Code';?></th>
+			        <th><?php echo 'Credit';?></th>
+			        <th><?php echo 'L T L';?></th>
+			</tr>
+                                      <?php  
+                                         foreach ($section_value as $type_index=>$section_value_detail) {
+                                       echo '<tr><td colspan=5 class="fs16">'.$type_index.'</td></tr>';
+                                  
+                                      foreach ($section_value_detail as $publishedCourse) {
+                                          
+                                           ?>
+                                          
+                                           <?php 
+                                            if (!empty($publishedCourse)) {
+                                              
+	                    $i = 0;
+	                 
+	                        
+		                    $class = null;
+		                    if ($i++ % 2 == 0) {
+			                    $class = ' class="altrow"';
+		                    }
+		                    ?>
+		                    <tr<?php echo $class;?>>
+		<td><?php echo $count++; ?>&nbsp;</td>
+				<td>
+			<?php echo $this->Html->link($publishedCourse['Course']['course_title'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		</td>
+		<td>
+			<?php echo $this->Html->link($publishedCourse['Course']['course_code'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		</td>
+		<td>
+			<?php echo $publishedCourse['Course']['credit']; ?>
+		</td>
+		<td>
+			<?php echo $publishedCourse['Course']['course_detail_hours']; ?>
+		</td>
+		
+	</tr>
+		                    
+		                    <?php   
+		
+		            
+                                            }
+                                         
+                                       }
+                                  }
+                                echo "</table>";
+                    } 
+   }
+
+?>
+</div>
+	  </div> <!-- end of columns 12 -->
+	</div> <!-- end of row -->
+      </div> <!-- end of box-body -->
+</div><!-- end of box -->
+
+<script type='text/javascript'>
+
+$(document).ready(function() { 
+   
+
+}); 
+function toggleView(obj) {
+  if($('#c'+obj.id).css("display") == 'none')
+    $('#i'+obj.id).attr("src", '/img/minus2.gif');
+  else
+    $('#i'+obj.id).attr("src", '/img/plus2.gif');
+  $('#c'+obj.id).toggle("slow");
+}
+
+function toggleViewFullId(id) {
+  if($('#'+id).css("display") == 'none') {
+    $('#'+id+'Img').attr("src", '/img/minus2.gif');
+    $('#'+id+'Txt').empty();
+    $('#'+id+'Txt').append('Hide Filter');
+    }
+  else {
+    $('#'+id+'Img').attr("src", '/img/plus2.gif');
+    $('#'+id+'Txt').empty();
+    $('#'+id+'Txt').append('Display Filter');
+    }
+  $('#'+id).toggle("slow");
+}
+
+function getDepartments() {
+            //serialize form data
+            var col = $("#ajax_college_id").val();
+            $("#ajax_department_id").attr('disabled', true);
+            $("#ajax_department_id").empty();
+            $("#ajax_year_level_id").empty();
+            //get form action
+            var formUrl = '/course_schedules/get_departments/'+col;
+            $.ajax({
+                type: 'get',
+                url: formUrl,
+                data: col,
+                success: function(data,textStatus,xhr){
+                        $("#ajax_department_id").attr('disabled', false);
+                        $("#ajax_department_id").empty();
+                        $("#ajax_department_id").append(data);
+                },
+                error: function(xhr,textStatus,error){
+                        alert(textStatus);
+                }
+            });
+            return false;
+ }
+
+function getYearLevel() {
+            //serialize form data
+            var dept = $("#ajax_department_id").val();
+            $("#ajax_year_level_id").attr('disabled', true);
+            $("#ajax_year_level_id").empty().
+            html('<img src="/img/busy.gif" class="displayed" >');
+            var formUrl = '/dormitory_assignments/get_year_levels/'+dept;
+            $.ajax({
+                type: 'get',
+                url: formUrl,
+                data: dept,
+                success: function(data,textStatus,xhr){
+                    $("#ajax_year_level_id").attr('disabled', false);
+                    $("#ajax_year_level_id").empty();
+                    $("#ajax_year_level_id").append(data);
+                },
+                error: function(xhr,textStatus,error){
+                        alert(textStatus);
+                }
+            });
+            return false;
+ }
+
+</script>
+

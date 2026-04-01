@@ -1,0 +1,92 @@
+<?php ?>
+<div class="box">
+     <div class="box-body">
+       <div class="row">
+	  <div class="large-12 columns">
+   <div class="graduationCertificates index">
+<div class="smallheading"><?php __('Graduation Certificate Templates');?></div>
+	<table cellpadding="0" cellspacing="0">
+	<tr>
+			<th>S.N<u>o</u></th>
+			<th><?php echo $this->Paginator->sort('program_id');?></th>
+			<th><?php echo $this->Paginator->sort('program_type_id');?></th>
+<th>Target</th>
+			<th><?php echo $this->Paginator->sort('academic_year');?></th>
+			<th><?php echo $this->Paginator->sort('amharic_title');?></th>
+			<th><?php echo $this->Paginator->sort('english_title');?></th>
+			<th><?php echo $this->Paginator->sort('applicable_for_current_student');?></th>
+			<th style="text-align:center" class="actions"><?php __('Actions');?></th>
+	</tr>
+	<?php
+	$i = 0;
+	$start= $this->Paginator->counter('%start%');
+	foreach ($graduationCertificates as $graduationCertificate):
+		$class = null;
+		if ($i++ % 2 == 0) {
+			$class = ' class="altrow"';
+		}
+	?>
+	<tr<?php echo $class;?>>
+		<td><?php echo $start++; ?>&nbsp;</td>
+		<td>
+			<?php echo $graduationCertificate['Program']['name']; ?>
+		</td>
+		<td>
+			<?php echo $graduationCertificate['ProgramType']['name']; ?>
+		</td>
+                <td>
+			<?php 
+		debug($departments);
+		debug($graduationCertificate['GraduationCertificate']['department']);
+         foreach($departments as $k=>$v) {
+            if(strcasecmp($k,$graduationCertificate['GraduationCertificate']['department'])==0) {
+                echo $v;
+				break;			
+			} else {
+                        
+				 if(is_array($v)) {   
+				       
+				        foreach($v as $k1=>$v1) {
+						  if($k1==$graduationCertificate['GraduationCertificate']['department']) {
+						 // debug($v1);
+						        echo $v1;
+								break 2;	
+							}
+					   }
+		         }
+		   }
+		}
+ ?>
+		</td>
+		<td><?php echo $graduationCertificate['GraduationCertificate']['academic_year']; ?>&nbsp;</td>
+		<td><?php echo $graduationCertificate['GraduationCertificate']['amharic_title']; ?>&nbsp;</td>
+		<td><?php echo $graduationCertificate['GraduationCertificate']['english_title']; ?>&nbsp;</td>
+		<td><?php echo ($graduationCertificate['GraduationCertificate']['applicable_for_current_student'] == 1 ? 'Yes' : 'No'); ?>&nbsp;</td>
+		<td class="actions">
+			<?php echo $this->Html->link(__('View', true), array('action' => 'view', $graduationCertificate['GraduationCertificate']['id'])); ?>
+			<?php echo $this->Html->link(__('Edit', true), array('action' => 'edit', $graduationCertificate['GraduationCertificate']['id'])); ?>
+			<?php echo $this->Html->link(__('Delete', true), array('action' => 'delete', $graduationCertificate['GraduationCertificate']['id']), null, sprintf(__('Are you sure you want to delete "%s" graduation certificate template?', true), $graduationCertificate['GraduationCertificate']['english_title'])); ?>
+		</td>
+	</tr>
+<?php endforeach; ?>
+	</table>
+	<p>
+	<?php
+	
+echo $this->Paginator->counter(array(
+	'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
+	));
+
+	?>	</p>
+
+	<div class="paging">
+		<?php echo $this->Paginator->prev('<< ' . __('previous', true), array(), null, array('class'=>'disabled'));?>
+	 | 	<?php echo $this->Paginator->numbers();?>
+ |
+		<?php echo $this->Paginator->next(__('next', true) . ' >>', array(), null, array('class' => 'disabled'));?>
+	</div>
+</div>
+	  </div> <!-- end of columns 12 -->
+	</div> <!-- end of row --->
+      </div> <!-- end of box-body -->
+</div><!-- end of box -->

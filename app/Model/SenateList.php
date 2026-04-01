@@ -1,0 +1,796 @@
+<?php
+class SenateList extends AppModel {
+	var $name = 'SenateList';
+	var $displayField = 'minute_number';
+	//The Associations below have been created with all possible keys, those that are not needed can be removed
+
+	var $belongsTo = array(
+		'Student' => array(
+			'className' => 'Student',
+			'foreignKey' => 'student_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		)
+	);
+	
+	function getListOfStudentsForSenateList($program_id = null, $program_type_id = null, $department_id = null) {
+		/***
+			1. Get all students in the department who are neither in graduation nor senate list
+			2. Filter students who takes a minimum of the specified credit hours on their curriculum
+				//fully registered, add, exempt, substitute all courses from their curriculum
+			3. Decide who is going to be included in the senate list and generate justification for those who will not be on the senate list.
+				RULE:
+					1. No F, NG, I, DO, W, and check if the course are not repeated.getCourseRepetation() TODO
+					2. All required course should be taken (it is by category)
+					
+					3. A minimum of x CGPA
+			4. Return the list
+		***/
+		$percentCompletedCredit=0.95;
+$options['conditions']['Student.program_id'] = $program_id;
+if($program_type_id != 0 && !empty($program_type_id))
+	$options['conditions']['Student.program_type_id'] = $program_type_id;
+		$options['conditions']['Student.department_id'] = $department_id;
+		$options['conditions'][] = 'Student.curriculum_id IS NOT NULL';
+		$options['conditions'][] = 'Student.curriculum_id is not null';
+	
+		//$options['conditions'][] = 'Student.id in (20713,17764,17678,11208,10853)';
+		//$options['conditions'][] = 'Student.id=66061'; //66061
+	 // $options['conditions'][] = 'Student.id in (22201,22190,22184,22181,22173)';
+	//$options['conditions'][] = 'Student.id in (554,584,1065)';
+		//$optios['conditions'][] = 'Student.id in (18961) ';
+		/*
+		$dateAdmittedTo='2013-09-20';
+		$dateAdmittedFrom='2012-09-20';
+		$options['conditions'][] = 'Student.admissionyear <="2013-09-20" and Student.admissionyear >="2012-09-20"';
+		*/
+        $minimumPointofCurriculum=$this->Student->Curriculum->find('first',array('conditions'=>array('Curriculum.department_id'=>$department_id,'Curriculum.program_id'=>$program_id),'recursive'=>-1,'order'=>array('Curriculum.minimum_credit_points ASC')));
+         $courseNotUsedInGPA=$this->Student->Curriculum->Course->find('first',array('conditions'=>array('Course.department_id'=>$department_id,'GradeType.used_in_gpa'=>0),'contain'=>array('GradeType'),'order'=>array('Course.credit DESC')));
+        if(!empty($courseNotUsedInGPA)){
+        	$notUsedInCGPACreditSum=$courseNotUsedInGPA['Course']['credit'];
+        } else {
+        	$notUsedInCGPACreditSum=0;
+        }
+        debug($notUsedInCGPACreditSum);
+        
+		if(isset($program_type_id) && !empty($program_type_id)){
+		  $exemptionMaximum=$this->query(
+		"SELECT student_id, SUM( course_taken_credit ) 
+		FROM  course_exemptions
+		WHERE student_id in (select id from students where department_id=".$department_id." and program_id=".$program_id." and program_type_id=".$program_type_id.")  and 
+		student_id  NOT IN (SELECT student_id FROM senate_lists where student_id is not null)
+			and student_id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null )
+		GROUP BY student_id
+		order by SUM(course_taken_credit)  DESC limit 1
+		");
+		} else {
+		$exemptionMaximum=$this->query(
+		"SELECT student_id, SUM( course_taken_credit ) 
+		FROM  course_exemptions
+		WHERE student_id in (select id from students where department_id=".$department_id." and program_id=".$program_id.") and student_id  NOT IN (SELECT student_id FROM senate_lists where student_id is not null)
+			and student_id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null)
+		GROUP BY student_id
+		order by SUM(course_taken_credit)  DESC limit 1
+		");
+		}
+		if(isset($program_type_id) && !empty($program_type_id)){
+			$studentLists = $this->query(
+			"SELECT student_id, SUM( credit_hour_sum ) 
+			FROM  student_exam_statuses
+			WHERE student_id in (select id from students where department_id=".$department_id." and program_id=".$program_id." and program_type_id=".$program_type_id.") and student_id  NOT IN (SELECT student_id FROM senate_lists where student_id is not null)
+			and student_id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null )
+
+			GROUP BY student_id
+			HAVING SUM(credit_hour_sum) >= ".($minimumPointofCurriculum['Curriculum']['minimum_credit_points']-$exemptionMaximum[0][0]['SUM( course_taken_credit )']-$notUsedInCGPACreditSum)*($percentCompletedCredit)."");
+		} else {
+			$studentLists = $this->query(
+			"SELECT student_id, SUM( credit_hour_sum ) 
+			FROM  student_exam_statuses
+			WHERE student_id in (select id from students where department_id=".$department_id." and program_id=".$program_id.") 
+			and student_id  NOT IN (SELECT student_id FROM senate_lists where student_id is not null)
+			and student_id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null ) 
+			GROUP BY student_id
+			HAVING SUM(credit_hour_sum) >= ".($minimumPointofCurriculum['Curriculum']['minimum_credit_points']-$exemptionMaximum[0][0]['SUM( course_taken_credit )']-$notUsedInCGPACreditSum)*($percentCompletedCredit)."");
+			
+	   }
+		
+	  	// consider only those students who have registered and achieved the minimum credit hours without status since there are courses which doenst require status
+
+
+		
+		debug(count($studentLists));
+
+
+		 
+		$options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null )';
+		$options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM senate_lists where student_id is not null )';
+
+	 
+
+	    $student_ids=array();
+	  	foreach ($studentLists as $id) {
+	  		# code...
+	  		$student_ids[$id['student_exam_statuses']['student_id']]=$id['student_exam_statuses']['student_id'];
+	  	}
+	  	
+	  	if(!empty($student_ids)){
+            $student_comma_sep=join(', ',$student_ids);
+           $options['conditions'][] = 'Student.id in ('.$student_comma_sep.')';
+	  	}
+
+		/*              
+		$options['conditions'][] = 'Student.id  IN (SELECT student_id FROM course_registrations)';
+		*/
+		$options['contain'] = array(
+			//'Curriculum.minimum_credit_points' => array('CourseCategory'),
+			'Curriculum' => array('fields'=>array('id', 'minimum_credit_points', 'certificate_name', 'amharic_degree_nomenclature', 'specialization_amharic_degree_nomenclature', 'english_degree_nomenclature', 'specialization_english_degree_nomenclature', 'minimum_credit_points', 'name'), 'Department', 'CourseCategory'=>array('id',
+			'curriculum_id')),
+			'Department.name',
+			'Program.name',
+			'ProgramType.name',
+			'CourseRegistration.id' => 
+			array(
+				'PublishedCourse' => 
+				array(
+					'fields' => array('PublishedCourse.id', 'PublishedCourse.drop'),
+					'Course.course_title',
+					'Course.credit' => 
+					array(
+						'CourseCategory'
+					)
+				)
+			),
+			'CourseAdd.id' => 
+			array(
+				'fields'=>array('registrar_confirmation'),
+				'PublishedCourse' => 
+				array(
+					'fields' => array('PublishedCourse.id', 'PublishedCourse.drop'),
+					'Course.credit' => 
+					array(
+						'CourseCategory'
+					),
+					'Course.course_title'
+				)
+			)
+		);
+		$options['fields'] = array('Student.curriculum_id', 'Student.full_name', 'Student.first_name', 'Student.middle_name', 'Student.last_name', 'Student.studentnumber', 'Student.admissionyear', 'Student.gender');
+		$options['order'] = array('Student.first_name ASC', 'Student.middle_name ASC', 'Student.last_name ASC');
+		 $genericErrorMessage=array();
+		//$options['limit']=30;
+		$students = $this->Student->find('all', $options);
+		$filtered_students = array();
+		
+		foreach($students as $key => $student) 
+		{
+			
+			$credit_sum = 0;
+			$donot_consider_cgpa = false;
+			$course_category_detail = $this->Student->Curriculum->CourseCategory->find('all',
+				array(
+					'conditions' =>
+					array(
+						'CourseCategory.curriculum_id' => $student['Curriculum']['id']
+					),
+					'recursive' => -1
+				)
+			);
+			$course_categories = array();
+			foreach($course_category_detail 
+			as $key => $value) {
+				$course_categories[$value['CourseCategory']['name']]['mandatory_credit'] = $value['CourseCategory']['mandatory_credit'];
+				$course_categories[$value['CourseCategory']['name']]['total_credit'] = $value['CourseCategory']['total_credit'];
+				$course_categories[$value['CourseCategory']['name']]['taken_credit'] = 0;
+			}
+			$justsummedandtaken=0;
+			foreach($student['CourseRegistration'] as $key => $course_registration) {
+				// isRegistrationAddForFirstTime return false sometimes?
+				$justsummedandtaken+=$course_registration['PublishedCourse']['Course']['credit'];
+				
+				
+			
+			if(!$this->Student->CourseRegistration->isCourseDroped($course_registration['id']) && $course_registration['PublishedCourse']['drop'] == 0 && $this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_registration['id'], 1, 1) ) {
+			//&& $this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_registration['id'], 1, 1)
+			//if($this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_registration['id'], 1, 1)){
+			if($course_registration['PublishedCourse']['course_id']==378 ||
+				$course_registration['PublishedCourse']['course_id']==379 ||
+				$course_registration['PublishedCourse']['course_id']==376 ){
+				  debug('Course Title:'.$course_registration['PublishedCourse']['Course']['course_title'].'Credit: '.$course_registration['PublishedCourse']['Course']['credit'].'CId: '.$course_registration['PublishedCourse']['course_id']);
+			}
+			$credit_sum += $course_registration['PublishedCourse']['Course']['credit'];
+			//}
+				if(!isset($course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'])) {
+					$course_ids=ClassRegistry::init('EquivalentCourse')->validEquivalentCourse($course_registration['PublishedCourse']['course_id'],$student['Curriculum']['id']);
+				$course_cat_mapped=ClassRegistry::init('EquivalentCourse')->courseEquivalentCategory($course_registration['PublishedCourse']['course_id'],$student['Curriculum']['id']);
+				debug($course_cat_mapped);
+
+				if(isset($course_cat_mapped)) {
+
+				$course_categories[$course_cat_mapped]['taken_credit'] += $course_registration['PublishedCourse']['Course']['credit'];	
+				} else {
+				$course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] = 0;
+
+				}
+			} else{
+				 $course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] += $course_registration['PublishedCourse']['Course']['credit'];
+			
+			  
+			
+			}
+	  	} else {
+             $sumexcludingfromreg+=$course_registration['PublishedCourse']['Course']['credit'];
+			
+			debug($course_registration['PublishedCourse']['Course']['course_title']);
+			debug($course_registration['PublishedCourse']['Course']['CourseCategory']['name']);
+			
+			debug($this->Student->CourseRegistration->isCourseDroped($course_registration['id']));
+			debug($course_registration['PublishedCourse']['drop']);
+			debug($this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_registration['id'], 1, 1));
+			debug($course_registration);
+			
+		}	
+	}
+ debug($justsummedandtaken);			
+ debug($credit_sum);
+ debug($sumexcludingfromreg);
+        $addSum=0;
+        $sumexcludingfromreg=0;
+        $sumexcludingfromadd=0;
+        //$debugingsum=0;
+		foreach($student['CourseAdd'] as $key => $course_add) {
+			debug($this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_add['id'], 0, 1));
+			debug($course_add);
+			if($course_add['PublishedCourse']['course_id']==378 ||
+				$course_add['PublishedCourse']['course_id']==379 ||
+				$course_add['PublishedCourse']['course_id']==376 ){
+				  debug('Course Title:'.$course_add['PublishedCourse']['Course']['course_title'].'Credit: '.$course_add['PublishedCourse']['Course']['credit'].'CId: '.$course_add['PublishedCourse']['course_id']);
+			}
+			if($course_add['registrar_confirmation'] && $this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_add['id'], 0, 1)) {
+			//1347 1349 2581 1344 1348 Done 378 379  
+				
+
+			$credit_sum += $course_add['PublishedCourse']['Course']['credit'];
+				$addSum += $course_add['PublishedCourse']['Course']['credit'];
+
+				if(!isset($course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'])) {
+				debug($course_add['PublishedCourse']['Course']['CourseCategory']['name']);
+				$course_ids=ClassRegistry::init('EquivalentCourse')->validEquivalentCourse($course_add['PublishedCourse']['course_id'],$student['Curriculum']['id']);
+
+				$course_cat_mapped=ClassRegistry::init('Course')->find('first',array('conditions'=>array('Course.id'=>$course_ids),'contain'=>array('CourseCategory')));
+				debug($course_ids);
+				$course_cat_mapped=ClassRegistry::init('EquivalentCourse')->courseEquivalentCategory($course_add['PublishedCourse']['course_id'],$student['Curriculum']['id']);
+
+				
+				 if(isset($course_cat_mapped)) {
+				 
+				$course_categories[$course_cat_mapped]['taken_credit'] += $course_add['PublishedCourse']['Course']['credit'];	
+				} else {
+				   $course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] = 0;
+				 
+				}
+				//debug($to_be_sumappedCourse);
+			//		debug($course_add['PublishedCourse']['course_id']);
+
+				} else  {
+		         debug($course_add['PublishedCourse']['Course']['CourseCategory']['name']);
+				 $course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] += $course_add['PublishedCourse']['Course']['credit'];
+					  				
+				}
+
+
+				}else {
+				  debug($course_add['PublishedCourse']['course_id']);
+				  debug($course_add['PublishedCourse']['Course']['course_title']);
+				  debug($course_add['PublishedCourse']['Course']['CourseCategory']['name']);
+				  debug($this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_add['id'], 0, 1));
+				  debug($course_add['registrar_confirmation']);
+				  debug($course_add['id']);
+				  debug($course_add);
+				  $sumexcludingfromadd+=$course_add['PublishedCourse']['Course']['credit'];
+			
+				
+				}
+		   }
+		   
+  debug($addSum);
+ debug($credit_sum);
+ debug($sumexcludingfromadd);
+ 
+ debug($student['Curriculum']['minimum_credit_points']);
+ debug($student['Student']['id']);
+ debug($course_categories);
+            //Include all exempted courses in the credit_sum
+			$all_exempted_courses = $this->Student->CourseExemption->find('all',
+				array(
+					'conditions' =>
+					array(
+			'CourseExemption.student_id' => $student['Student']['id'],
+'CourseExemption.department_accept_reject' => 1,
+	'CourseExemption.registrar_confirm_deny' => 1,
+					),
+					'contain' => array('Course'=>array('CourseCategory'))
+				)
+			);
+			$studentAttachedCurriculumIds=$this->Student->CurriculumAttachment->find('list',array(
+					'conditions' =>
+					array(
+						'CurriculumAttachment.student_id' => $student['Student']['id'],
+					),
+					'fields' => array('curriculum_id', 'curriculum_id'),
+					
+			));
+			debug($studentAttachedCurriculumIds);
+			$student_curriculum_course_list = $this->Student->Curriculum->Course->find('list',
+				array(
+					'conditions' =>
+					array(
+						//'Course.curriculum_id' => $student['Student']['curriculum_id'],
+						'Course.curriculum_id'
+						=>$studentAttachedCurriculumIds,
+					),
+					'fields' => array('id', 'credit'),
+					'recursive' => -1
+				)
+			);
+			
+	$student_curriculum_course_id_list = array_keys($student_curriculum_course_list);
+		    $only_exempted_credit=0;
+			debug($all_exempted_courses);
+			debug($student_curriculum_course_id_list);
+			foreach($all_exempted_courses as $ec_key => $all_exempted_course) {
+			debug($all_exempted_course);
+				//Check if the exempted course is from their curriculum
+				if(in_array($all_exempted_course['CourseExemption']['course_id'], $student_curriculum_course_id_list)) {
+					// why course_id ?
+// we need to replace with course_taken_credit 
+					$only_exempted_credit+=$student_curriculum_course_list[$all_exempted_course['CourseExemption']['course_id']];
+					//$credit_sum += $student_curriculum_course_list[$all_exempted_course['CourseExemption']['course_id']];
+					$credit_sum += $all_exempted_course['Course']['credit'];
+					 $course_categories[$all_exempted_course['Course']['CourseCategory']['name']]['taken_credit'] +=$all_exempted_course['Course']['credit'];
+
+				}
+			}
+			debug($only_exempted_credit);
+		//	debug($student['Student']['id']);
+		debug($credit_sum);
+	  debug($student['Curriculum']['minimum_credit_points']);
+	
+			//die;
+			if($credit_sum >= $student['Curriculum']['minimum_credit_points']) {
+				//Now the student fullfill the minimum credit hour requirement
+				  debug($student['Curriculum']['name']);
+	  debug($student['Student']);
+				$incomplete_grade = false;
+				$invalid_grade = false;
+				$cid = $student['Curriculum']['id'];
+				if(!isset($filtered_students[$cid])) {
+					$filtered_students[$cid][0]['Curriculum'] = $student['Curriculum'];
+					$filtered_students[$cid][0]['Program'] = $student['Program'];
+					$filtered_students[$cid][0]['Department'] = $student['Department'];
+				}
+				$index = count($filtered_students[$cid]);
+				$filtered_students[$cid][$index]['Student'] = $student['Student'];
+				$filtered_students[$cid][$index]['ProgramType'] = $student['ProgramType'];
+				$filtered_students[$cid][$index]['credit_taken'] = $credit_sum;
+				$filtered_students[$cid][$index]['disqualification'] = null;
+	$filtered_students[$cid][$index]['ExemptedCredit'] = $this->Student->CourseExemption->getStudentCourseExemptionCredit($student['Student']['id']);
+
+				//Check: 1) All registered course grade is submitted and 2) A valid grade for each registration
+				foreach($student['CourseRegistration'] as $key => $course_registration) {
+if(!$this->Student->CourseRegistration->isCourseDroped($course_registration['id']) && $course_registration['PublishedCourse']['drop'] == 0) {
+		$grade_detail = $this->Student->CourseRegistration->getCourseRegistrationLatestApprovedGradeDetail($course_registration['id']);
+ //$grade_detail=$this->Student->CourseRegistration->ExamGrade->getApprovedGrade($course_registration['id'],1);
+
+
+		$courseRepeated=$this->Student->CourseRegistration->ExamGrade->getCourseRepetation($course_registration['id'],
+$course_registration['student_id'],1);
+debug($courseRepeated);
+	
+	/*
+	debug($course_registration['PublishedCourse']['course_id']);
+	debug($this->Student->CourseRegistration->PublishedCourse->Course->isEquivalenCourseTakenHaveRecentGrade($course_registration['PublishedCourse']['course_id'],$course_registration['student_id']));
+	if($this->Student->CourseRegistration->PublishedCourse->Course->isEquivalenCourseTakenHaveRecentGrade($course_registration['PublishedCourse']['course_id'],$course_registration['student_id'])) {
+		continue;				
+	}
+	*/
+	 /*
+if($this->Student->CourseRegistration->PublishedCourse->Course->isCourseTakenHaveRecentGrade($course_registration['student_id'],
+$course_registration['PublishedCourse']['course_id']) || $courseRepeated['repeated_old'] ){
+		continue;
+	}
+	*/
+	
+	if($courseRepeated['repeated_old']){
+		debug($course_registration);
+		continue;
+	}
+
+			if(empty($grade_detail) 
+				&& !$incomplete_grade) {
+
+				if($student['Student']['id']==112){
+				debug($incomplete_grade);
+
+				debug($grade_detail);
+
+				debug($course_registration);
+
+				}
+
+								$filtered_students[$cid][$index]['disqualification'][] = 'Student has incomplete grade. All student exam grade should be submitted and approved by both department and registrar.';
+debug($incomplete_grade);
+debug($course_registration['id']);						$incomplete_grade = true;
+							$donot_consider_cgpa = true;
+						}
+						else if(!$invalid_grade && isset($grade_detail['ExamGrade']['grade']) && (strcasecmp($grade_detail['ExamGrade']['grade'], 'NG') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'DO') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'I') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'F') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'W') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'Fx') == 0
+)) {
+debug($invalid_grade);
+debug($grade_detail['ExamGrade']);
+							$filtered_students[$cid][$index]['disqualification'][] = 'Student has invalid grade. Any of the student grade should not contain NG, I, DO,
+ W, Fx and/or F.';
+debug($courseRepeated);
+debug($grade_detail);
+debug($grade_detailx);
+					$invalid_grade = true;
+							$donot_consider_cgpa = true;
+						}
+						
+					}
+				}
+				//Check: 1) All added course grade is submitted and 2) A valid grade for each add
+				foreach($student['CourseAdd'] 
+				as $key => $course_add) {
+				
+				if($course_add['registrar_confirmation']==false) {
+				   continue;				
+				}
+	
+					$grade_detail = $this->Student->CourseAdd->getCourseAddLatestApprovedGradeDetail($course_add['id']);
+					
+$courseRepeated=$this->Student->CourseRegistration->ExamGrade->getCourseRepetation($course_add['id'],$course_add['student_id'],0);
+debug($courseRepeated);
+
+/*
+	if($this->Student->CourseRegistration->PublishedCourse->Course->isCourseTakenHaveRecentGrade($course_add['student_id'],$course_add['PublishedCourse']['course_id']) || $courseRepeated['repeated_old']){
+		continue;
+	}
+	*/
+	/*
+	if($this->Student->CourseRegistration->PublishedCourse->Course->isCourseTakenHaveRecentGrade($course_add['student_id'],$course_add['PublishedCourse']['course_id']) || $courseRepeated['repeated_old']){
+		continue;
+	} */
+	
+	if($courseRepeated['repeated_old']) {
+	   debug($course_add);
+	   continue;				
+	}
+
+				if(empty($grade_detail) && !$incomplete_grade ) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'Student has incomplete grade. All student exam grade should be submitted and approved by both department and registrar.';
+						debug($incomplete_grade);
+debug($course_add['id']);
+						$incomplete_grade = true;
+						$donot_consider_cgpa = true;
+
+					}
+					else if(!$invalid_grade && isset($grade_detail['ExamGrade']['grade']) && (strcasecmp($grade_detail['ExamGrade']['grade'], 'NG') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'DO') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'I') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'F') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'W') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'Fx') == 0
+)) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'Student has invalid grade. Any of the student grade should not contain NG, I, DO, W, Fx and/or F.';
+
+						$invalid_grade = true;
+						$donot_consider_cgpa = true;
+
+debug($grade_detail);
+					}
+					
+				}
+				//Check: All mandatory courses is taken
+		debug($course_categories);
+						
+		foreach($course_categories as $category_name => $course_category) {
+		if($course_category['taken_credit'] < $course_category['mandatory_credit']) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'According to the curriculum, the student is expected to take a minimum of '.$course_category['mandatory_credit'].' credit hours from '.$category_name.' course category. Currently the student takes only '.$course_category['taken_credit'].' credit hours.';
+				$donot_consider_cgpa = true;
+					}
+				}
+				//Check: A minimum cgpa is achieved
+				$minimum_cgpa = $this->Student->Program->GraduationRequirement->getMinimumGraduationCGPA($program_id, $student['Student']['admissionyear']);
+				$last_status = $this->Student->StudentExamStatus->find('first',
+					array(
+						'conditions' =>
+						array(
+							'StudentExamStatus.student_id' => $student['Student']['id']
+						),
+						'order' => 
+						array(
+							'StudentExamStatus.created DESC'
+						),
+						'recursive' => -1
+					)
+				);
+				if(!$donot_consider_cgpa && !empty($last_status) && $last_status['StudentExamStatus']['cgpa'] < $minimum_cgpa) {
+					$filtered_students[$cid][$index]['cgpa'] = $last_status['StudentExamStatus']['cgpa'];
+					$filtered_students[$cid][$index]['mcgpa'] = $last_status['StudentExamStatus']['mcgpa'];
+					$filtered_students[$cid][$index]['disqualification'][] = 'The student need to achieve a minimum of '.$minimum_cgpa.' CGPA point. Currently the student has '.$last_status['StudentExamStatus']['cgpa'].' CGPA point.';
+				}
+				else if(!empty($last_status)) {
+					$filtered_students[$cid][$index]['cgpa'] = $last_status['StudentExamStatus']['cgpa'];
+					$filtered_students[$cid][$index]['mcgpa'] = $last_status['StudentExamStatus']['mcgpa'];
+				}
+				else {
+					$filtered_students[$cid][$index]['cgpa'] = null;
+					$filtered_students[$cid][$index]['mcgpa'] = null;
+				}
+			} else {
+				$genericErrorMessage['CourseCategory']=$course_categories;
+				$genericErrorMessage['ExemptionSum']=$only_exempted_credit;
+				
+			}
+		}
+		debug($genericErrorMessage);
+		return $filtered_students;
+	}
+
+	function getListOfStudentsForSenateListGivenId($student_ids=array()) {
+		/***
+			1. Get all students in the department who are neither in graduation nor senate list
+			2. Filter students who takes a minimum of the specified credit hours on their curriculum
+
+				//fully registered, add, exempt, substitute all courses from their curriculum
+			3. Decide who is going to be included in the senate list and generate justification for those who will not be on the senate list.
+				RULE:
+
+					1. No F, NG, I, DO, W
+
+					2. All required course should be taken (it is by category)
+
+					3. A minimum of x CGPA
+
+			4. Return the list
+
+		***/
+		$options['conditions']['Student.id'] = $student_ids;
+		$options['conditions'][] = 'Student.curriculum_id IS NOT NULL';
+		$options['conditions'][] = 'Student.curriculum_id <> 0';
+		$options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM graduate_lists where student_id is not null )';
+		$options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM senate_lists where student_id is not null )';
+		$options['contain'] = array(
+			//'Curriculum.minimum_credit_points' => array('CourseCategory'),
+			'Curriculum' => array('fields'=>array('id', 'minimum_credit_points', 'certificate_name', 'amharic_degree_nomenclature', 'specialization_amharic_degree_nomenclature', 'english_degree_nomenclature', 'specialization_english_degree_nomenclature', 'minimum_credit_points', 'name'), 'Department', 'CourseCategory'=>array('id',
+			'curriculum_id')),
+			'Department.name',
+			'Program.name',
+			'ProgramType.name',
+			'CourseRegistration.id' => 
+			array(
+				'PublishedCourse' => 
+				array(
+					'fields' => array('PublishedCourse.id', 'PublishedCourse.drop'),
+					'Course.credit' => 
+					array(
+						'CourseCategory'
+					)
+				)
+			),
+			'CourseAdd.id' => 
+			array(
+				'PublishedCourse' => 
+				array(
+					'fields' => array('PublishedCourse.id', 'PublishedCourse.drop'),
+					'Course.credit' => 
+					array(
+						'CourseCategory'
+					)
+				)
+			)
+		);
+		$options['fields'] = array('Student.curriculum_id', 'Student.full_name', 'Student.first_name', 'Student.middle_name', 'Student.last_name', 'Student.studentnumber', 'Student.program_id','Student.program_type_id','Student.admissionyear', 'Student.gender');
+		$options['order'] = array('Student.first_name ASC', 'Student.middle_name ASC', 'Student.last_name ASC');
+		//$options['limit'] = 10;
+		//debug($options);
+		$students = $this->Student->find('all', $options);
+		//debug($students);
+		$filtered_students = array();
+		foreach($students as $key => $student) {
+			$credit_sum = 0;
+			$donot_consider_cgpa = false;
+			$course_category_detail = $this->Student->Curriculum->CourseCategory->find('all',
+				array(
+					'conditions' =>
+					array(
+						'CourseCategory.curriculum_id' => $student['Curriculum']['id']
+					),
+					'recursive' => -1
+				)
+			);
+			$course_categories = array();
+			foreach($course_category_detail as $key => $value) {
+				$course_categories[$value['CourseCategory']['name']]['mandatory_credit'] = $value['CourseCategory']['mandatory_credit'];
+				$course_categories[$value['CourseCategory']['name']]['total_credit'] = $value['CourseCategory']['total_credit'];
+				$course_categories[$value['CourseCategory']['name']]['taken_credit'] = 0;
+			}
+			
+			foreach($student['CourseRegistration'] as $key => $course_registration) {
+				
+				// figure out why isRegistrationAddForFirstTime return false sometimes? 
+				if(!$this->Student->CourseRegistration->isCourseDroped($course_registration['id']) 
+				&& $course_registration['PublishedCourse']['drop'] == 0 && 
+				$this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime(
+				$course_registration['id'], 1, 1)) {
+			
+					$credit_sum += $course_registration['PublishedCourse']['Course']['credit'];
+					
+					if(!isset($course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'])) {
+						$course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] = 0;
+					}
+					$course_categories[$course_registration['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] += $course_registration['PublishedCourse']['Course']['credit'];
+				} else {
+			        // debug($course_registration);	
+				}
+			}
+			
+			foreach($student['CourseAdd'] as $key => $course_add) {
+				if($this->Student->CourseRegistration->ExamGrade->isRegistrationAddForFirstTime($course_add['id'], 0, 1)) {
+					$credit_sum += $course_add['PublishedCourse']['Course']['credit'];
+					if(!isset($course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'])) {
+						$course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] = 0;
+					}
+					$course_categories[$course_add['PublishedCourse']['Course']['CourseCategory']['name']]['taken_credit'] += $course_add['PublishedCourse']['Course']['credit'];
+				}
+			}
+			//Include all exempted courses in the credit_sum
+			$all_exempted_courses = $this->Student->CourseExemption->find('all',
+				array(
+					'conditions' =>
+					array(
+						'CourseExemption.student_id' => $student['Student']['id'],
+						'CourseExemption.department_accept_reject' => 1,
+						'CourseExemption.registrar_confirm_deny' => 1,
+					),
+					'recursive' => -1
+				)
+			);
+			$studentAttachedCurriculumIds=$this->Student->CurriculumAttachment->find('list',array(
+					'conditions' =>
+					array(
+						'CurriculumAttachment.student_id' => $student['Student']['id'],
+					),
+					'fields' => array('curriculum_id', 'curriculum_id'),
+					
+			));
+			
+			$student_curriculum_course_list = $this->Student->Curriculum->Course->find('list',
+				array(
+					'conditions' =>
+					array(
+						'Course.curriculum_id' => $studentAttachedCurriculumIds,
+					),
+					'fields' => array('id', 'credit'),
+					'recursive' => -1
+				)
+			);
+			$student_curriculum_course_id_list = array_keys($student_curriculum_course_list);
+			$exempted_credit_sum=0;
+			foreach($all_exempted_courses as $ec_key => $all_exempted_course) {
+				//Check if the exempted course is from their curriculum
+				if(in_array($all_exempted_course['CourseExemption']['course_id'], $student_curriculum_course_id_list)) {
+					$credit_sum += $student_curriculum_course_list[$all_exempted_course['CourseExemption']['course_id']];
+	
+				$exempted_credit_sum+= $student_curriculum_course_list[$all_exempted_course['CourseExemption']['course_id']];
+				}
+			}
+	
+			if($credit_sum >= $student['Curriculum']['minimum_credit_points']) {
+				//Now the student fullfill the minimum credit hour requirement
+				$incomplete_grade = false;
+				$invalid_grade = false;
+				$cid = $student['Curriculum']['id'];
+				if(!isset($filtered_students[$cid])) {
+					$filtered_students[$cid][0]['Curriculum'] = $student['Curriculum'];
+					$filtered_students[$cid][0]['Program'] = $student['Program'];
+					$filtered_students[$cid][0]['Department'] = $student['Department'];
+				}
+				$index = count($filtered_students[$cid]);
+				$filtered_students[$cid][$index]['Student'] = $student['Student'];
+				$filtered_students[$cid][$index]['ProgramType'] = $student['ProgramType'];
+				$filtered_students[$cid][$index]['credit_taken'] = $credit_sum;
+				$filtered_students[$cid][$index]['disqualification'] = null;
+				//Check: 1) All registered course grade is submitted and 2) A valid grade for each registration
+				foreach($student['CourseRegistration'] as $key => $course_registration) {
+					if(!$this->Student->CourseRegistration->isCourseDroped($course_registration['id']) &&$course_registration['PublishedCourse']['drop'] == 0) {
+						$grade_detail = $this->Student->CourseRegistration->getCourseRegistrationLatestApprovedGradeDetail($course_registration['id']);
+
+$courseRepeated=$this->Student->CourseRegistration->ExamGrade->getCourseRepetation($course_registration['id'],$course_registration['student_id'],0);
+
+               if($courseRepeated['repeated_old']) {
+				continue;				
+				}
+						if(empty($grade_detail) && !$incomplete_grade) {
+							$filtered_students[$cid][$index]['disqualification'][] = 'Student has incomplete grade. All student exam grade should be submitted and approved by both department and registrar.';
+							debug($incomplete_grade);
+debug($course_registration['id']);
+							$incomplete_grade = true;
+							$donot_consider_cgpa = true;
+						}
+						else if(!$invalid_grade && isset($grade_detail['ExamGrade']['grade']) && (strcasecmp($grade_detail['ExamGrade']['grade'], 'NG') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'DO') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'I') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'F') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'W') == 0 || 
+strcasecmp($grade_detail['ExamGrade']['grade'], 'Fx') == 0)) {
+							$filtered_students[$cid][$index]['disqualification'][] = 'Student has invalid grade. Any of the student grade should not contain NG, I, DO, 
+W,Fx and/or F.';
+							$invalid_grade = true;
+							$donot_consider_cgpa = true;
+							debug($grade_detail);
+						}
+						
+
+					}
+				}
+				//Check: 1) All added course grade is submitted and 2) A valid grade for each add
+				foreach($student['CourseAdd'] as $key => $course_add) {
+					$grade_detail = $this->Student->CourseAdd->getCourseAddLatestApprovedGradeDetail($course_add['id']);
+
+$courseRepeated=$this->Student->CourseRegistration->ExamGrade->getCourseRepetation($course_add['id'],$course_add['student_id'],0);
+
+ if($courseRepeated['repeated_old']) {
+				continue;				
+				}
+
+					if(empty($grade_detail) && !$incomplete_grade) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'Student has incomplete grade. All student exam grade should be submitted and approved by both department and registrar.';
+						debug($incomplete_grade);
+debug($course_registration['id']);
+						$incomplete_grade = true;
+						$donot_consider_cgpa = true;
+					}
+					else if(!$invalid_grade && isset($grade_detail['ExamGrade']['grade']) && (strcasecmp($grade_detail['ExamGrade']['grade'], 'NG') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'DO') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'I') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'F') == 0 || strcasecmp($grade_detail['ExamGrade']['grade'], 'W') == 0 || 
+strcasecmp($grade_detail['ExamGrade']['grade'], 'Fx') == 0)) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'Student has invalid grade. Any of the student grade should not contain NG, I, DO, W, Fx and/or F.';
+						$invalid_grade = true;
+						$donot_consider_cgpa = true;
+						debug($grade_detail);
+					}
+					//debug($grade_detail);
+				}
+				//Check: All mandatory courses is taken
+				//debug($course_categories);
+				foreach($course_categories as $category_name => $course_category) {
+					if($course_category['taken_credit'] < $course_category['mandatory_credit']) {
+						$filtered_students[$cid][$index]['disqualification'][] = 'According to the curriculum, the student is expected to take a minimum of '.$course_category['mandatory_credit'].' credit hours from '.$category_name.' course category. Currently the student takes only '.$course_category['taken_credit'].' credit hours.';
+						$donot_consider_cgpa = true;
+					}
+				}
+			// debug($student['Student']);
+				//Check: A minimum cgpa is achieved
+				$minimum_cgpa = $this->Student->Program->GraduationRequirement->getMinimumGraduationCGPA($student['Student']['program_id'], $student['Student']['admissionyear']);
+				$last_status = $this->Student->StudentExamStatus->find('first',
+					array(
+						'conditions' =>
+						array(
+							'StudentExamStatus.student_id' => $student['Student']['id']
+						),
+						'order' => 
+						array(
+							'StudentExamStatus.created DESC'
+						),
+						'recursive' => -1
+					)
+				);
+				if(!$donot_consider_cgpa && !empty($last_status) && $last_status['StudentExamStatus']['cgpa'] < $minimum_cgpa) {
+					$filtered_students[$cid][$index]['cgpa'] = $last_status['StudentExamStatus']['cgpa'];
+					$filtered_students[$cid][$index]['mcgpa'] = $last_status['StudentExamStatus']['mcgpa'];
+					$filtered_students[$cid][$index]['disqualification'][] = 'The student need to achieve a minimum of '.$minimum_cgpa.' CGPA point. Currently the student has '.$last_status['StudentExamStatus']['cgpa'].' CGPA point.';
+				}
+				else if(!empty($last_status)) {
+					$filtered_students[$cid][$index]['cgpa'] = $last_status['StudentExamStatus']['cgpa'];
+					$filtered_students[$cid][$index]['mcgpa'] = $last_status['StudentExamStatus']['mcgpa'];
+				}
+				else {
+					$filtered_students[$cid][$index]['cgpa'] = null;
+					$filtered_students[$cid][$index]['mcgpa'] = null;
+				}
+			}
+		}
+		return $filtered_students;
+	}
+}
+?>

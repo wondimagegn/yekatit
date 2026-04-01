@@ -1,0 +1,295 @@
+<?php echo $this->Form->create('CourseInstructorAssignment');?>
+<script type='text/javascript'>
+function toggleViewFullId(id) {
+	if($('#'+id).css("display") == 'none') {
+		$('#'+id+'Img').attr("src", '/img/minus2.gif');
+		$('#'+id+'Txt').empty();
+		$('#'+id+'Txt').append('Hide Filter');
+		}
+	else {
+		$('#'+id+'Img').attr("src", '/img/plus2.gif');
+		$('#'+id+'Txt').empty();
+		$('#'+id+'Txt').append('Display Filter');
+		}
+	$('#'+id).toggle("slow");
+}
+//Sub cat combo
+function updateDepartmentCollege(id) {
+           
+            //serialize form data
+            var formData = $("#college_id_"+id).val();
+			$("#college_id_"+id).attr('disabled', true);
+			$("#department_id_"+id).attr('disabled', true);
+			
+			//get form action
+            var formUrl = '/departments/get_department_combo/'+formData;
+            $.ajax({
+                type: 'get',
+                url: formUrl,
+                data: formData,
+                success: function(data,textStatus,xhr){
+						$("#department_id_"+id).attr('disabled', false);
+						$("#college_id_"+id).attr('disabled', false);
+						$("#department_id_"+id).empty();
+						$("#department_id_"+id).append(data);
+							
+					},
+                error: function(xhr,textStatus,error){
+                        alert(textStatus);
+                }
+			});
+			
+			return false;
+      
+}
+</script>
+<div class="box">
+     <div class="box-body">
+       <div class="row">
+	  <div class="large-12 columns">
+             
+<div class="publishedCourses form">
+<?php 
+   //if (!isset($turn_off_search)) {
+?>
+<p class="fs16">
+                    <strong> Important Note: </strong> 
+                    This tool will help you to dispatch instructor assignment to other department. By change the course department, then the department will be allowed to assign appropriate instructor for the published courses of the given academic year and semester. Only for those courses not assigned to instructor allowed for dispatch or department change.
+                    
+</p>
+<div onclick="toggleViewFullId('ListPublishedCourse')"><?php 
+	if (!empty($turn_off_search)) {
+		echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); 
+		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span><?php
+		}
+	else {
+		echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); 
+		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span><?php
+		}
+?></div>
+<div id="ListPublishedCourse" style="display:<?php echo (!empty($turn_off_search) ? 'none' : 'display'); ?>">
+<table class="fs13 small_padding">
+	   
+		<tr>
+			<td style="width:15%">Academic Year:</td>
+			<td style="width:35%">
+			<?php 
+			    echo $this->Form->input('Search.academicyear',array(
+            'label' => false,'type'=>'select','options'=>$acyear_array_data,
+            'empty'=>"--Select Academic Year--",
+                'selected'=>isset($this->request->data['Search']['academicyear'])?$this->request->data['Search']['academicyear']:
+                (isset($defaultacademicyear) ? $defaultacademicyear:'' )
+            
+            )
+            
+            );
+			?>
+			</td>
+			<td style="width:13%"> Semester:</td>
+			<td style="width:37%">
+			<?php 
+			    echo $this->Form->input('Search.semester',array('options'=>array('I'=>'I','II'=>'II',
+            'III'=>'III'),'label'=>false,'empty'=>'--select semester--'));
+			?>
+			
+			</td>
+		</tr>
+		  
+		<tr>
+			<td style="width:15%">Program:</td>
+			<td style="width:35%"><?php 
+			 echo $this->Form->input('Search.program_id',array('id'=>'program_id','label'=>false,
+			 'type'=>'select','multiple'=>'checkbox','div'=>false));
+			
+			 ?>
+			</td>
+			<td style="width:13%"> Program Type</td>
+			<td style="width:37%">
+			&nbsp;
+			<?php 
+			  echo $this->Form->input('Search.program_type_id',array('id'=>'program_type_id','label'=>false,
+			 'type'=>'select','multiple'=>'checkbox','div'=>false));
+			
+			?>		
+			</td>
+		</tr>
+	    <tr>
+			<td style="width:15%">Year Level:</td>
+			<td style="width:35%"><?php 
+			  
+			     echo $this->Form->input('Search.year_level_id',array('id'=>'year_level_id','label'=>false,
+			     'type'=>'select','multiple'=>'checkbox','div'=>false));
+			   
+			
+			 ?>
+			</td>
+			<td style="width:13%"> &nbsp;</td>
+			<td style="width:37%">
+			&nbsp;
+			
+			</td>
+		</tr>
+
+		<tr>
+			<td colspan="4"><?php echo $this->Form->submit(__('Continue'), 
+			array('name' => 'getPublishedCourse','class'=>'tiny radius button bg-blue','div' => false)); ?></td>
+		</tr>
+	</table>
+</div>
+<?php 
+//}
+?>
+
+<?php 
+if (isset($turn_off_search)){
+ 
+			 
+ echo "<p class='smallheading' style='font-weight:bold'> Academic Year: ".$academic_year." <br /> ";
+ echo " Semester: ".$semester." </p> ";
+ ?>
+  <p class="fs16">
+                    <strong> Important Note: </strong> 
+                    Please select the appropriate "given by department" who will give the course, 
+                    then the system will allow the other department to 
+                    assign instructor accordingly, by default the system will take 
+                    the current department who published the courses  are responsible for 
+                    assigning an instructor.
+                    
+    </p>
+ <?php 
+ foreach ($organizedPublishedCourse as $pk => $pv) {
+       echo "<div class='fs16'> Program:".$pk."</div>";
+        foreach ($pv as $ptk=>$ptv) {
+                 echo "<div class='fs16'> Program Type: ".$ptk."</div>";
+               foreach ($ptv as $yk=>$yv) {
+                   echo "<div class='fs16'> Year Level: ".$yk."</div>";
+                 foreach ($yv as $section_name=>$section_value) {
+                    echo "<div class='fs16'> Section : ".$section_name."</div>";
+                                    ?>
+                    <table id='fieldsForm' cellpadding="0" cellspacing="0" style='table-layout:fixed'>
+                       
+			            <tr>
+			                <th>S.N<u>o</u></th>
+			                <th style='width:5%'> Year </th>
+                            <th style='width:8%'> Semester </th>
+                            <th style='width:20%'> Course Title </th>
+                            <th style='width:10%'> Course Code </th>
+                            <th style='width:8%'> Credit </th>
+                             <th style='width:7%'> L T L </th>
+                            <th style='width:10%'> Prerequisite </th>
+                          
+                           
+                            <th style='width:25%'> Given By Department </th>
+                        </tr>
+                        <?php  
+                            $count=1;
+                            foreach ($section_value as $type_index=>$publishedCourse) {
+                             ?>
+                            <?php 
+                                          
+	                            $i = 0;   
+		                        $class = null;
+		                        if ($i++ % 2 == 0) {
+			                        $class = ' class="altrow"';
+		                        }
+		                    ?>
+		                <tr<?php echo $class;?>>
+		                     <td><?php 
+		                      if (isset($publishedCourse['CourseInstructorAssignment']) && !empty(
+			                 $publishedCourse['CourseInstructorAssignment'])) {
+		                     
+		                     } else {
+		                         echo $this->Form->input('PublishedCourse.'.$publishedCourse['PublishedCourse']['id'].'.id',
+		                     array('value'=>$publishedCourse['PublishedCourse']['id'])); 
+		                     
+		                     }
+		                     echo $count++; ?>&nbsp;</td>
+		                    <td><?php echo $publishedCourse['YearLevel']['name'];?>&nbsp;</td>
+		                   
+				            <td><?php echo $publishedCourse['PublishedCourse']['semester'];?>&nbsp;</td>
+				            <td>
+			                    <?php echo $this->Html->link($publishedCourse['Course']['course_title'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		                    </td>
+		                    <td>
+			                    <?php echo $this->Html->link($publishedCourse['Course']['course_code'], array('controller' => 'courses', 'action' => 'view', $publishedCourse['Course']['id'])); ?>
+		                    </td>
+		                     <td>
+			                    <?php echo $publishedCourse['Course']['credit']; ?>
+		                    </td>
+		                    <td>
+			                    <?php echo $publishedCourse['Course']['course_detail_hours']; ?>
+		                    </td>
+		                     <td>
+		                     <?php 
+		                    
+		                      if (!empty($publishedCourse['Course']['Prerequisite'])) {
+                                     foreach ($publishedCourse['Course']['Prerequisite'] as $ppindex=>$pvlll) {
+                                            echo $pvlll['PrerequisiteCourse']['course_code'];
+                                     }
+                              } else {
+                                  echo 'none';
+                              }
+                              
+                              ?>
+		                    </td>
+		                    
+		                    
+		                   
+		                    <td>
+			                 <?php 
+			                 
+			                
+			                 if (isset($publishedCourse['CourseInstructorAssignment']) && !empty(
+			                 $publishedCourse['CourseInstructorAssignment'])) {
+			                    if (isset($publishedCourse['PublishedCourse']['given_by_department_id']) && !empty($publishedCourse['PublishedCourse']['given_by_department_id'])) {
+			                        echo $departments[$publishedCourse['PublishedCourse']['given_by_department_id']];
+			                    } else {
+			                        echo '---';
+			                    }
+			                   
+			                 } else {
+			                    
+			                     echo $this->Form->input('PublishedCourse.'.
+			                     $publishedCourse['PublishedCourse']['id'].'.given_by_college_id',array('label'=>false,'type'=>'select','options'=>$colleges,'style'=>'width:200px',
+	                           'selected'=>isset($this->request->data['PublishedCourse'][$publishedCourse['PublishedCourse']['id']]['given_by_college_id'])?$this->request->data['PublishedCourse'][$publishedCourse['PublishedCourse']['id']]['given_by_college_id']:((isset($publishedCourse['GivenByDepartment']['college_id']) ? $publishedCourse['GivenByDepartment']['college_id']: $defaultCollege )),
+	                           'onchange'=>'updateDepartmentCollege('.$publishedCourse['PublishedCourse']['id'].')',
+	                           'id'=>'college_id_'.$publishedCourse['PublishedCourse']['id']));
+	                           
+	                           echo $this->Form->input('PublishedCourse.'.
+	                           $publishedCourse['PublishedCourse']['id'].'.given_by_department_id',
+	                           array('label'=>false,'options'=>isset($publishedCourse['departments']) ? $publishedCourse['departments'] :$departments,
+	                           'style'=>'width:200px',
+	                           'selected'=>isset($this->request->data['PublishedCourse'][
+	                           $publishedCourse['PublishedCourse']['id']]['given_by_department_id'])
+	                           ?$this->request->data['PublishedCourse'][
+	                           $publishedCourse['PublishedCourse']['id']]
+	                           ['given_by_department_id']:(isset($publishedCourse['PublishedCourse']['given_by_department_id']) ? $publishedCourse['PublishedCourse']['given_by_department_id']:$defaultDepartment),
+	                           'id'=>'department_id_'.$publishedCourse['PublishedCourse']['id']));
+	                           
+			                 }   
+			                   ?>
+		                    </td>
+		
+	                    </tr>
+		                    
+		                    <?php   
+		
+                        }
+                       
+                         // type
+                        echo "</table>";
+                     } 
+                                 
+                } // end year level
+            } // end of program 
+    }  // end of program
+  
+    echo $this->Form->submit('Change/Dispatch',array('name'=>'changeDispatch','class'=>'tiny radius button bg-blue','div'=>'false'));
+}   
+?>
+</div>
+
+	  </div> <!-- end of columns 12 -->
+	</div> <!-- end of row --->
+      </div> <!-- end of box-body -->
+</div><!-- end of box -->

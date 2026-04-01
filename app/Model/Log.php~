@@ -1,0 +1,69 @@
+<?php
+class Log extends AppModel {
+	var $name = 'Log';
+	var $belongsTo = array(
+		'User' => array(
+			'className' => 'User',
+			'foreignKey' => 'user_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		)
+	);
+	
+	public function getDetail($userId) {
+		return null;
+		// if logged in user is asking for her own log, use the data we allready have
+		$user = $this->User->find('first', array('conditions' => array('id'=>$userId)));
+		return $user;
+		/*
+		$username = $user['User']['username'];
+		$fields = array();
+		if (isset($params['fields'])) {
+			if (is_array($params['fields'])) {
+				$fields = $params['fields'];
+			} else {
+				$fields = array($params['fields']);
+			}
+		}
+		if (isset($params['conditions'])) {
+			$conditions = $params['conditions'];
+		}
+		$order = array('User.created' => 'DESC');
+		if (isset($params['order'])) {
+			$order = $params['order'];
+		}
+		$limit=5;
+		if (isset($params['limit'])) {
+			$limit = $params['limit'];
+		}
+		debug($userId);
+		debug($conditions);
+		debug($fields);
+		return false;
+		*/
+		/*
+		$data = $this->Log->find('all', array(
+			'conditions' => $conditions,
+			'recursive' => -1,
+			'fields' => $fields,
+			'order' => $order
+		));
+		if (!isset($params['events']) || (isset($params['events']) && $params['events'] == false)) {
+			return $data;
+		}
+		$result = array();
+		
+		foreach ($data as $key => $row) {
+			$one = $row[$this->Log->alias];
+			$result[$key][$this->Log->alias]['id'] = $one['id'];
+			$result[$key][$this->Log->alias]['event'] = $username;
+			// have all the detail models and change as list :
+			
+		}
+		*/
+		return $result;
+	}
+	
+	
+}

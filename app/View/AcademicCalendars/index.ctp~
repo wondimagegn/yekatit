@@ -1,0 +1,317 @@
+
+<?php ?>
+<script type="text/javascript">
+
+
+function toggleView(obj) {
+	
+	if($('#c'+obj.id).css("display") == 'none')
+		$('#i'+obj.id).attr("src", '/img/minus2.gif');
+	else
+		$('#i'+obj.id).attr("src", '/img/plus2.gif');
+		
+	$('#c'+obj.id).toggle("slow");
+}
+
+</script>
+
+<?php 
+  echo $this->Form->Create('AcademicCalendar');
+ 
+?>
+
+<div class="box">
+     <div class="box-body">
+       <div class="row">
+		<div class="large-12 columns">
+                     <h2 class="box-title">
+			<?php echo __('Academic Calendar ');?>
+		      </h2>
+
+
+ 	
+	<?php
+
+	   
+	 
+        echo '<table>';	
+           echo '<tr><td>'.$this->Form->input('Search.academic_year',array('id'=>'academicyear',
+            'label' =>'Academic Year','type'=>'select','options'=>$acyear_array_data,
+            'empty'=>"--Select Academic Year--",'selected'=>isset($defaultacademicyear)?$defaultacademicyear:'')).'</td><td>'.$this->Form->input('Search.semester',array('options'=>array('I'=>'I','II'=>'II',
+            'III'=>'III'),'empty'=>'--select semester--')).'</td></tr>';
+
+
+        echo '<tr><td>'.$this->Form->input('Search.program_type_id').'</td><td>'.$this->Form->input('Search.program_id').'</td></tr>';
+		//$this->set(compact('acyear_array_data','defaultacademicyear'));
+        echo '<tr><td>'.$this->Form->input('Search.department_id',
+array('empty'=>' ')).'</td></tr>';
+  
+  	
+		echo '<tr><td colspan="2">';
+		 echo $this->Form->submit(__('View Academic Calendar'), array('name' => 'viewAcademicCalendar','class'=>'tiny radius button bg-blue', 'id' => 'viewAcademicCalendar', 'div' => false));
+		echo '</td></tr>';
+		echo '</table>';
+		
+		//echo $this->Form->submit('Search');
+		
+		
+	?>
+
+		</div>
+		<div class="large-12 columns">
+		<table class="display" cellpadding="0" cellspacing="0">
+	<tr>
+			<th>&nbsp;&nbsp;&nbsp;</th>
+			<th><?php echo $this->Paginator->sort('id','ID');?></th>
+			<th><?php echo $this->Paginator->sort('full_year','Academic Year-Semester');?></th>
+			
+			<th><?php echo $this->Paginator->sort('year_name','Year Level');?></th>
+			
+			<th><?php echo $this->Paginator->sort('program_id','Program');?></th>
+			<th><?php echo $this->Paginator->sort('program_type_id','Program Type');?></th>
+		
+			
+			<th class="actions"><?php echo __('Actions');?></th>
+	</tr>
+	<?php
+	$i = 0;
+	$count=1;
+	foreach ($academicCalendars as $academicCalendar):
+		$class = null;
+		if ($i++ % 2 == 0) {
+			$class = ' class="altrow"';
+		}
+	?>
+	<tr<?php echo $class;?>>
+		
+		 <td onclick="toggleView(this)" id="<?php echo $count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$count)); ?>  </td>
+		<td><?php echo $count; ?>&nbsp;</td>
+		 
+		<td><?php echo $academicCalendar['AcademicCalendar']['full_year']; ?>&nbsp;</td>
+		
+		<td>
+			<?php echo $this->Html->link($academicCalendar['AcademicCalendar']['year_name'], array('action' => 'view', $academicCalendar['AcademicCalendar']['id'])); ?>
+		</td> 
+		
+		<td>
+			<?php echo $this->Html->link($academicCalendar['Program']['name'], array('controller' => 'programs', 'action' => 'view', $academicCalendar['Program']['id'])); ?>
+		</td>
+		<td>
+			<?php echo $this->Html->link($academicCalendar['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $academicCalendar['ProgramType']['id'])); ?>
+		</td>
+	
+		<td class="actions">
+			<?php echo $this->Html->link(__('View'), array('action' => 'view', $academicCalendar['AcademicCalendar']['id']),array('class'=>'fontawesome-eye-open','title'=>'View')); ?>
+			<?php echo $this->Html->link(__('Edit'), array('action' => 'edit', $academicCalendar['AcademicCalendar']['id']),array('class'=>'entypo-pencil','title'=>'Edit')); ?>
+			
+		</td>
+	</tr>
+	<tr id="c<?php echo $count; ?>" style="display:none">
+			<td colspan="4">
+				<table>
+					<tr>
+						<td>Department</td>
+						<td>Activty and Date</td>
+						
+					</tr>
+					<tr>
+						<td><?php 
+						$department_lists=explode(", ",$academicCalendar['AcademicCalendar']['department_name']);
+						$list='<ul>';
+						foreach($department_lists 
+						as $dpl=>$dptv){
+							$list.='<li>'.$dptv.'</li>';
+						}
+						$list.='</ul>';
+						echo $list;
+						?></td>
+						<td>
+						<table>
+						<tr>
+						<?php
+						
+						echo '<td>Registration</td> <td><strong>'.date('M d',strtotime($academicCalendar['AcademicCalendar']['course_registration_start_date'])).'-'.date('d , Y',strtotime($academicCalendar['AcademicCalendar']['course_registration_end_date'])).'</strong></td>';
+						?>
+						</tr>
+						
+						<tr>
+						  <?php 
+						  echo '<td> Add</td><td> <strong>'.date('M d',strtotime($academicCalendar['AcademicCalendar']['course_add_start_date'])).'-'.date('d , Y',strtotime($academicCalendar['AcademicCalendar']['course_add_end_date'])).'</strong></td>';
+						  ?>
+						</tr>
+						
+						<tr>
+						  <?php 
+						 echo '<td> Drop</td><td> <strong>'.date('M d',strtotime($academicCalendar['AcademicCalendar']['course_drop_start_date'])).'-'.date('d , Y',strtotime($academicCalendar['AcademicCalendar']['course_drop_end_date'])).'</strong></td>';
+						
+						  ?>
+						</tr>
+						
+						<tr>
+						  <?php 
+							
+						echo '<td> Grade Submission </td><td><strong>'.date('M d',strtotime($academicCalendar['AcademicCalendar']['grade_submission_start_date'])).'-'.date('d , Y',strtotime($academicCalendar['AcademicCalendar']['grade_submission_end_date'])).'</strong></td>';
+						
+						  ?>
+						</tr>
+						
+						<tr>
+						  <?php 
+							
+						
+						if(isset($academicCalendar['AcademicCalendar']['grade_fx_submission_end_date']) && !empty($academicCalendar['AcademicCalendar']['grade_fx_submission_end_date'])){
+						echo '<td>Fx Grade Submission </td><td><strong>'.date('M d,Y',strtotime($academicCalendar['AcademicCalendar']['grade_fx_submission_end_date'])).'</strong></td>';
+						}
+						
+						  ?>
+						</tr>
+						
+						<tr>
+						  <?php 
+							
+						
+						if(isset($academicCalendar['AcademicCalendar']['senate_meeting_date']) && !empty($academicCalendar['AcademicCalendar']['senate_meeting_date'])){
+						echo '<td> Senate Meeting Date </td><td><strong>'.date('M d,Y',strtotime($academicCalendar['AcademicCalendar']['senate_meeting_date'])).'</strong></td>';
+						}
+						
+						  ?>
+						</tr>
+						
+						<tr>
+						  <?php 
+						
+						if(isset($academicCalendar['AcademicCalendar']['graduation_date']) && !empty($academicCalendar['AcademicCalendar']['graduation_date'])){
+						echo '<td> Graduation Day </td><td><strong>'.date('M d,Y',strtotime($academicCalendar['AcademicCalendar']['graduation_date'])).'</strong></td>';
+						}
+						
+						  ?>
+						</tr>
+						
+						</table>
+						</td>
+						
+					</tr>
+				</table>
+			</td>
+			<td colspan="3">
+				<?php if(isset($academicCalendar['ExtendingAcademicCalendar']) && !empty($academicCalendar['ExtendingAcademicCalendar'])){
+				?>
+				<table>
+				<tr>
+					<td colspan="5"><h6>The list of department which have deadline extension.</h6></td>
+				</tr>
+				<tr>
+					 	<td>
+					 		S.No
+					 	</td>
+					 	<td>
+					 		Year
+					 	</td>
+					 	<td>
+					 		Department
+					 	</td>
+					 	<td>Activty</td>
+					 	<td>Days Extened</td>
+					 	
+			     </tr>
+				<?php
+				$e_count=1;
+				
+				foreach($academicCalendar['ExtendingAcademicCalendar'] as $exk=>$exv)
+				{ ?>
+					 <tr>
+					 	<td>
+					 		<?php echo $e_count;?>
+					 	</td>
+					 	<td>
+					 		<?php echo $exv['year_level_id']?>
+					 	</td>
+					 	
+					 	<td>
+					 		<?php echo $exv['Department']['name']?>
+					 	</td>
+					 	<td>
+					 		<?php echo ucwords($exv['activity_type']);?>
+					 	</td>
+					 	<td>
+					 		<?php 
+					 		
+
+echo $this->Form->input('ExtendingAcademicCalendar.'.$e_count.$count.'.id', array('type' => 'hidden', 'value' => $exv['id']));
+
+echo $this->Form->input('ExtendingAcademicCalendar.'.$e_count.$count.'.days', array( 'type' => 'number', 'label' => false, 'maxlength' =>'5', 'style' => 'width:50px','id' => 'extension_'.$e_count.$count,'value'=>$exv['days']));
+						
+					 		?>
+					 		
+					 	</td>
+					 	
+					 </tr>
+				<?php
+				
+				  $e_count++;
+				 } ?>
+				</table>
+				<?php  
+				} else { ?>
+						<p>
+						<strong>No deadline extension</strong></p>
+				<?php } ?>
+			</td>		
+	</tr>
+<?php 
+$count++;
+endforeach; ?>
+	</table>
+	<p>
+	<?php
+	echo $this->Paginator->counter(array(
+	'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
+	));
+	?>	</p>
+
+	<div class="paging">
+		<?php echo $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class'=>'disabled'));?>
+	 | 	<?php echo $this->Paginator->numbers();?>
+ |
+		<?php echo $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled'));?>
+	</div>	
+		</div>
+       </div>
+      </div>
+</div>
+
+<script>
+$(document).ready(function() {
+   $('form input').change(function(e) {
+   		updateExtension(e);
+   		e.preventDefault();
+   });
+});
+
+function updateExtension(e) {
+	
+	if($(e.target).val() != "" && 
+	isNaN($(e.target).val())) {
+		    alert('Please enter a valid result.');
+			$('#'+$(e.target).attr("id")).focus();
+			$('#'+$(e.target).attr("id")).blur();
+			return false;
+	} else if ($(e.target).val() != "" && 
+	parseInt($(e.target).val()) < 0) {
+	
+			$('#'+$(e.target).attr("id")).focus();
+			$('#'+$(e.target).attr("id")).blur();
+			return false;
+	}
+	
+	$.ajax({
+        url: "/academicCalendars/autoSaveExtension",
+        type:'POST',
+        data:$('form').serialize(),
+        success:function(data){
+        }
+    });
+
+}
+
+</script>

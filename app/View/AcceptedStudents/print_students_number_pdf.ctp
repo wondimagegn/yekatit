@@ -1,0 +1,91 @@
+<?php
+
+App::import('Vendor','tcpdf/tcpdf');
+$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);
+//show header or footer
+$pdf->SetPrintHeader(false);
+$pdf->SetPrintFooter(false);
+
+// set font
+$pdf->SetMargins(3, 1, 3);
+$pdf->SetFont("freeserif", "", 11);
+
+$pdf->setPageOrientation('L', true, 0);
+
+$header = '<table style="width:100%;">
+<tr>
+    <td style="text-align:center; font-weight:bold">  YEKATIT 12 HOSPITAL MEDICAL COLLEGE</td>
+</tr>
+<tr>
+    <td style="text-align:center; font-weight:bold">OFFICE OF THE REGISTRAR</td>
+</tr>
+</table>';
+
+    // add a page
+    $pdf->AddPage();
+
+    if(!empty($acceptedStudents)){
+        $pdf->writeHTML($header, true, false, false, false, '');
+         $headingFor = '<br/><table class="fs13 summery">
+         <tr>
+            <td style="width:22%">Department:</td>
+            <td style="width:78%; font-weight:bold">'. $selected_college_name.'</td>
+        </tr>
+
+        <tr>
+            <td style="width:22%">Field of study:</td>
+            <td style="width:78%; font-weight:bold">'.$selected_department_name.'</td>
+        </tr>
+
+        <tr>
+            <td>Program:</td>
+            <td style="font-weight:bold">'.$selected_program_name.'</td>
+        </tr>
+
+        <tr>
+            <td>Program Type:</td>
+            <td style="font-weight:bold">'.$selected_program_type_name.'</td>
+        </tr>
+
+        <tr>
+            <td>AcademicYear:</td>
+            <td style="font-weight:bold">'.$selected_acdemicyear.'</td>
+        </tr>
+        </table><br/>';
+
+		$pdf->writeHTML($headingFor, true, false, false, false, '');
+		$tbl = '<table style="width: 800px;" cellspacing="0">';
+		$tbl .= '<tr><th style="border: 1px solid #000000; width: 40px;font-size:40px;font-weight:bold;">No</th>
+				<th style="border: 1px solid #000000; width: 260px;font-size:40px;font-weight:bold;">Full Name</th>
+				<th style="border: 1px solid #000000; width: 50px;font-size:40px;font-weight:bold;">Sex</th>
+				<th style="border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">Student Id</th>
+				<th style="border: 1px solid #000000; width: 150px;font-size:40px;font-weight:bold;">University Attended</th></tr>';
+
+		$count=1;
+	   foreach ($acceptedStudents as $acceptedStudent) {
+			$tbl .= '
+			<tr>
+				<td style="border: 1px solid #000000; width: 40px;">'.$count++.'</td>
+				<td style="border: 1px solid #000000; width: 260px;">'.$acceptedStudent['AcceptedStudent']['full_name'].'</td>
+				<td style="border: 1px solid #000000; width: 50px;">'.$acceptedStudent['AcceptedStudent']['sex'].'</td>
+				<td style="border: 1px solid #000000; width: 100px;">'. $acceptedStudent['AcceptedStudent']['studentnumber'].'</td>
+				<td style="border: 1px solid #000000; width: 150px;">'. $acceptedStudent['AcceptedStudent']['university_attended'].'</td>
+			</tr>';
+		   }
+		  $tbl .= '</table>';
+		  $pdf->writeHTML($tbl, true, false, false, false, '');
+	}
+
+
+    // reset pointer to the last page
+    $pdf->lastPage();
+
+    //output the PDF to the browser
+
+    $pdf->Output('Student Id of '.$selected_college_name.'.pdf', 'D');
+    /*
+    I: send the file inline to the browser.
+    D: send to the browser and force a file download with the name given by name.
+    F: save to a local file with the name given by name.
+    S: return the document as a string.
+    */

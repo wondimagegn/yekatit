@@ -1,0 +1,78 @@
+<?php echo $this->Form->create('Section');  ?>
+<div class="box">
+   <div class="box-body">
+	<div class="row">
+		<div class="large-12 columns">
+		   <div id="myModalUpgrade" class="reveal-modal" data-reveal>
+
+			</div>
+		</div>
+	</div>
+    <div class="row">
+	  <div class="large-12 columns">
+        <?php
+ 
+if($role_id == ROLE_DEPARTMENT || ROLE_DEPARTMENT==
+$this->Session->read('Auth.User')['Role']['parent_id']){
+	echo "<div class='centeralign_smallheading'> Upgrade Sections</div>";
+    echo "<div class='font'>".$college_name."</div>";
+    echo "<div class='font'>"."Department of ".$department_name."</div>";
+
+?>
+<table cellpadding="0" cellspacing="0">
+	<?php 
+       
+        echo '<tr><td>'. $this->Form->input('Section.program_id',array('empty'=>"--Select Program--")).'</td>'; 
+        echo '<td>'. $this->Form->input('Section.program_type_id',array('empty'=>"--Select Program Type--")).'</td></tr>';  
+         echo '<tr><td>'. $this->Form->input('Section.academicyear',array('type'=>'select', 'options'=>$acyear_array_data,'empty'=>'--Select Academic Year--')).'</td>';   
+        echo '<td>'. $this->Form->input('Section.year_level_id',array('empty'=>'All')).'</td></tr>'; 
+        echo '<tr><td colspan="3">'. $this->Form->Submit('Search',array('name'=>'search','class'=>'tiny radius button bg-blue','div'=>false)).'</td></tr>'; 
+	?> 
+</table>
+<?php
+
+if(isset($formatedSections) && !empty($formatedSections)){
+    debug($formatedSections);
+	foreach($formatedSections as $fsk=>$fsv){
+		echo '<div class="smallheading">'.$fsk.'</div>';
+		echo '<table style="border: #CCC solid 2px">';
+		echo '<tr><td class="font"> Upgrade able Sections</td></tr>';
+		if(isset($fsv['Upgradable']) && !empty($fsv['Upgradable'])){
+			echo '<tr><td><table><tr>';
+			foreach($fsv['Upgradable'] as $ufsk=>$ufsv){
+				$unqualified_count = 0;
+				if(isset($unqualified_students_count[$ufsk])){
+					$unqualified_count = count($unqualified_students_count[$ufsk]);
+				}
+				echo '<td>'.$this->Form->input('Section.Upgradbale_Selected.'.$ufsk,array('class'=>'upgradableSelectedSection','type'=>'checkbox','value'=>$ufsk,'label'=>$ufsv));
+				if($unqualified_count !=0){ 
+	echo '('.$this->HTML->link($unqualified_students_count[$ufsk].' unqualified Students','#',array('data-animation'=>"fade",'data-reveal-id'=>'myModalUpgrade',
+'data-reveal-ajax'=>'/sections/get_modal_box/'.$ufsk)).')';
+	}
+				echo '</td>';
+			}
+			echo '</tr></table></td></tr>';
+		}
+		if(isset($fsv['Unupgradable']) && !empty($fsv['Unupgradable'])){
+			echo '<tr><td class="font"> The following list of sections are not qualify for upgrade. Since one or more published courses grade are not sumbited for those sections.</td></tr>';
+			echo '<tr><td><table><tr>';
+			foreach($fsv['Unupgradable'] as $uufsk=>$uufsv){
+				echo '<td>'.$uufsv.'</td>';
+			}
+			echo '</tr></table></td></tr>';
+		}
+		echo '</table>';
+	}
+	echo $this->Form->Submit('Upgrade',array('name'=>'upgrade','class'=>'tiny radius button bg-blue','div'=>false));
+	} else if(empty($formatedSections) && !($isbeforesearch)) { 
+		echo "<div class='info-box info-message'>
+<span></span> There is no section to upgrade in the search criteria </div>";
+	}
+} // close if department
+ 
+?>    
+	  </div> <!-- end of columns 12 -->
+	</div> <!-- end of row -->
+      </div> <!-- end of box-body -->
+</div><!-- end of box -->
+<?php $this->Form->end(); ?>

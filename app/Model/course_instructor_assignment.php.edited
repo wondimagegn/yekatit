@@ -1,0 +1,171 @@
+<?php
+class CourseInstructorAssignment extends AppModel {
+	var $name = 'CourseInstructorAssignment';
+	
+	var $validate = array(
+		'academic_year' => array(
+			'notempty' => array(
+				'rule' => array('notempty'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+		'semester' => array(
+			'notempty' => array(
+				'rule' => array('notempty'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+		'section_id' => array(
+			'numeric' => array(
+				'rule' => array('numeric'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+		'staff_id' => array(
+			'numeric' => array(
+				'rule' => array('numeric'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+		'published_course_id' => array(
+			'numeric' => array(
+				'rule' => array('numeric'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+		'type' => array(
+			'notempty' => array(
+				'rule' => array('notempty'),
+				//'message' => 'Your custom message here',
+				//'allowEmpty' => false,
+				//'required' => false,
+				//'last' => false, // Stop validation after this rule
+				//'on' => 'create', // Limit validation to 'create' or 'update' operations
+			),
+		),
+	);
+	//The Associations below have been created with all possible keys, those that are not needed can be removed
+
+	var $belongsTo = array(
+		'Section' => array(
+			'className' => 'Section',
+			'foreignKey' => 'section_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		),
+		'CourseSplitSection' => array(
+			'className' => 'CourseSplitSection',
+			'foreignKey' => 'course_split_section_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		),
+		'Staff' => array(
+			'className' => 'Staff',
+			'foreignKey' => 'staff_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		),
+		'PublishedCourse' => array(
+			'className' => 'PublishedCourse',
+			'foreignKey' => 'published_course_id',
+			'conditions' => '',
+			'fields' => '',
+			'order' => ''
+		)
+	);
+
+    var $hasMany = array(
+		'ExamGrade' => array(
+			'className' => 'ExamGrade',
+			'foreignKey' => 'course_instructor_assignment_id',
+			'dependent' => false,
+			'conditions' => '',
+			'fields' => '',
+			'order' => '',
+			'limit' => '',
+			'offset' => '',
+			'exclusive' => '',
+			'finderQuery' => '',
+			'counterQuery' => ''
+		)
+	);
+
+	function listOfSectionInstructorAssigned($acadamic_year = null, $semester = null, $instructor_id = null) {
+		$sections = $this->find('all', array(
+			'fields' => array('CourseInstructorAssignment.section_id'),
+			'conditions' => array(
+				'CourseInstructorAssignment.type LIKE \'%Lecture%\'',
+				'CourseInstructorAssignment.staff_id' => $instructor_id,
+				'CourseInstructorAssignment.academic_year' => $acadamic_year,
+				'CourseInstructorAssignment.semester' => $semester,
+				'CourseInstructorAssignment.isprimary' => 1
+				),
+			'recursive' => -1
+		));
+		$sections_formated = array();
+		foreach($sections as $key => $section) {
+			$section_detail = $this->Section->find('all', array(
+				'condition' => array('Section.id' => $section['CourseInstructorAssignment']['section_id']),
+				'contain' => array('Department', 'Program', 'ProgramType')
+			));
+			$sections_formated[$section_detail[0]['Section']['id']] = $section_detail[0]['Section']['name'].' ('.$section_detail[0]['Program']['name'].' - '.$section_detail[0]['ProgramType']['name'].' - '.$section_detail[0]['Department']['name'].')';
+		}
+		return $sections_formated;
+	}
+
+	function listOfCoursesInstructorAssignedBySection($acadamic_year = null, $semester = null, $instructor_id = null) {
+		$list_of_sections = $this->listOfSectionInstructorAssigned($acadamic_year, $semester, $instructor_id);
+		$courses_formated = array();
+		foreach($list_of_sections as $section_id => $section) {
+			$conditions = array(
+					'CourseInstructorAssignment.type LIKE \'%Lecture%\'',
+					'CourseInstructorAssignment.staff_id' => $instructor_id,
+					'CourseInstructorAssignment.academic_year' => $acadamic_year,
+					'CourseInstructorAssignment.semester' => $semester,
+					'CourseInstructorAssignment.isprimary' => 1,
+					'CourseInstructorAssignment.section_id' => $section_id
+					);
+			$courses = $this->find('all', array(
+				'fields' => array('CourseInstructorAssignment.published_course_id'),
+				'conditions' => $conditions,
+			));
+			$courses_formated[$section] = array();
+			foreach($courses as $key => $course) {
+				$course_detail = $this->PublishedCourse->Course->find('all', array(
+					'fields' => array('Course.course_title', 'Course.course_code'),
+					'conditions' => array(
+						'Course.id' => $course['CourseInstructorAssignment']['published_course_id']
+					),
+					'recursive' => 0,
+					'contain' => array()
+				));
+				$courses_formated[$section][$section_id.'~'.$course['CourseInstructorAssignment']['published_course_id']] = $course_detail[0]['Course']['course_title'].' ('.$course_detail[0]['Course']['course_code'].')';
+			}
+		}
+		return $courses_formated;
+	}
+
+}

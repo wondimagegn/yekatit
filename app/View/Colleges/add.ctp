@@ -1,0 +1,48 @@
+<?php ?>
+<div class="box">
+    <div
+        class="box-header bg-transparent">
+        <h6 class="box-title">
+            <?php echo __('Add Department'); ?>
+        </h6>
+    </div>
+    <div class="box-body">
+        <div class="row">
+            <?php echo $this->Html->script('amharictyping'); ?>
+            <?php echo $this->Form->create('College'); ?>
+            <div
+                class="large-6 columns">
+
+                <?php
+				echo $this->Form->input('campus_id');
+				echo $this->Form->input('name', array('style' => 'width:300px'));
+
+				echo $this->Form->input('shortname');
+
+				echo $this->Form->input('amharic_name', array('style' => 'width:300px', 'id' => 'AmharicText', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);"));
+
+				echo $this->Form->input('type', array('style' => 'width:100px'));
+				?>
+            </div>
+            <div
+                class="large-6 columns">
+                <?php
+				echo $this->Form->input(
+					'amharic_short_name',
+					array('id' => 'AmharicText', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);")
+				);
+				echo $this->Form->input('description');
+				echo $this->Form->input('phone');
+				?>
+
+            </div>
+
+            <div
+                class="large-12 columns">
+
+                <?php echo $this->Form->end(array('label' => 'Submit', 'class' => 'tiny radius button bg-blue'));
+				?>
+            </div>
+        </div>
+    </div>
+</div>

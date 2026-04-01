@@ -1,0 +1,230 @@
+
+<?php 
+$login_page_background = Configure::read('Image.login_background');
+$bg_index = rand(0, 9);
+?>
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+	<!-- META CHARS -->
+	<?php echo $this->Html->charset(); ?>
+	 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>
+		<?php __('SIS '); ?>
+	</title>
+ <link rel="stylesheet" type="text/css" href="/css/foundation.min.css" media="screen" /> 
+
+<link rel="stylesheet" type="text/css" href="/css/home/theme.css" media="screen" /> 
+<link rel="stylesheet" type="text/css" href="/css/home/login.css" media="screen" /> 
+<link rel="stylesheet" type="text/css" href="/css/home/style_p.css" media="screen" /> 
+<link rel="stylesheet" type="text/css" href="/css/home/blog.css" media="screen" /> 
+<script src="/js/vendor/modernizr.js"></script>
+</head>
+
+
+<body>
+    <!-- preloader -->
+    <div id="preloader">
+        <div id="status">&nbsp;</div>
+    </div>
+    <!-- End of preloader -->
+	<div class="off-canvas-wrap" data-offcanvas>
+		<div class="inner-wrap">
+			<div class="top-bar-nest">
+				<nav  class="top-bar " data-topbar role="navigation" data-options="is_hover: false">
+				<ul class="title-area left">
+				     <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+					<li class="toggle-topbar menu-icon"><a href="#"><span></span></a>
+
+					</li>
+					
+					
+
+				</ul>
+				
+			    <div class="left top-bar-section menu-margin-front">
+					 <div class="left  hide-banner">
+                     	  <a class="logo-link-bg" href="/">
+							<img style="width:100px;height: 84px;" src="/img/amu.png">
+							</a>
+                     </div>
+
+                     <div class="left  hide-banner">
+							<h4><span style="color:#582f85;">Y12HMC</span> <span style="color:#ff5b00;">|</span> <span style="color:#582f85;">Office of the College Registrar </span></h4>
+							
+						
+                     </div>
+                     
+				</div>
+                
+				 <section  class="top-bar-section">
+                
+				    
+                      <ul  class="right menu menu-margin-front">
+                     	<li>
+							 <a    class="show-menu" href="#"> Menu </a>
+							 
+                     	</li>
+                     	
+                     	<li>
+							 <a href="/pages/academic_calender">Academic Calendar</a>
+                     	</li>
+                     	<li>
+							 <a href="/pages/official_transcript_request">Transcript Request</a>
+                     	</li>
+                     	<li>
+							 <a href="/pages/admission">Admission</a>
+                     	</li>
+                     	<li>
+							 <a href="#">Alumni Registration</a>
+                     	</li>
+                     	
+                     	
+                     </ul>
+				  </section>
+				</nav>
+			</div>
+	  </div>
+	</div>
+
+  	<!-- right sidebar wrapper -->
+    <div class="inner-wrap container">
+        <div class="wrap-fluid">
+          <div class="row">
+          	<div class="medium-3 large-3 columns">
+          	  <?php 
+		echo $this->element('leftmenu/leftmenu');
+			?>
+          	</div>
+          	<div class="medium-9 large-9 columns">
+          	   <div class="row">
+          	   	 <?php
+            if ($this->Session->check('Message.flash')) {
+                     echo $this->Session->flash();
+               }
+               ?>
+	    <?php echo $content_for_layout;
+	    
+	    	
+	     ?>
+          	   </div>
+          		
+          	</div>
+          	
+          </div>
+          
+		</div>
+   </div>
+  <div id="footer">
+  		<p>
+           Copyright &copy; <?php echo date('Y');?>
+            <?php echo Configure::read('CopyRightCompany');?>
+           </p>
+  </div>
+<!-- main javascript library -->
+    <script type='text/javascript' src="/js/jquery.js"></script>
+    <script type="text/javascript" src="/js/waypoints.min.js"></script>
+    <script type='text/javascript' src='/js/preloader-script.js'></script>
+<!-- foundation javascript -->
+    <script type='text/javascript' src="/js/foundation.min.js"></script>
+    <script type='text/javascript' src="/js/foundation/foundation.dropdown.js"></script>
+ <!-- main edumix javascript -->
+    <script type='text/javascript' src='/js/slimscroll/jquery.slimscroll.js'></script>
+   
+    <script type='text/javascript' src='/js/sliding-menu.js'></script>
+
+    <script type='text/javascript' src='/js/scriptbreaker-multiple-accordion-1.js'></script>
+    <script type="text/javascript" src="/js/number/jquery.counterup.min.js"></script>
+    <script type="text/javascript" src="/js/circle-progress/jquery.circliful.js"></script>
+    <script type='text/javascript' src='/js/app.js'></script>
+
+<?php   
+   echo $this->Js->writeBuffer(); // Any Buffered Scripts
+?>
+
+<script>
+// disable all tabs
+
+//// disable all tabs
+$('[data-toggle=tab]').click(function () {
+  return false;}).addClass("disabledTab");
+
+var validated = function(tab){
+	//alert(tab);
+    tab.unbind('click').removeClass('disabledTab').addClass('active');
+    //$('[data-toggle=tab]').addClass("disabledTab");
+};
+
+
+/*
+function disableOtherTab(){
+    var listTab=[];
+    $("#ListOfTab ").find('li').each(function(i,e){
+    	listTab.push(i);
+    });
+    //alert(listTab);
+	$("#ListOfTab").tabs({disabled:[listTab]});
+}
+
+$("#ListOfTab ").find('li').not('.active').each(function(i,e){
+		$(this).addClass('disabledTab');
+});
+*/
+$('.btnNext').click(function(){
+   
+    var allValid = true;
+    // get each input in this tab pane and validate
+    $(this).parents('.tab-pane').find('.form-control').each(function(i,e){
+       // some condition(s) to validate each input
+      
+        if ($(e).val()!=""){
+            // validation passed
+            allValid = true;
+        } else {
+            // validation failed
+            allValid = false;
+        }
+        
+    });
+    
+    if (allValid) {
+		var tabIndex = $(this).parents('.tab-pane').index();
+        validated($('[data-toggle]').eq(tabIndex+1));
+        $('#ListOfTab  > .active').next('li').find('a').trigger('click');
+    } else {
+    	//alert(allValid);
+    	//$('[data-toggle=tab]').addClass("disabledTab");
+    } 
+   
+});
+
+$('.btnPrevious').click(function(){
+ 		 $('#ListOfTab > .active').prev('li').find('a').trigger('click');
+});
+
+// always validate first tab
+validated($('[data-toggle]').eq(0));
+//disableOtherTab();
+/*
+$(".nav-tabs a[data-toggle=tab]").on("click", function(e) {
+  if ($(this).hasClass("disable")) {
+    e.preventDefault();
+    return false;
+  }
+});
+*/
+
+</script>
+<style>
+.disabledTab{
+    pointer-events: none;
+}
+</style>
+<script>
+$(document).foundation();
+</script>
+
+
+
+</body>
+</html>
