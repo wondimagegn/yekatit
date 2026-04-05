@@ -4,15 +4,14 @@ class SectionSplitForPublishedCoursesController extends AppController {
 	public $name = 'SectionSplitForPublishedCourses';
 	public $components =array('AcademicYear');
 	public $menuOptions = array(
-             'parent' => 'publishedCourses',
-             'exclude' => array('add'),
-             'alias' => array(
-                   	'index' => 'View Split Section for Selected Courses',
-                    'split' => 'Split Section for Selected Courses',
-            )
-			 );
-   
-	
+		'parent' => 'publishedCourses',
+		'controllerButton' => false,
+		'exclude' => array('add', 'index', 'split'),
+		'alias' => array(
+			//'index' => 'View Split Section for Selected Courses',
+			//'split' => 'Split Section for Selected Courses',
+		)
+	);
    
     public function beforeRender() {
 
@@ -125,8 +124,7 @@ class SectionSplitForPublishedCoursesController extends AppController {
 		array('conditions'=>array('SectionSplitForPublishedCourse.id'=>$id),
 		'contain'=>array('CourseSplitSection'=>array('Student'=>array('StudentsCourseSplitSection')))));
 		
-		$isResultSubmitted=ClassRegistry::
-	    init('ExamResult')->isExamResultSubmitted($getChildren['SectionSplitForPublishedCourse']['published_course_id']);
+		$isResultSubmitted=ClassRegistry::init('ExamResult')->isExamResultSubmitted($getChildren['SectionSplitForPublishedCourse']['published_course_id']);
 		if ($isResultSubmitted==0) {
 		    
 		    $courseSplitSectionIds=array();

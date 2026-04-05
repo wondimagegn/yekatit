@@ -79,12 +79,11 @@ table.grade_list tr td{
 		debug($total_student_count);
 		foreach($students_process as $key => $student) {
 			$grade_history_count = 0;
-			if(isset($student['freshman_program']) && $student['freshman_program'] == false) {
+			if (isset($student['freshman_program']) && $student['freshman_program']) {
 				$freshman_program = true;
 				$approver = 'freshman program';
 				$approver_c = 'Freshman Program';
-			}
-			else {
+			} else {
 				$freshman_program = false;
 				$approver = 'department';
 				$approver_c = 'Department';

@@ -1,8 +1,9 @@
 <?php
-class Program extends AppModel {
+class Program extends AppModel
+{
 	var $name = 'Program';
 	var $displayField = 'name';
-	
+
 	var $hasMany = array(
 		'GraduationStatus' => array(
 			'className' => 'GraduationStatus',
@@ -82,7 +83,7 @@ class Program extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-        'AcceptedStudent' => array(
+		'AcceptedStudent' => array(
 			'className' => 'AcceptedStudent',
 			'foreignKey' => 'program_id',
 			'dependent' => false,
@@ -95,7 +96,7 @@ class Program extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-        'Section' => array(
+		'Section' => array(
 			'className' => 'Section',
 			'foreignKey' => 'program_id',
 			'dependent' => false,
@@ -108,7 +109,7 @@ class Program extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-		 'GradeScale' => array(
+		'GradeScale' => array(
 			'className' => 'GradeScale',
 			'foreignKey' => 'program_id',
 			'dependent' => false,
@@ -186,15 +187,16 @@ class Program extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		)
-    );
-  
-        public function beforeValidate($options = array()) {
-              if (!$this->id) {
-                  if ($this->findByName($this->data['Program']['name'])) {
-                      $this->invalidate('name_unique');
-                      return false;
-                   }
-              }
-              return true;
-         }
+	);
+
+	public function beforeValidate($options = array())
+	{
+		if (!$this->id) {
+			if ($this->findByName($this->data['Program']['name'])) {
+				$this->invalidate('name_unique');
+				return false;
+			}
+		}
+		return true;
+	}
 }

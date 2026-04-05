@@ -1,17 +1,6 @@
 <?php
 class ExamResult extends AppModel {
 	var $name = 'ExamResult';
-	  /* We can log all actions by calling this here, but it is also possible to call 
-    the loggable behavior in selected models.
-       */
-    var $actsAs = array(
-            'Logable' => array(
-                'change' => 'full',
-                'description_ids' => 'false',
-                'displayField' => 'username',
-                'foreignKey' => 'foreign_key'
-                )
-            );
    
 	var $validate = array(
 		'result' => array(
@@ -117,34 +106,34 @@ class ExamResult extends AppModel {
          return $published_courses_student_registred_score_grade;
         
      
-	}	
+	}
 
-	
-	function isStudenSectionChangePossible ($student_id=null,
-	$section_id=null) {
-		
-		$check=$this->CourseRegistration->find('count',array('conditions'=>array('CourseRegistration.student_id'=>$student_id,'CourseRegistration.section_id'=>$section_id)));
-		if ($check>0) {
-		  return false;
+
+	function isStudenSectionChangePossible($student_id = null, $section_id = null)
+	{
+		$check = $this->CourseRegistration->find('count', array('conditions' => array('CourseRegistration.student_id' => $student_id, 'CourseRegistration.section_id' => $section_id)));
+		if ($check > 0) {
+			return false;
 		}
 		return true;
 	}
-	
-	function isRegistredInNameOfSectionAndSubmittedGrade ($student_id=null,
-	$section_id=null) {
-	    $course_regitration_ids=$this->CourseRegistration->find('list',array('fields'=>'id','conditions'=>array('CourseRegistration.student_id'=>$student_id,'CourseRegistration.section_id'=>$section_id)));
-	    
-	    if (!empty($course_regitration_ids)) {
-		    $check = $this->CourseRegistration->ExamGrade->find('count',
-		    array('conditions'=>array(
-		    'ExamGrade.course_registration_id'=>$course_regitration_ids)));
-	       // if ($check==0) {
-		       return true;
-		    //}
-	    } 
-	    	
-		
-		return false;               
+
+	function isRegistredInNameOfSectionAndSubmittedGrade($student_id = null, $section_id = null)
+	{
+		$course_regitration_ids = $this->CourseRegistration->find('list', array('fields' => 'id', 'conditions' => array('CourseRegistration.student_id' => $student_id, 'CourseRegistration.section_id' => $section_id)));
+
+		if (!empty($course_regitration_ids)) {
+			$check = $this->CourseRegistration->ExamGrade->find('count', array(
+					'conditions' => array(
+						'ExamGrade.course_registration_id' => $course_regitration_ids
+					)
+				)
+			);
+			//if ($check == 0) {
+				return true;
+			//}
+		}
+		return false;
 	}
     
     /**
@@ -536,7 +525,7 @@ class ExamResult extends AppModel {
 	$exam_grades = array();
 	$exam_grade_changes = array();
 	 App::import('Component','AcademicYear');
-	 $AcademicYear= new AcademicYearComponent();
+	 $AcademicYear= new AcademicYearComponent(new ComponentCollection);
 	   
 	$students_makeup = $this->generateGradeEntryCourseGrade(
 	$student_course_register_and_adds['makeup'], $grade_scales);
@@ -907,90 +896,105 @@ class ExamResult extends AppModel {
 		return $grade_submission_status;
 	}
 
-	function cancelSubmitedGrade($published_course_id = null, $student_course_register_and_adds = null) {
-		if($student_course_register_and_adds == null)
+	function cancelSubmitedGrade($published_course_id = null, $student_course_register_and_adds = null) 
+	{
+		if($student_course_register_and_adds == null) {
 			$student_course_register_and_adds = $this->CourseRegistration->PublishedCourse->getStudentsTakingPublishedCourse($published_course_id);
-	
-	$exam_grades_for_deletion = array();
-	$exam_grade_changes_for_deletion = array();
-	$students_register = $student_course_register_and_adds['register'];
-	$students_add = $student_course_register_and_adds['add'];
-	$students_makeup = $student_course_register_and_adds['makeup'];
-	
-	foreach($students_register as $key => $student) {
-		if(isset($student['ExamGrade']) && !empty($student['ExamGrade']) && $student['ExamGrade'][0]['department_approval'] == null) {
-			$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
 		}
-	}
-	foreach($students_add as $key => $student) {
-		if(isset($student['ExamGrade']) && !empty($student['ExamGrade']) && $student['ExamGrade'][0]['department_approval'] == null) {
-			$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
-		}
-	}
-	foreach($students_makeup as $key => $student) {
-		if(isset($student['ExamGradeChange']) && !empty($student['ExamGradeChange']) && $student['ExamGradeChange'][0]['department_approval'] == null) {
-			$exam_grade_changes_for_deletion[] = $student['ExamGradeChange'][0]['id'];
-		}
-	}
 	
-	$grade_cancelation_status = array();
-	if(!empty($exam_grades_for_deletion)) {
-		if($this->CourseRegistration->ExamGrade->deleteAll(array('ExamGrade.id' => $exam_grades_for_deletion), false)) {
-			if(!empty($exam_grade_changes_for_deletion)) {
-				if($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
-					$grade_cancelation_status['error'] = "Exam grade cancelation for ".count($exam_grades_for_deletion)." students is done but faild to cancel makeup exam grade. Please make your makeup exam grade cancelation again.";
+		$exam_grades_for_deletion = array();
+		$exam_grade_changes_for_deletion = array();
+		$students_register = $student_course_register_and_adds['register'];
+		$students_add = $student_course_register_and_adds['add'];
+		$students_makeup = $student_course_register_and_adds['makeup'];
+		
+		if (!empty($students_register) && is_array($students_register)) {
+			foreach($students_register as $key => $student) {
+				if(isset($student['ExamGrade']) && !empty($student['ExamGrade']) && $student['ExamGrade'][0]['department_approval'] == null) {
+					$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
 				}
 			}
 		}
-		else {
-			$grade_cancelation_status['error'] = "Exam grade cancelation is faild. Please try again.";
+
+		if (!empty($students_add) && is_array($students_add)) {
+			foreach($students_add as $key => $student) {
+				if(isset($student['ExamGrade']) && !empty($student['ExamGrade']) && $student['ExamGrade'][0]['department_approval'] == null) {
+					$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
+				}
+			}
 		}
-	}
-	else if(!empty($exam_grade_changes_for_deletion)) {
-		if($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
-			$grade_cancelation_status['error'] = "Makeup exam grade cancelation is faild. Please try again.";
+
+		if (!empty($students_makeup) && is_array($students_makeup)) {
+			foreach($students_makeup as $key => $student) {
+				if(isset($student['ExamGradeChange']) && !empty($student['ExamGradeChange']) && $student['ExamGradeChange'][0]['department_approval'] == null) {
+					$exam_grade_changes_for_deletion[] = $student['ExamGradeChange'][0]['id'];
+				}
+			}
 		}
-	}
-	$grade_cancelation_status['course_registration_add'] = $exam_grades_for_deletion;
-	$grade_cancelation_status['makeup_exam'] = $exam_grade_changes_for_deletion;
-	return $grade_cancelation_status;
+		
+		$grade_cancelation_status = array();
+
+		if (!empty($exam_grades_for_deletion)) {
+			if ($this->CourseRegistration->ExamGrade->deleteAll(array('ExamGrade.id' => $exam_grades_for_deletion), false)) {
+				if (!empty($exam_grade_changes_for_deletion)) {
+					if ($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
+						$grade_cancelation_status['error'] = "Exam grade cancelation for " . count($exam_grades_for_deletion) . " students is done but faild to cancel makeup exam grade. Please make your makeup exam grade cancelation again.";
+					}
+				}
+			} else {
+				$grade_cancelation_status['error'] = "Exam grade cancelation is faild. Please try again.";
+			}
+		} else if (!empty($exam_grade_changes_for_deletion)) {
+			if ($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
+				$grade_cancelation_status['error'] = "Makeup exam grade cancelation is faild. Please try again.";
+			}
+		}
+
+		$grade_cancelation_status['course_registration_add'] = $exam_grades_for_deletion;
+		$grade_cancelation_status['makeup_exam'] = $exam_grade_changes_for_deletion;
+
+		return $grade_cancelation_status;
 	}
 	
-	function cancelSubmitedGradeEntry($published_course_id = null, $student_course_register_and_adds = null) {
-		if($student_course_register_and_adds == null)
+	function cancelSubmitedGradeEntry($published_course_id = null, $student_course_register_and_adds = null) 
+	{
+		if ($student_course_register_and_adds == null) {
 			$student_course_register_and_adds = $this->CourseRegistration->PublishedCourse->getStudentsRequiresGradeEntryExamPublishedCourse($published_course_id);
+		}
 	
-	$exam_grades_for_deletion = array();
-	$exam_grade_changes_for_deletion = array();
-	
-	$students_makeup = $student_course_register_and_adds['makeup'];
-	
-	foreach($students_makeup as $key => $student) {
-		if(isset($student['CourseRegistration']['ExamGrade']) && !empty($student['CourseRegistration']['ExamGrade']) &&
-		 $student['CourseRegistration']['ExamGrade'][0]['department_approval'] == null) {
-			$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
-		} else if(isset($student['CourseAdd']['ExamGrade']) && !empty($student['CourseAdd']['ExamGrade']) &&
-		 $student['CourseAdd']['ExamGrade'][0]['department_approval'] == null){
-		$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
-		} 
-	}
-	
-	$grade_cancelation_status = array();
-	if(!empty($exam_grades_for_deletion)) {
-		if($this->CourseRegistration->ExamGrade->deleteAll(array('ExamGrade.id' => $exam_grades_for_deletion), false)) {
-			if(!empty($exam_grade_changes_for_deletion)) {
-				if($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
-					$grade_cancelation_status['error'] = "Exam grade cancelation for ".count($exam_grades_for_deletion)." students is done but faild to cancel  exam grade entry. Please make your  exam grade entry cancelation again.";
+		$exam_grades_for_deletion = array();
+		$exam_grade_changes_for_deletion = array();
+		
+		$students_makeup = $student_course_register_and_adds['makeup'];
+
+		if (!empty($students_makeup) && is_array($students_makeup)) {
+			foreach ($students_makeup as $key => $student) {
+				if (isset($student['CourseRegistration']['ExamGrade']) && !empty($student['CourseRegistration']['ExamGrade']) && $student['CourseRegistration']['ExamGrade'][0]['department_approval'] == null) {
+					$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
+				} else if (isset($student['CourseAdd']['ExamGrade']) && !empty($student['CourseAdd']['ExamGrade']) && $student['CourseAdd']['ExamGrade'][0]['department_approval'] == null) {
+					$exam_grades_for_deletion[] = $student['ExamGrade'][0]['id'];
 				}
 			}
 		}
-		else {
-			$grade_cancelation_status['error'] = "Exam grade cancelation is faild. Please try again.";
+	
+		$grade_cancelation_status = array();
+
+		if (!empty($exam_grades_for_deletion)) {
+			if ($this->CourseRegistration->ExamGrade->deleteAll(array('ExamGrade.id' => $exam_grades_for_deletion), false)) {
+				if (!empty($exam_grade_changes_for_deletion)) {
+					if ($this->CourseRegistration->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_changes_for_deletion), false)) {
+						$grade_cancelation_status['error'] = "Exam grade cancelation for " . count($exam_grades_for_deletion) . " students is done but faild to cancel exam grade entry. Please make your exam grade entry cancelation again.";
+					}
+				}
+			} else {
+				$grade_cancelation_status['error'] = "Exam grade cancelation is faild. Please try again.";
+			}
 		}
-	}
-	$grade_cancelation_status['course_registration_add'] = $exam_grades_for_deletion;
-	$grade_cancelation_status['makeup_exam'] = $exam_grade_changes_for_deletion;
-	return $grade_cancelation_status;
+
+		$grade_cancelation_status['course_registration_add'] = $exam_grades_for_deletion;
+		$grade_cancelation_status['makeup_exam'] = $exam_grade_changes_for_deletion;
+
+		return $grade_cancelation_status;
 	}
 	
 }

@@ -4,13 +4,12 @@ class ApplicablePaymentsController extends AppController {
 
 	public $name = 'ApplicablePayments';
     public $menuOptions = array(
-             'parent'=>'payments',
+             'parent'=>'costShares',
              'alias' => array(
                     'index'=>'View Payment',
                     'add'=>'Add Applicable Payment',
                     
-            ),
-            'weight'=>2,
+            )
     );
     
      public $components =array('AcademicYear');

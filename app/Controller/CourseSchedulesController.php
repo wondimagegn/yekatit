@@ -1664,12 +1664,13 @@
 		 }
 		
 		function get_departments($college_id=null){
-				if(!empty($college_id)){
-						$this->layout = 'ajax';
-						$departments = $this->CourseSchedule->PublishedCourse->Department->find('list',array('conditions'=>array('Department.college_id'=>$college_id)));
-						
-						$this->set(compact('departments'));
-				}
+		if(!empty($college_id)){
+		$this->layout = 'ajax';
+		$departments = $this->CourseSchedule->PublishedCourse->Department->find('list',array('conditions'=>array('Department.college_id'=>$college_id)));
+		$departments['pre']='Pre/(Unassign Freshman)'; 
+		
+		$this->set(compact('departments'));
+		}
 		}
 		function get_year_levels($department_id=null){
 		if(!empty($department_id)){

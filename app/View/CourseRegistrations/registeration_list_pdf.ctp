@@ -1,107 +1,126 @@
 <?php
+	App::import('Vendor','tcpdf/tcpdf');
+	$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);  
+	//show header or footer
+	$pdf->SetPrintHeader(false); 
+	$pdf->SetPrintFooter(false);
 
-App::import('Vendor','tcpdf/tcpdf');
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);  
-//show header or footer
-$pdf->SetPrintHeader(false); 
-$pdf->SetPrintFooter(false);
-$countryAmharic = Configure::read('ApplicationDeployedCountryAmharic'); 
+
+$countryAmharic = Configure::read('ApplicationDeployedCountryAmharic');
 $cityAmharic = Configure::read('ApplicationDeployedCityAmharic');
-$countryEnglish = Configure::read('ApplicationDeployedCountryEnglish'); 
+$countryEnglish = Configure::read('ApplicationDeployedCountryEnglish');
 $cityEnglish = Configure::read('ApplicationDeployedCityEnglish');
-$pobox=  Configure::read('POBOX');	
+$universityName=Configure::read('CompanyName');
+$pobox=  Configure::read('POBOX');
+
+	
+	$pdf->SetCreator(PDF_CREATOR);
+    $pdf->SetAuthor('SIS,'.$universityName);
+    $pdf->SetTitle('Registration List PDF -' . date('Y-m-d'));
+    $pdf->SetSubject('Registration List PDF');
+    $pdf->SetKeywords('Registration, List, PDF, SMiS, AMU');
+
     // set font
-    $pdf->SetMargins(3, 1, 3);
+	$pdf->SetMargins(10, 10, 10);
     $pdf->SetFont("freeserif", "", 11);
 
-    $pdf->setPageOrientation('L', true, 0);
+    $pdf->setPageOrientation('L', true, 10);
    
-    $header = '<table style="width:100%;">
+    $header = '
+	<table style="width:100%;">
     	<tr>
-    		<td style="text-align:center; font-weight:bold">YEKATIT 12 HOSPITAL MEDICAL COLLEGE</td>
+    		<td style="text-align:center; font-weight:bold">'.$universityName.'</td>
     	</tr>
-		
-<tr>
+		<tr>
     		<td style="text-align:center; font-weight:bold">OFFICE OF THE REGISTRAR</td>
     	</tr>
-<tr>
+		<tr>
     		<td style="text-align:center; font-weight:bold;text-decoration:underline;">REGISTRATION LIST</td>
     	</tr>
-    	</table>';
+    </table>';
   
-   $count = 1;
-   $graduationCriteria='';
-   foreach($students_in_registration_list_pdf as $c_id => $students) 
-   {
-	$registrationDepartmentDetail = explode('~',$c_id); 
-      // add a page
-     $pdf->AddPage("P");
-     $graduationCriteria .= $header;
-	 $graduationCriteria .= '<br/><table class="fs13 summery">
-		<tr>
-			<td style="width:22%">Academic Year:</td>
-			<td style="width:78%; font-weight:bold">'. $registrationDepartmentDetail[0].'</td>
-		</tr>
-		<tr>
-			<td style="width:22%">Semester:</td>
-			<td style="width:78%; font-weight:bold">'.$registrationDepartmentDetail[1].'</td>
-		</tr>
+   	$count = 1;
+   	$content = '';
 
-		<tr>
-			<td style="width:22%">Department:</td>
-			<td style="width:78%; font-weight:bold">'.$registrationDepartmentDetail[2].'</td>
-		</tr>
+   	foreach($students_in_registration_list_pdf as $c_id => $students) 
+   	{
+		$registrationDepartmentDetail = explode('~',$c_id); 
+      	// add a page
+     	$pdf->AddPage("P");
+     	$content .= $header;
+		
+	 	$content .= '<br/>
+		<table cellpadding="1" cellspacing="0">
+			<tr>
+				<td style="width:15%; font-weight:bold">Department:</td>
+				<td style="width:40%;">'.$registrationDepartmentDetail[2].'</td>
+				<td style="width:15%; font-weight:bold">Academic Year:</td>
+				<td style="width:30%;">'. $registrationDepartmentDetail[0].'</td>
+			</tr>
+			<tr>
+				<td style="font-weight:bold">Program:</td>
+				<td>'.$registrationDepartmentDetail[3].'</td>
+				<td style="font-weight:bold">Semester:</td>
+				<td>'.$registrationDepartmentDetail[1].'</td>
+			</tr>
+			<tr>
+				<td style="font-weight:bold">Program Type:</td>
+				<td>'.$registrationDepartmentDetail[4].'</td>
+				<td style="font-weight:bold">Section:</td>
+				<td>'.$registrationDepartmentDetail[5].'</td>
+			</tr>
+		</table>';
 
-		<tr>
-			<td>Program:</td>
-			<td style="font-weight:bold">'.$registrationDepartmentDetail[3].'</td>
-		</tr>
+		$content .= '<br/>
+		<table cellpadding="1" cellspacing="0">
+			<thead>
+				<tr>
+					<th style="width:7%; border:1px solid #000000; border-bottom:2px solid #000000;text-align:center ">#</th>
+					<th style="width:40%; text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Student Name</th>
+					<th style="width:20%; text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Student ID</th>	
+					<th style="width:10%;text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Sex</th>
+					<th style="width:23%;text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Remark</th>
+				</tr>
+			</thead>
+			<tbody>';
 
-		<tr>
-			<td>Program Type:</td>
-			<td style="font-weight:bold">'.$registrationDepartmentDetail[4].'</td>
-		</tr>
-        <tr>
-			<td>Section:</td>
-			<td style="font-weight:bold">'.$registrationDepartmentDetail[5].'</td>
-		</tr>
-		';
+			$s_count = 1;
+			foreach($students as $key => $student) {
+				$content .='
+				<tr>
+					<td style="width:7%; border:1px solid #000000; text-align:center; ">'.$s_count++.'</td>
+					<td style="width:40%; border:1px solid #000000;"> &nbsp;'.$student['Student']['full_name'].'</td>
+					<td style="width:20%; border:1px solid #000000; text-align:center;">'.$student['Student']['studentnumber']. '</td>
+					<td style="width:10%; border:1px solid #000000; text-align:center;">'.(strcasecmp($student['Student']['gender'], 'male') == 0 ? 'M' : 'F').'</td>
+					<td style="width:23%; border:1px solid #000000; text-align:center;">&nbsp;</td>
+				</tr>'; 
+			}
+	
+			$content .='
+			</tbody>
+		</table>
 
-    $graduationCriteria .= '</table>';
-	$graduationCriteria .= '<br/><table cellpadding="1" style="padding-left:2px;text-align:left;" >';
+		<table table cellpadding="0" cellspacing="0">
+			<tr>
+				<td style="width:100%">&nbsp;</td>
+			</tr>
+			<tr>
+				<td style="width:45%">Generated By: <u>SIS</u></td>
+				<td style="width:40%">Checked By:</td>
+				<td style="width:15%">&nbsp;</td>
+			</tr>
+			<tr>
+				<td style="width:45%">Date: <u>'. date('Y-m-d').'</u></td>
+				<td style="width:40%">Sign:______________</td>
+				<td style="width:15%">&nbsp;</td>
+			</tr>
+		</table>';
 
-	$graduationCriteria .= '<tr>
-			<th style="width:10%;border:1px solid #000000; border-bottom:2px solid #000000;text-align:center ">S.No</th>
-			<th style="width:20%;text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">ID</th>			
-			<th style="width:50%;text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Student Name</th>
-			
-			<th style="width:10%;text-align:center;border:1px solid #000000; border-bottom:2px solid #000000; ">Sex</th>
-		</tr>';
-
-    $s_count = 1;
-	foreach($students as $key => $student) {
-		 $graduationCriteria .='<tr><td style="border:1px solid #000000; border-bottom:2px solid #000000;text-align:center; ">'.$s_count++.'</td>
-			<td style="border:1px solid #000000; border-bottom:2px solid #000000;text-align:center;">'.$student['Student']['studentnumber'].
-'</td><td style="border:1px solid #000000; border-bottom:2px solid #000000; ">'.$student['Student']['full_name'].'</td>
-<td style="border:1px solid #000000; border-bottom:2px solid #000000; text-align:center;">
-'.(strcasecmp($student['Student']['gender'], 'male') == 0 ? 'M' : 'F').'</td>
- </tr>'; 
-   }
-   
-        $graduationCriteria .='<tr><td style="width:100%">&nbsp;</td></tr>';
-
-       $graduationCriteria .='<tr><td style="width:45%">Generated By:</td>
-<td style="width:40%">Checked By:</td></tr>';
-
-       $graduationCriteria .='<tr><td style="width:45%">SiS</td>
-<td style="width:40%">Sign:______________</td><td style="width:15%">&nbsp;</td></tr>';
-      $graduationCriteria .= '</table>';
-      $pdf->writeHTML($graduationCriteria);	
-   }
-   // reset pointer to the last page
-   $pdf->lastPage();
-
-    //output the PDF to the browser
+      	$pdf->writeHTML($content);	
+   	}
+   	// reset pointer to the last page
+   	$pdf->lastPage();
+	//output the PDF to the browser
 
     $pdf->Output('RegistrationList.'.date('Y').'.pdf', 'I');
 
@@ -111,4 +130,3 @@ $pobox=  Configure::read('POBOX');
     F: save to a local file with the name given by name.
     S: return the document as a string.
     */
-?>

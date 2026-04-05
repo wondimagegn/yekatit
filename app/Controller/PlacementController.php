@@ -1,6 +1,5 @@
 <?php 
-    
-    class PlacementController extends AppController {
+class PlacementController extends AppController {
             var $name = "Placement";
             var $uses = array();
             var $menuOptions = array(

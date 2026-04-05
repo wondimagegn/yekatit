@@ -1,66 +1,127 @@
-<?php ?>
 <div class="box">
-  <div class="box-body">
-	<div class="row">
-		<div class="large-12 columns">
-		     <h2 class="box-title">
-			<?php echo __('Section Less Student');?>
-		      </h2>
-		</div>
-		<div class="large-12 columns">
-          <?php
-echo $this->Form->create('Section');  
-if($role_id == ROLE_DEPARTMENT){
-	echo "<div class='centeralign_smallheading'> List of Section-less Students</div>";
-    echo "<div class='font'>".$college_name."</div>";
-    echo "<div class='font'>"."Department of ".$department_name."</div>";
-    echo "<div class='info-message info-box'><span></span><u>Note:</u><br/> - 
-    Please be notice that the list of section less students doesn not include graduated,
-    disciplinary dismissed, drop out students. It only lists  those students elegible and not have section  
-    currently and readmitted students without section.</div>";
+    <div class="box-header bg-transparent">
+        <div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+            <span style="font-size: medium; font-weight: bold; margin-top: 20px;">Sectionless Students List (<?= (($role_id != ROLE_COLLEGE) ? $department_name : $college_name); ?>)</span>
+        </div>
+    </div>
+    <div class="box-body">
+        <div class="row">
+            <div class="large-12 columns">
+                <div style="margin-top: -30px;"></div>
+                <hr>
+                <blockquote>
+                    <h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+                    <p style="text-align:justify;">
+                        <span class="fs14 text-black">
+                            Note that Sectionless Students list doesn't include graduated, disciplinary dismissed, drop out students.
+                            It only lists students including readmitted ones who are elegible for Section Assignment(not assigned to any active section currently).
+                        </span>
+                    </p>
+                </blockquote>
+                <hr>
 
+                <?= $this->Form->create('Section'); ?>
 
-?>
-<table cellpadding="0" cellspacing="0">
-	<?php 
-       
-        echo '<tr><td width="250PX">'. $this->Form->input('Section.program_id',array('empty'=>"--Select Program--")).'</td>'; 
-        echo '<td width="400PX">'. $this->Form->input('Section.program_type_id',array('empty'=>"--Select Program Type--")).'</td></tr>';  
+                <fieldset style="padding-bottom: 10px;padding-top: 15px;">
+                    <!-- <legend>&nbsp;&nbsp; Search / Filter &nbsp;&nbsp;</legend> -->
+                    <div class="row">
+                        <div class="large-3 columns">
+                            <?= $this->Form->input('Section.academicyear', array('options' => $acyear_array_data, 'required', 'style' => 'width:90%;')); ?>
+                        </div>
+                        <div class="large-3 columns">
+                            <?= $this->Form->input('Section.program_id', array('required', 'style' => 'width:90%;')); ?>
+                        </div>
+                        <div class="large-3 columns">
+                            <?= $this->Form->input('Section.program_type_id', array('required', 'style' => 'width:90%;')); ?>
+                        </div>
+                        <div class="large-3 columns">
+                            <br>
+                            <?= $this->Form->Submit('Search', array('name' => 'search', 'class' => 'tiny radius button bg-blue', 'div' => false)); ?>
+                        </div>
+                    </div>
+                </fieldset>
+                <hr>
 
-        echo '<tr><td colspan="3">'. $this->Form->Submit('Search',array('name'=>'search','div'=>false)).'</td></tr>'; 
-	?> 
-</table>
-<?php
+                <?php
+                if ($role_id == ROLE_DEPARTMENT) { 
+                    if (!empty($sectionless_students_last_sections_details)) { ?>
+                        <div style="overflow-x:auto;">
+                            <table cellpadding="0" cellspacing="0" class="table">
+                                <thead>
+                                    <tr>
+                                        <th class="center">#</th>
+                                        <th class="vcenter">Full Name</th>
+                                        <th class="center">Student ID</th>
+                                        <th class="center">Last Section</th>
+                                        <th class="center">ACY</th>
+                                        <th class="center">Year Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $count = 1;
+                                    foreach ($sectionless_students_last_sections_details as $sslsdk => $sslsdv) { ?>
+                                        <tr>
+                                            <td class="center"><?= $count++; ?></td>
+                                            <td class="vcenter"><?= isset($sslsdv['Student']) && !empty($sslsdv['Student']) ? $this->Html->link($sslsdv['Student'][0]['full_name'], array('controller' => 'students', 'action' => 'student_academic_profile', $sslsdv['Student'][0]['id'])) : debug($sslsdv); ?></td>
+                                            <td class="center"><?= isset($sslsdv['Student']) && !empty($sslsdv['Student']) ? $sslsdv['Student'][0]['studentnumber'] : '' ?></td>
+                                            <td class="center"><?= $sslsdv['Section']['name']; ?></td>
+                                            <td class="center"><?= $sslsdv['Section']['academicyear']; ?></td>
+                                            <td class="center"><?= $sslsdv['YearLevel']['name']; ?></td>
+                                        </tr>
+                                        <?php
+                                    } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <br>
+                        <?php
+                    } else if (empty($sectionless_students_last_sections_details) && !($isbeforesearch)) { ?>
+                        <div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>No Sectionless Student is found with the given search criteria.</div>
+                        <?php
+                    }
+                } else if ($role_id == ROLE_COLLEGE) {
+                    if (!empty($sectionless_students_last_sections_details)) { ?>
+                        <div style="overflow-x:auto;">
+                            <table cellpadding="0" cellspacing="0" class="table">
+                                <thead>
+                                    <tr>
+                                        <th class="center">#</th>
+                                        <th class="vcenter">Full Name</th>
+                                        <th class="center">Student ID</th>
+                                        <th class="center">Last Section</th>
+                                        <th class="center">ACY</th>
+                                        <th class="center">Year Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $count = 1;
+                                    foreach ($sectionless_students_last_sections_details as $sslsdk => $sslsdv) { ?>
+                                        <tr>
+                                            <td class="center"><?= $count++; ?></td>
+                                            <td class="vcenter"><?= $this->Html->link($sslsdv['Student'][0]['full_name'], array('controller' => 'students', 'action' => 'student_academic_profile', $sslsdv['Student'][0]['id'])); ?></td>
+                                            <td class="center"><?= $sslsdv['Student'][0]['studentnumber']; ?></td>
+                                            <td class="center"><?= $sslsdv['Section']['name']; ?></td>
+                                            <td class="center"><?= $sslsdv['Section']['academicyear']; ?></td>
+                                            <td class="center"><?= (!empty($sslsdv['YearLevel']['name']) ? $sslsdv['YearLevel']['name'] : 'Pre/1st'); ?></td>
+                                        </tr>
+                                        <?php
+                                    } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <br>
+                        <?php
+                    } else if (empty($sectionless_students_last_sections_details) && !($isbeforesearch)) { ?>
+                        <div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>No Sectionless Student is found with the given search criteria.</div>
+                        <?php
+                    }
+                } ?>
 
-if(!empty($sectionless_students_last_sections_details)){
-		echo '<table style="border: #CCC solid 1px">';
-        echo '<tr><th style="border-right: #CCC solid 1px">'. "No. ".'</th>'.
-                '<th style="border-right: #CCC solid 1px">'. "ID".'</th>'.
-                '<th style="border-right: #CCC solid 1px">'. "Name ".'</th>'.
-                '<th style="border-right: #CCC solid 1px">'. "Last Section".'</th>
-                <th style="border-right: #CCC solid 1px">'. "Year Level".'</th>'.
-                '<th style="border-right: #CCC solid 1px">'. "Academic Year".'</th></tr>';
-           $count = 1;
-	foreach($sectionless_students_last_sections_details as $sslsdk => $sslsdv){
-		 echo '<tr><td style="border-right: #CCC solid 1px">'.$count++.'</td>';
-		 echo '<td style="border-right: #CCC solid 1px">'.
-		 
-		 $this->Html->link($sslsdv['Student'][0]['studentnumber'], array('controller' => 'students', 'action' => 'student_academic_profile', $sslsdv['Student'][0]['id'])).'</td>';
-         echo '<td style="border-right: #CCC solid 1px">'.$this->Html->link($sslsdv['Student'][0]['full_name'], array('controller' => 'students', 'action' => 'student_academic_profile', $sslsdv['Student'][0]['id'])).'</td>';
-         echo '<td style="border-right: #CCC solid 1px">'.$sslsdv['Section']['name'].'</td>';
-		 echo '<td style="border-right: #CCC solid 1px">'.$sslsdv['YearLevel']['name'].'</td>';
-         echo '<td style="border-right: #CCC solid 1px">'.$sslsdv['Section']['academicyear'].'</td></tr>';
-	}
-	echo '</table>';
+                <?= $this->Form->end(); ?>
 
-} else if(empty($sectionless_students_last_sections_details) && !($isbeforesearch)) { 
-	echo "<div class='info-box info-message'><span></span> There is no section-less students in the search criteria </div>";
-}
-} // close if department
-$this->Form->end(); 
-?>
-		</div>
-	</div>
-   </div>
+            </div>
+        </div>
+    </div>
 </div>
-

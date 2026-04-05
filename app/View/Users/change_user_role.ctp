@@ -1,65 +1,95 @@
-<?php ?>
-<script type="text/javascript">
-function getUsersBasedOnRole(obj) {
-	$("#RoleID").attr('disabled', true);
-	$("#UserID").attr('disabled', true);
-	$("#NewRoleID").attr('disabled', true);
-	$("#SubmitID").attr('disabled', true);
-	window.location.replace("/users/change_user_role/"+obj.value);
-}
-</script>
+<div class="box">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-loop-outline" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Change User Role'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<?= $this->Form->create('User', array('data-abide', 'onSubmit' => 'return checkForm(this);')); ?>
+			<div class="large-12 columns">
+				<div style="margin-top: -30px;"><hr></div>
+				<blockquote>
+					<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+					<p style="text-align: justify;">
+						<span class="fs14 text-black">This tool will enable you to change user role. It is mainly important when you want to assign a person as an administrator of the newly to be selected role and when department administrator leaves his position and to enable him/her gain instructor privilage. Note that:</span>
+						<ol class="fs14">
+							<li>Only active accounts are displayed in the user list.</li>
+							<li>It is not possible to change administrator role, You need to cancel his/her administration privilege first.</li>
+						</ol>
+					</p>
+				</blockquote>
+				<hr>
+				<div class="row">
+					<div class="large-6 columns">
+						<?= $this->Form->input('role_id', array('label' => 'Role: ', 'style' => 'width:320px', 'onchange' => 'getUsersBasedOnRole(this)', 'id' => 'RoleID', 'type' => 'select', 'default' => $role_id, 'options' => $roles)); ?>
+					</div>
+				</div>
+				<div class="row">
+					<div class="large-6 columns">
+						<?= $this->Form->input('user_id', array('label' => 'User: ', 'style' => 'width:400px', 'id' => 'UserID', 'onchange' => 'toggleSubmitButtonActive()', 'class' => 'custom-select', 'options' => $users)); ?>
+					</div>
+				</div>
+				<div class="row">
+					<div class="large-6 columns">
+						<br>
+						<?= $this->Form->input('new_role_id', array('label' => 'New Role: ', 'style' => 'width:320px', 'id' => 'NewRoleID', 'type' => 'select', 'options' => $roles)); ?>
+					</div>
+				</div>
+				<hr>
+				<div class="row">
+					<div class="large-6 columns">
+						<?= $this->Form->Submit('Change User Role', array('id' => 'SubmitID', 'disabled', 'class' => 'tiny radius button bg-blue')); ?>
+					</div>
+				</div>
+				<?= $this->Form->end(); ?>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script type="text/javascript">
-		
-		function getUsersBasedOnRole(obj) {
-			$("#RoleID").attr('disabled', true);
-			$("#UserID").attr('disabled', true);
-			$("#SubmitID").attr('disabled', true);
-			window.location.replace("/users/change_user_role/"+obj.value);
+	function getUsersBasedOnRole(obj) {
+		$("#RoleID").attr('disabled', true);
+		$("#UserID").attr('disabled', true);
+		$("#NewRoleID").attr('disabled', true);
+		$("#SubmitID").attr('disabled', true);
+		window.location.replace("/users/change_user_role/" + obj.value);
+	}
+
+	$(function() {
+		$("#UserID").customselect();
+	});
+
+	function toggleSubmitButtonActive() {
+		if ($("#UserID").val != 0 || $("#UserID").val != '') {
+			$("#SubmitID").attr('disabled', false);
+		}
+	}
+
+	var form_being_submitted = false; /* global variable */
+
+	var checkForm = function(form) {
+		if (form.NewRoleID.value == 0 || form.NewRoleID.value == '' ) { 
+			form.NewRoleID.focus();
+			return false;
 		}
 
-$(function() {
-	$("#UserID").customselect();
-	
-}
-); 	
+		if (form_being_submitted) {
+			alert("Changing User Role, please wait a moment...");
+			form.SubmitID.disabled = true;
+			return false;
+		}
+
+		form.SubmitID.value = 'Changing User Role...';
+		form_being_submitted = true;
+		return true; /* submit form */
+	};
+
+	// prevent possible form resubmission of a form 
+	// and disable default JS form resubmit warning  dialog  caused by pressing browser back button or reload or refresh button
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
 </script>
-
-
-<div class="box">    
-     <div class="box-body">
-       <div class="row">
-	  <?php echo $this->Form->create('User'); ?>
-	  <div class="large-12 columns">
-              <h5 class="box-title">
-                User Role Change
-              </h5>
-              <p class="fs12">This tool will enable you to change user role. It is mainly important when you want to assign a person as an administrator of the newly to-be-selected role and when department administrator leaves his position and to enable him/her gain instructor privilage. Note that:</p>
-<ol class="fs12">
-<li>Only active accounts are displayed in the user list.</li>
-<li>It is not possible to change administrator role. You need to cancel his/her administration privilege first.</li>
-</ol>
-
-<table class="fs12">
-	<tr>
-		<td style="width:10%">Role:</td>
-		<td style="width:90%"><?php echo $this->Form->input('role_id', array('label' => false, 'style' => 'width:400px', 'onchange' => 'getUsersBasedOnRole(this)', 'id' => 'RoleID', 'type' => 'select', 'default' => $role_id, 'options' => $roles)); ?></td>
-	</tr>
-	<tr>
-		<td>User:</td>
-		<td><?php echo $this->Form->input('user_id', array('label' => false, 'style' => 'width:400px', 'id' => 'UserID', 'class'=>'custom-select','options' => $users)); ?></td>
-	</tr>
-	<tr>
-		<td>New Role:</td>
-		<td><?php echo $this->Form->input('new_role_id', array('label' => false, 'style' => 'width:400px', 'id' => 'NewRoleID', 'type' => 'select', 'options' => $roles)); ?></td>
-	</tr>
-    <tr><td colspan="2"><?php echo $this->Form->Submit('Change User Role', array('id' => 'SubmitID',
-'class'=>'tiny radius button bg-blue'));?></td></tr>
-</table>
-
-           </div>
-         <?php echo $this->Form->end(); ?>
-
-</div>
-</div>
-</div>

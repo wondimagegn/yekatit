@@ -1,174 +1,290 @@
-<?php ?>
-<script type='text/javascript'>
-function toggleViewFullId(id) {
-	if($('#'+id).css("display") == 'none') {
-		$('#'+id+'Img').attr("src", '/img/minus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Hide Filter');
-		}
-	else {
-		$('#'+id+'Img').attr("src", '/img/plus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Display Filter');
-		}
-	$('#'+id).toggle("slow");
-}
-//Sub cat combo
-</script>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-             
-<?php echo $this->Form->create('CourseRegistration');?>
+    <div class="box-header bg-transparent">
+        <div class="box-title" style="margin-top: 10px;"><i class="fontello-check" style="font-size: larger; font-weight: bold;"></i>
+            <span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Cancel Registration of a Section'); ?></span>
+        </div>
+    </div>
+    <div class="box-body">
+        <div class="row">
+            <div class="large-12 columns">
 
-<p class="fs16">
-                    <strong> Important Note: </strong> 
-                  
-                     
-                      This tool will help you to cancel/delete course registration. 
-                      It is important when the course registration was wrong. Cancelation/Deletion 
-                      is possible if and only  if  grade is not submitted for one or more 
-                      students. The courses student has registered will not be visible to the 
-        instructor if you cancel the registration.
-                    
-</p>
-<div onclick="toggleViewFullId('ListPublishedCourse')"><?php 
-	if (isset($organized_published_course_by_section) && 
-	!empty($organized_published_course_by_section)) {
-		echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span><?php
-		}
-	else {
-		echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span><?php
-		}
-?></div>
-<div id="ListPublishedCourse" style="display:<?php echo (isset($organized_published_course_by_section) ? 'none' : 'display'); ?>">
+                <?= $this->Form->create('CourseRegistration'); ?>
 
+                <div style="margin-top: -30px;">
+                    <hr>
+                    <blockquote>
+                        <h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+                        <p style="text-align:justify;"><span class="fs16">This tool will help you to cancel/delete course registration. It is important when course registration of all students in a section was wrong. <span class="text-red">Note that Registration Cancellation is possible if grade is not submitted for one or more students of the sections, if grade is submitted, use Course Drop instead.</span></span></p>
+                    </blockquote>
+                    <hr>
 
-<?php //if (!isset($hide_search)) { ?>
-<table cellpadding="0" cellspacing="0">
-<?php 
-echo '<tr><td>'.$this->Form->input('Student.academic_year',array(
-            'label' => 'Academic Year','type'=>'select','options'=>$acyear_array_data,
-            'empty'=>"--Select Academic Year--",'selected'=>isset($defaultacademicyear)?$defaultacademicyear:'')).
-            '</td><td>'.$this->Form->input('Student.department_id',array(
-            'label' => 'Department',
-            'empty'=>"--Select Department--"
-            )).'</td></tr>';
-            
-          ?>
-<tr> 
-	<?php 
-            
-             echo '<tr><td>'. $this->Form->input('Student.year_level_id',array('label'=>'Year Level','empty'=>"--Select Year Level--")).'</td>'; 
-            echo '<td>'. $this->Form->input('Student.program_id',array('label'=>'Program')).'</td></tr>'; 
-            echo '<tr><td>'.$this->Form->input('Student.program_type_id',array('label'=>'Program Type',
-			'empty'=>"--Select Program Type--")).'</td><td>'.$this->Form->input('Student.semester',array('options'=>array('I'=>'I','II'=>'II',
-            'III'=>'III'),'empty'=>'--select semester--')).'</td></tr>';   
-            ?>
-	<tr><td colspan=2><?php echo $this->Form->submit('Continue',array('name'=>'getsection','class'=>'tiny radius button bg-blue','div'=>'false')); ?> </td>	
-</tr></table>
-
-<?php //} ?>
-
-</div>
-<?php 
-if(isset($organized_published_course_by_section) && !empty($organized_published_course_by_section)) {
-
-        echo "<div class='fs16'>";
-  
-                      echo "Department: ".$department_name.'<br/>'; 
-                       echo "Program: ".$program_name.'<br/>'; 
-                       echo "Program Type: ".$program_type_name.'<br/>';                
-                       echo "Year Level: ".$year_level_id.'<br/>';
-                       echo "Academic Year: ".$academic_year.'<br/>'; 
-                       echo "Semester: ".$semester.'<br/>'; 
-                       ?>
-       <?php  
-       echo "</div>";
- $display_button=0;
-           $section_count=0;
-          
-           foreach($organized_published_course_by_section as $section_id=>$coursss) {
-           $section_count++;
-                if (!empty($coursss)) {
-                    echo "<table id='fieldsForm'><tbody>";
-                    
-                    ?>
-                   <tr><th colspan=7><?php echo "Section: ".$sections[$section_id]; ?></td></tr>
-                    <tr><th colspan=7><?php echo "Select the course you want to cancel registration."; ?></td></tr>
-                    <tr>
-                    <?php 
-                    echo "<th style='padding:0'> &nbsp;</th>";
-                    echo "<th style='padding:0'> S.No </th>";
-                    echo "<th style='padding:0'> Course Title </th>";
-                    echo "<th style='padding:0'> Course Code </th>";
-                    echo "<th style='padding:0'> Lecture hour </th>";
-                    echo "<th style='padding:0'> Tutorial hour </th>"; 
-                    echo "<th style='padding:0'> Credit </th></tr>";
-                   
-                    $count=1;
-                    foreach ($coursss as $kc=>$vc) {
-                      
-                        echo "<tr>";
-                        
-                         if($vc['grade_submitted']) {
-                         echo '<td>**</td>';
-                        
+                    <div onclick="toggleViewFullId('ListPublishedCourse')">
+                        <?php
+                        if (isset($organized_published_course_by_section) && !empty($organized_published_course_by_section)) {
+                            echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+                            <span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span>
+                            <?php
                         } else {
-                             echo '<td>'.$this->Form->checkbox('PublishedCourse.'.$section_id.'.'.$vc['PublishedCourse']['id'],
-                             array('class'=>'listOfPublishedCourse','id'=>$count)).'</td>';
-                        }
-                         
-                         
-                       
-                         
-                         
-                         echo "<td>".$count.'</td><td>'.$vc['Course']['course_title'].'</td>';
-                         echo "<td>".$vc['Course']['course_code']."</td>";
-                         echo "<td>".$vc['Course']['lecture_hours']."</td><td>".$vc['Course']['tutorial_hours']."</td>";
-                         echo "<td>".$vc['Course']['credit']."</td>";
-                         
-                         echo "</tr>";
-                         echo "<tr><td colspan=7 id=cancel_".$count.">";
-                         echo "</td></tr>";
-                      
-                        $count++;
-                     } 
-                    
-                     echo "</tbody></table>";
-                     
-                 } else {
-                   $display_button++;
-                 
-                 }
-                 ?>
-    
-            <?php      
-             }
-             
-             ?>
-             
-                                  <table>
-            <tr>
-               <?php 
-               
-               if ($published_counter!=$grade_submitted_counter) { ?>
-                <td style='padding:0'> <?php 
-                  echo $this->Form->submit('Cancel Registration',array('name'=>'canceregistration','class'=>'tiny radius button bg-blue','div'=>'false'));?></td> 
-              <?php } ?>
-            </tr>
-            <tr>
-                <td style='padding:0'> ** Those courses are not allowed for cancellation since one or 
-                more students has got grade.</td>
-            </tr>
-           </table>
-             <?php          
-}
-?>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row --->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+                            echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+                            <span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span>
+                            <?php
+                        } ?>
+                    </div>
+                </div>
+
+                <div id="ListPublishedCourse" style="display:<?= (isset($organized_published_course_by_section) ? 'none' : 'display'); ?>">
+                    <fieldset style="padding-bottom: 0px; padding-top: 15px;">
+                        <!-- <legend>&nbsp;&nbsp; Search &nbsp;&nbsp;</legend> -->
+                        <div class="row">
+                            <div class="large-3 columns">
+                                <?= $this->Form->input('Student.academic_year', array('label' => 'Academic Year: ', 'type' => 'select', 'style' => 'width: 90%;', 'required', 'options' => $acyear_array_data, /* 'empty' => "[ Select Academic Year ]", */ 'default' => isset($this->request->data['Student']['academic_year'])  ? $this->request->data['Student']['academic_year'] : $defaultacademicyear)); ?>
+                            </div>
+                            <div class="large-3 columns">
+                                <?= $this->Form->input('Student.semester', array('label' => 'Semester: ', 'options' => Configure::read('semesters'), 'empty' => '[ Select Semester ]', 'required')); ?>
+                            </div>
+                            <div class="large-3 columns">
+                                <?= $this->Form->input('Student.program_id', array('label' => 'Program: ', 'empty' => '[ Select Program ]', 'style' => 'width: 90%;', 'required')); ?>
+                            </div>
+                            <div class="large-3 columns">
+                                <?= $this->Form->input('Student.program_type_id', array('label' => 'Program Type', 'empty' => '[ Select Program Type ]', 'style' => 'width: 90%;', 'required')); ?>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="large-6 columns">
+                                <?= (isset($departments) && !empty($departments) ? $this->Form->input('Student.department_id', array('label' => 'Department: ', 'required',  'empty' => "[ Select Department ]", 'style' => 'width: 90%;')) : (isset($colleges) && !empty($colleges) ? $this->Form->input('Student.college_id', array('label' => 'College:', 'required', 'empty' => "[ Select College ]", 'style' => 'width: 90%;')) : '')); ?>
+                            </div>
+                            <?php
+                            if (isset($departments) && !empty($departments)) { ?>
+                                <div class="large-3 columns">
+                                    <?= $this->Form->input('Student.year_level_id', array('label' => 'Year Level', 'empty' => "[ Select Year Level ]", 'required', 'style' => 'width: 90%;')); ?>
+                                </div>
+                                <?php
+                            } else { ?>
+                                <div class="large-3 columns">
+                                    &nbsp;
+                                </div>
+                                <?php
+                            } ?>
+                            <div class="large-3 columns">
+                                &nbsp;
+                            </div>
+                        </div>
+                        <hr>
+                        <?= $this->Form->submit('Search', array('name' => 'getsection', 'id' => 'getsection', 'class' => 'tiny radius button bg-blue', 'div' => 'false')); ?>
+                    </fieldset>
+                </div>
+                <hr>
+
+                <h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+				<br>
+
+                <div id="show_search_results">
+                    <?php
+                    if (isset($organized_published_course_by_section) && !empty($organized_published_course_by_section)) {
+                        
+                        $display_button = 0;
+                        $section_count = 0;
+                        $course_count = 0;
+
+                        foreach ($organized_published_course_by_section as $section_id => $coursss) {
+                            $section_count++;
+                            //debug($coursss);
+                            if (!empty($coursss)) { ?>
+                                <div style="overflow-x:auto;">
+                                    <table id='fieldsForm' cellspacing="0" cellpadding="0" class="table">
+                                        <thead>
+                                            <tr>
+                                                <td colspan=8 style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+                                                    <span style="font-size:16px;font-weight:bold; margin-top: 25px;"> Section: <?= $sections[$section_id]; ?></span>
+                                                    <br>
+                                                    <span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+                                                        <?= (isset($coursss[$course_count]['Section']['Program']['id']) && !empty($coursss[$course_count]['Section']['Program']['name']) ? $coursss[$course_count]['Section']['Program']['name'] : $program_name); ?> &nbsp;|&nbsp; <?= (isset($coursss[$course_count]['Section']['ProgramType']['id']) && !empty($coursss[$course_count]['Section']['ProgramType']['name']) ? $coursss[$course_count]['Section']['ProgramType']['name'] : $program_type_name); ?> &nbsp;|&nbsp; 
+                                                        <?php //echo (isset($coursss[$course_count]['Section']['Department']['id']) && !empty($coursss[$course_count]['Section']['Department']['name']) ? $coursss[$course_count]['Section']['Department']['name'] : $coursss[$course_count]['Section']['College']['name'] . ' Pre/Freshman'); ?><!-- <br> -->
+                                                        <?= (isset($department_name) && !empty($department_name['Department']['name']) ? $department_name['Department']['name'] : (isset($college_name) && !empty($college_name['College']['name']) ? $college_name['College']['name'] . (isset($coursss[$course_count]['Program']['id']) && $coursss[$course_count]['Program']['id'] == PROGRAM_REMEDIAL ? ' - Remedial Program' : ' - Pre/Freshman') : '')) ; ?><br>
+                                                        <?= (isset($coursss[$course_count]['Program']['id']) && $coursss[$course_count]['Program']['id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : (isset($coursss[$course_count]['Section']['YearLevel']['name'])  ?  $coursss[$course_count]['Section']['YearLevel']['name'] : (isset($year_level_id) && !empty($year_level_id) ? $year_level_id : 'Pre/1st'))); ?> &nbsp;|&nbsp; <?= isset($coursss[$course_count]['Section']['academicyear']) && !empty($coursss[$course_count]['Section']['academicyear']) ? $coursss[$course_count]['Section']['academicyear'] : (isset($academic_year) && !empty($academic_year) ? $academic_year : $defaultacademicyear); ?> &nbsp;|&nbsp; <?= ($semester == 'I' ? '1st' :($semester == 'II' ? '2nd' :($semester == 'III' ? '3rd': $semester))); ?> semester
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="center" style="width:5%;">&nbsp;</th>
+                                                <th class="center" style="width:3%;">#</th>
+                                                <th class="vcenter">Course Title</th>
+                                                <th class="center">Course Code</th>
+                                                <th class="center"><?= (isset($coursss[$course_count]['Course']['Curriculum']['type_credit']) && count(explode('ECTS', $coursss[$course_count]['Course']['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit'); ?></th>
+                                                <th class="center">Lecture</th>
+                                                <th class="center">Tutorial</th>
+                                                <th class="center">Lab</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            $count = 1;
+                                            foreach ($coursss as $kc => $vc) { ?>
+                                                <tr>
+                                                    <td class="center">
+                                                        <?php
+                                                        if ($vc['grade_submitted']) {
+                                                            echo '**';
+                                                        } else {
+                                                        echo '<div style="margin-left: 30%;">' . $this->Form->checkbox('PublishedCourse.' . $section_id . '.' . $vc['PublishedCourse']['id'], array('class' => 'listOfPublishedCourse', 'id' => $count)) . '</div>'; 
+                                                        $display_button++;
+                                                        } ?>
+                                                    </td>
+                                                    <td class="center"><?= $count; ?></td>
+                                                    <td class="vcenter"><?= $vc['Course']['course_title']; ?></td>
+                                                    <td class="center"><?= $vc['Course']['course_code']; ?></td>
+                                                    <td class="center"><?= $vc['Course']['credit']; ?></td>
+                                                    <td class="center"><?= $vc['Course']['lecture_hours']; ?></td>
+                                                    <td class="center"><?= $vc['Course']['tutorial_hours']; ?></td>
+                                                    <td class="center"><?= $vc['Course']['laboratory_hours']; ?></td>
+                                                </tr>
+                                                <!-- <tr>
+                                                    <td colspan=8 id="cancel_<?php //echo $count; ?>"></td>
+                                                </tr> -->
+                                                <?php
+                                                $count++;
+                                                $course_count++;
+                                            } ?>
+                                        </tbody>
+                                        <!-- <tfoot>
+                                            <tr>
+                                                <td class="center">**</td>
+                                                <td class="venter" colspan=7><span class="text-gray">marked courses are not allowed for cancellation since one or more students got a grade.</span></td>
+                                            </tr>
+                                        </tfoot> -->
+                                    </table>
+                                </div>
+                                <br>
+                                <br>
+                                <?php
+                            }
+                        }  ?>
+
+                        <h6 class="text-gray fs14"> Those courses marked with ** are not allowed for cancellation since one or more students got a grade.</h6>	
+                        <hr>
+                        <?= $this->Form->submit('Cancel Registration', array('name' => 'canceregistration', 'id' => 'cancelRegistration', 'class' => 'tiny radius button bg-red', 'div' => 'false', (!($display_button)) ? 'disabled' : '')); ?>
+                        <?php
+                    } ?>
+                </div>
+
+                <?= $this->Form->end(); ?>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type='text/javascript'>
+    function toggleViewFullId(id) {
+        if ($('#' + id).css("display") == 'none') {
+            $('#' + id + 'Img').attr("src", '/img/minus2.gif');
+            $('#' + id + 'Txt').empty();
+            $('#' + id + 'Txt').append('Hide Filter');
+        } else {
+            $('#' + id + 'Img').attr("src",'/img/plus2.gif');
+            $('#' + id + 'Txt').empty();
+            $('#' + id + 'Txt').append('Display Filter');
+        }
+        $('#' + id).toggle("slow");
+    }
+
+    $("#show_search_results").show();
+
+    var search_button_clicked = false;
+
+	$('#getsection').click(function(event) {
+
+        let formIsValid = true;
+        
+        // Iterate over required fields
+        $(':input[required]').each(function() {
+            if ($(this).val() === '') {
+                if (formIsValid) {
+                    $(this).focus();
+                    formIsValid = false;
+                    return false;
+                }
+            }
+        });
+
+        $('input[type="checkbox"][name^="data[PublishedCourse]"]').each(function() {
+            if ($(this).is(':checked')) {
+                $(this).prop('checked', false);
+            }
+        });
+
+        $('#show_search_results').hide();
+
+        if (!formIsValid) {
+            event.preventDefault();
+            formIsValid = false;
+            return false;
+        }
+
+        if (search_button_clicked) {
+            alert('Searching for Sections with course registrations, please wait a moment...');
+            $('#getsection').attr('disabled', true);
+            formIsValid = false;
+            return false;
+        }
+
+        if (!search_button_clicked && formIsValid) {
+            $('#getsection').val('Searching for Sections...');
+            $('#cancelRegistration').attr('disabled', true);
+            search_button_clicked = true;
+            formIsValid = true
+            return true;
+        } else {
+            search_button_clicked = false;
+            return false;
+        }
+	});
+
+    var form_being_submitted = false;
+
+    const validationMessageNonSelected = document.getElementById('validation-message_non_selected');
+
+    $('#cancelRegistration').click(function(event) {
+
+        var isValid = true;
+
+        let atLeastOneSelected = false;
+
+        $('input[type="checkbox"][name^="data[PublishedCourse]"]').each(function() {
+            if ($(this).is(':checked')) {
+                atLeastOneSelected = true;
+            }
+        });
+
+        if (!atLeastOneSelected) {
+            event.preventDefault();
+            isValid = false;
+            alert('At least one published course must be selected to cancel course registrations.');
+            validationMessageNonSelected.innerHTML = 'At least one published course must be selected to cancel course registrations.';
+            return false;
+        }
+
+        if (form_being_submitted) {
+            alert('Canceling Selected Course Registrations, please wait a moment...');
+            $('#cancelRegistration').attr('disabled', true);
+            $('#getsection').attr('disabled', true);
+            return false;
+        }
+
+        var confirmm = confirm('Are you sure you want to cancel the registration of the selected published course(s) form the selected section students? Use this option if and only if the the registartions for the whole section students is wrong or needs correction. If the selected courses are no more needed after registration cancellation, communicate the the department to also delete/unpublish the courses so that section upgrade can run smoothly at the end of the semester.');
+
+        if (!form_being_submitted && isValid && confirmm) {
+            $('#cancelRegistration').val('Canceling Selected Registrations...');
+            $('#getsection').attr('disabled', true);
+            form_being_submitted = true;
+            isValid = true;
+            return true;
+        } else {
+            return false;
+        }
+    });
+
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+</script>

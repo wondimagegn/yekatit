@@ -1,5 +1,6 @@
 <?php echo $this->Form->create('Alumnus',
-array('controller'=>'alumni','action'=>'add_baselinesurvey_onbehalf',
+array('controller'=>'alumni',
+'action'=>'add_baselinesurvey_onbehalf',
 'method'=>'post')); ?>
 <div class="box">
      <div class="box-body">
@@ -13,10 +14,17 @@ array('controller'=>'alumni','action'=>'add_baselinesurvey_onbehalf',
         
 		echo '<tr><td class="font">'.$this->Form->input('studentID',array('label' => 'Student Number/ID')).'</td></tr>';
        echo '<tr><td>'. $this->Form->Submit('Continue',array('name'=>'continue','class'=>'tiny radius button bg-blue','div'=>false)).'</td></tr>';
+
+ echo $this->Form->end();
 ?>
 </table>
 <?php 
 }
+
+echo $this->Form->create('Alumnus',
+array('controller'=>'alumni',
+'action'=>'add_baselinesurvey_onbehalf',
+'method'=>'post'));
 			if($everythingfine==true){
 ?>
 		
@@ -87,7 +95,7 @@ Your responses are voluntary and will be treated highly confidential. We assure 
 	       			<table>
 	       			<tr>
 	       			<td><?php echo $this->Form->input('Alumnus.region',array('label'=>'Region','value'=>$student['Region']['name'])); ?></td>
-	       			<td><?php echo $this->Form->input('Alumni.woreda',array('label'=>'Woreda',
+	       			<td><?php echo $this->Form->input('Alumnus.woreda',array('label'=>'Woreda',
 	       			'value'=>$student['Student']['woreda'])); ?></td>
 	       			
 	       			<td><?php echo $this->Form->input('Alumnus.kebele',array('label'=>'Kebele','value'=>$student['Student']['kebele'])); ?></td>
@@ -318,7 +326,7 @@ Your responses are voluntary and will be treated highly confidential. We assure 
 
 			       <?php 
 			       echo $this->Form->end(
-array('label'=>__('Submit',true),'class'=>'tiny radius button bg-blue'));
+array('label'=>__('Submit',true),'name' => 'fillAlumnus','class'=>'tiny radius button bg-blue'));
 		
 ?>
 				<span style="color:red;"></span>

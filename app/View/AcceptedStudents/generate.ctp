@@ -1,280 +1,232 @@
-<?php //echo $this->Html->script('jquery-1.6.2.min'); 
-?>
-<?php //echo $this->Html->script('jquery-selectall'); 
-?>
-
-<?php echo $this->Form->create('AcceptedStudent', array('action' => 'generate')); ?>
 <div class="box">
-    <div class="box-body">
-        <div class="row">
-            <div
-                class="large-12 columns">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-check" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Generate Student  ID Number') ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<div style="margin-top: -30px;"><hr></div>
 
-                <div>
-                    <?php if (!isset($show_list_generated)) { ?>
-                    <div
-                        class="smallheading">
-                        <?php echo __('Generate student number') ?>
-                    </div>
-                    <div
-                        class="centeralign_smallheading">
-                        <?php echo __('Tables:Summary of students those haven\'t student identification') ?>
-                    </div>
-                    <table>
-                        <tbody>
-                            <tr>
-                                <?php
+				<?= $this->Form->create('AcceptedStudent', array('action' => 'generate'/* , 'data-abide' */)); ?>
+
+				<?php
+				if (!isset($show_list_generated)) { ?>
+					<div class="smallheading"></div>
+					<h6 class="text-gray fs15">Table: Summary of students that doesn't have Identification Number (Student ID)</h6>
+					<br>
+					<div style="overflow-x:auto;">
+						<table cellpadding="0" cellspacing="0" class="table">
+							<tbody>
+								<tr>
+									<?php
 									$college_count = count($colleges);
 									$count_program = count($programs);
 									$count_program_type = count($programTypes);
+
 									debug($count_program_type);
 									debug($college_count);
-									for ($i = 1; $i <= $college_count; $i++) {
-										echo '<td><table style="border: #CCC solid 1px"><tr><td class="smallheading" colspan="3">' .
-											$colleges[$i] . '</B></td></tr>'; //Display College name
-										echo '<tr><th style="border-right: #CCC solid 1px">' . "ProgramType/ Program" . '</th>'; //Display ProgramType/Program label
-										foreach ($programs as $kp => $vp) {
-											echo '<th style="border-right: #CCC solid 1px">' . $vp . '</th>';
-										}
-										echo '</tr>';
-										for ($j = 1; $j <= $count_program_type; $j++) {
-											if (isset($programTypes[$j])) {
-												echo '<tr><td style="border-right: #CCC solid 1px">' .
-													$programTypes[$j] . '</td>';
-												for ($k = 1; $k <= $count_program; $k++) {
 
-													if (isset($programs[$k])) {
-														echo '<td style="border-right: #CCC solid 1px">' . $data[$colleges[$i]][$programs[$k]][$programTypes[$j]] . '</td>';
-													}
-												}
-												echo '</tr>';
-											}
-										}
-										echo '</table></td>';
-										if (($i % 3) == 0) {
+									for ($i = 1; $i <= $college_count; $i++) { ?>
+										<td style="width: 50%;">
+											<table cellpadding="0" cellspacing="0" class="table">
+												<thead>
+													<tr>
+														<th class="vcenter" colspan=<?= $count_program + 1; ?>><h6 class="text-gray fs14"><?= $colleges[$i]; ?></h6></th>
+													</tr>
+													<tr>
+														<th class="vcenter"> Program/Type </th>
+														<?php
+														if (!empty($programs)) {
+															foreach ($programs as $kp => $vp) { ?>
+																<th  class="center"><?= (strcasecmp(trim($vp), 'Undergraduate') == 0 || strcasecmp(trim($vp), 'Under graduate') == 0  ? 'UG' : (strcasecmp(trim($vp), 'Postgraduate') == 0 || strcasecmp(trim($vp), 'Post graduate') == 0 ? 'PG' : $vp ))?></th>
+																<?php
+															} 
+														} ?>
+													</tr>
+												</thead>
+												<tbody>
+													<?php
+													for ($j = 1; $j <= $count_program_type; $j++) {
+														if (isset($programTypes[$j])) { ?>
+															<tr>
+																<td class="vcenter"><?= $programTypes[$j]; ?></td>
+																<?php
+																for ($k = 1; $k <= $count_program; $k++) {
+																	if (isset($programs[$k])) { ?>
+																		<td class="center"><?= ($data[$colleges[$i]][$programs[$k]][$programTypes[$j]] != 0 ? '<b>'. $data[$colleges[$i]][$programs[$k]][$programTypes[$j]] .'</b>' : '--'); ?></td>
+																		<?php
+																	}
+																} ?>
+															</tr>
+															<?php
+														}
+													} ?>
+												</tbody>
+											</table>
+										</td>
+										<?php
+										if (($i % 2) == 0) {
 											echo '<tr></tr>';
 										}
-									}
-									?>
-                                <?php } ?>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <?php if (!isset($show_list_generated)) { ?>
-                    <table
-                        cellpadding="0"
-                        cellspacing="0">
-                        <tr>
-                            <?php
-									echo '<td>' . $this->Form->input('AcceptedStudent.academicyear', array(
-										'id' => 'academicyear',
-										'label' => 'Academic Year', 'type' => 'select', 'options' => $acyear_array_data,
-										'empty' => "--Select Academic Year--", 'selected' => isset($selectedsacdemicyear) ? $selectedsacdemicyear : ''
-									)) . '</td>';
-									echo '<td>' . $this->Form->input('AcceptedStudent.college_id', array(
-										'empty' => "--Select Department--", 'label' => 'Department',
-										'onchange' => 'getDepartments()', 'id' => 'ajax_college_id'
-									)) . '</td></tr>';
+									} ?>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<br>
+					<?php
+				} ?>
 
-									echo '<tr><td>' . $this->Form->input('AcceptedStudent.program_id', array('empty' => "--Select Program--")) . '</td>';
-									echo '<td>' . $this->Form->input('AcceptedStudent.program_type_id', array('empty' => "--Select Program Type--")) . '</td></tr>';
+				<?php
+				if (!isset($show_list_generated)) { ?>
+					<div>
+						<fieldset style="padding-bottom: 0px;padding-top: 15px;">
+							<!-- <legend>&nbsp;&nbsp; Search Filter &nbsp;&nbsp;</legend> -->
+							<div class="row">
+								<div class="large-3 columns">
+									<?= $this->Form->input('AcceptedStudent.academicyear', array('id' => 'academicyear', 'style' => 'width:90%;', 'label' => 'Academic Year: ', 'type' => 'select', 'options' => $acyear_array_data, /* 'empty' => "[ Select Academic Year ]", */ 'default' => isset($selectedsacdemicyear) ? $selectedsacdemicyear : '' )); ?>
+								</div>
+								<div class="large-3 columns">
+									<?= $this->Form->input('AcceptedStudent.program_id', array('style' => 'width:90%;', 'label' => 'Program: '/* , 'empty' => "[ Select Program ]" */)); ?>
+								</div>
+								<div class="large-3 columns">
+									<?= $this->Form->input('AcceptedStudent.program_type_id', array('style' => 'width:90%;', 'label' => 'Program Type: ', /* 'empty' => "[ Select Program Type ]" */)); ?>
+								</div>
+								<div class="large-3 columns">
+									<?= $this->Form->input('AcceptedStudent.limit', array('style' => 'width:90%;', 'label' => 'Limit: ','type' => 'number', 'min' => '100',  'max' => '2000', 'value' => $limit, 'step' => '100')); ?>
+								</div>
+							</div>
+							<div class="row">
+								<div class="large-6 columns">
+									<?= $this->Form->input('AcceptedStudent.college_id', array('style' => 'width:95%;', 'label' => 'College: ', 'empty' => "[ Select Faculty/School ]")); ?>
+								</div>
+								<div class="large-6 columns">
+									&nbsp;
+								</div>
+							</div>
+							<hr>
+							<?= $this->Form->submit('Search', array('name' => 'search', 'div' => 'false', 'class' => 'tiny radius button bg-blue')); ?> 
+						</fieldset>
+					</div>
+					<?php
+				} ?>
 
-									echo '<tr><td>' . $this->Form->input('AcceptedStudent.limit', array(
-										'type' => 'number',
-										'style' => 'width:100px;'
-									)) . '</td>';
-									echo '<td>' . $this->Form->input('AcceptedStudent.department_id', array('empty' => "--Select Field of study--", 'label' => 'Field of study', 'id' => 'ajax_department_id', 'required' => true)) . '</td>';
+				<?php
+				if (!empty($acceptedStudents)) { ?>
+					<h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+					<br>
+					<div style="overflow-x:auto;">
+						<table cellpadding="0" cellspacing="0" class="table">
+							<thead>
+								<tr>
+									<td class="center"><?= $this->Form->checkbox(null, array('id' => 'select-all', 'checked' => '')); ?> </td>
+									<td class="center">#</td>
+									<td class="vcenter"><?= $this->Paginator->sort('full_name', 'Full Name'); ?></td>
+									<td class="center"><?= $this->Paginator->sort("sex", "Sex"); ?></td>
+									<td class="center"><?= $this->Paginator->sort("studentnumber", "Student ID"); ?></td>
+									<td class="center"><?= $this->Paginator->sort("gpa", "GPA"); ?></td>
+                                    <td class="center"><?= $this->Paginator->sort('department_id', 'Department'); ?></td>
+									<td class="center"><?= $this->Paginator->sort('program_type_id', 'Program Type'); ?></td>
+									<td class="center"><?= $this->Paginator->sort('academicyear', 'ACY'); ?></td>
+									<td class="center"><?= $this->Paginator->sort('placement_approved_by_department', "Department Approval"); ?></td>
+									<td class="center"><?= $this->Paginator->sort('placementtype', 'Placement Type'); ?></td>
+								</tr>
+							</thead>
+							<tbody>
+								<?php
+								$start = $this->Paginator->counter('%start%');
 
-									echo '</tr>';
-									?>
-                        <tr>
-                            <td><?php echo $this->Form->submit('Search', array('name' => 'search', 'div' => 'false', 'class' => 'tiny radius button bg-blue')); ?>
-                            </td>
-                        </tr>
-                    </table>
-                    <?php } ?>
-                    <?php
-						if (!empty($acceptedStudents)) {
-						?>
-                    <table cellpadding=0
-                        cellspacing=0>
-                        <tbody>
-                            <tr>
-                                <th
-                                    style="padding:0">
-                                    <?php echo 'Select/Unselect All <br/>' . $this->Form->checkbox(null, array('id' => 'select-all', 'checked' => '')); ?>
-                                </th>
+								foreach ($acceptedStudents as $acceptedStudent) { ?>
+									<tr>
+										<td class="center"><div style="margin-left: 15%;"><?= $this->Form->checkbox('AcceptedStudent.generate.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')); ?></div></td>
+										<td class="center"><?= $start++; ?></td>
+										<td class="vcenter"><?= $acceptedStudent['AcceptedStudent']['full_name']; ?></td>
+										<td class="center"><?= (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'male') == 0 ? 'M' : (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'female') == 0 ? 'F' : '')); ?></td>
+										<td class="center"><?= $acceptedStudent['AcceptedStudent']['studentnumber']; ?></td>
+										<td class="center"><?= (int) $acceptedStudent['AcceptedStudent']['gpa']; ?></td>
+										<td class="center"><?= $this->Html->link($acceptedStudent['Department']['name'], array('controller' => 'departments', 'action' => 'view', $acceptedStudent['Department']['id'])); ?></td>
+										<td class="center"><?= $this->Html->link($acceptedStudent['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $acceptedStudent['ProgramType']['id'])); ?></td>
+										<td class="center"><?= $acceptedStudent['AcceptedStudent']['academicyear']; ?></td>
+										<td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['placement_approved_by_department'])
+                                            && $acceptedStudent['AcceptedStudent']['placement_approved_by_department'] == 1 ?
+                                                    '<span class="accepted">Yes</span>' : ''); ?></td>
+										<td class="center"><?= $acceptedStudent['AcceptedStudent']['placementtype']; ?></td>
+									</tr>
+									<?php
+								} ?>
+							</tbody>
+						</table>
+					</div>
+					<hr>
 
+					<?= $this->Form->Submit('Generate Student IDs', array('name' => 'generateid', 'id' => 'generateStudentID', 'div' => false, 'class' => 'tiny radius button bg-blue')); ?>
 
-                                <th
-                                    style="width:30%">
-                                    <?php echo $this->Paginator->sort('full_name', 'Full Name'); ?>
-                                </th>
-                                <th
-                                    style="width:5%">
-                                    <?php echo $this->Paginator->sort("sex", 'Sex'); ?>
-                                </th>
-                                <th
-                                    style="width:5%">
-                                    <?php echo $this->Paginator->sort("studentnumber", "Student Number"); ?>
-                                </th>
-                                <th
-                                    style="width:5%">
-                                    <?php echo $this->Paginator->sort('gpa', "GPA"); ?>
-                                </th>
-                                <th
-                                    style="width:1%">
-                                    <?php echo $this->Paginator->sort('college_id', 'Stream'); ?>
-                                </th>
-                                <th
-                                    style="width:11%">
-                                    <?php echo $this->Paginator->sort('department_id', 'Field of study'); ?>
-                                </th>
-                                <th
-                                    style="width:5%">
-                                    <?php echo $this->Paginator->sort('program_type_id', 'Program Type'); ?>
-                                </th>
-                                <th
-                                    style="width:9%">
-                                    <?php echo $this->Paginator->sort("attended_stream", "Stream Attended"); ?>
-                                </th>
+					<hr>
+					<div class="row">
+						<div class="large-5 columns">
+							<?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total'))); ?>
+						</div>
+						<div class="large-7 columns">
+							<div class="pagination-centered">
+								<ul class="pagination">
+									<?= $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?> <?= $this->Paginator->numbers(array('separator' => '', 'tag' => 'li')); ?> <?= $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<?php
+				} else if (empty($acceptedStudents) && !($isbeforesearch)) { ?>
+					<div class='info-box info-message'><span style='margin-right: 15px;'></span> No Accepted students without student identification in these selected criteria</div>
+					<?php
+				} ?>
 
-                                <th
-                                    style="width:5%">
-                                    <?php echo $this->Paginator->sort("university_attended", "University Attended"); ?>
-                                </th>
+				<?= $this->Form->end(); ?>
+			</div>
+		</div>
+	</div>
+</div>
 
+<script>
+	
+	var form_being_submitted = false;
 
-                            </tr>
-                            <?php
-									$i = 0;
-									foreach ($acceptedStudents as $acceptedStudent) :
-										$class = null;
-										if ($i++ % 2 == 0) {
-											$class = ' class="altrow"';
-										}
-									?>
-                            <tr<?php echo $class; ?>>
-                                <td><?php echo $this->Form->checkbox('AcceptedStudent.generate.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')); ?>&nbsp;
-                                </td>
-                                <td><?php echo $acceptedStudent['AcceptedStudent']['full_name']; ?>&nbsp;
-                                </td>
-                                <td><?php echo ucwords($acceptedStudent['AcceptedStudent']['sex']); ?>&nbsp;
-                                </td>
-                                <td><?php echo $acceptedStudent['AcceptedStudent']['studentnumber']; ?>&nbsp;
-                                </td>
-                                <td><?php echo $acceptedStudent['AcceptedStudent']['gpa']; ?>&nbsp;
-                                </td>
-                                <td>
-                                    <?php echo $this->Html->link($acceptedStudent['College']['shortname'], array('controller' => 'colleges', 'action' => 'view', $acceptedStudent['College']['id'])); ?>
-                                </td>
-                                <td>
-                                    <?php echo $this->Html->link($acceptedStudent['Department']['name'], array('controller' => 'departments', 'action' => 'view', $acceptedStudent['Department']['id'])); ?>
-                                </td>
-                                <td>
-                                    <?php echo $this->Html->link($acceptedStudent['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $acceptedStudent['ProgramType']['id'])); ?>
-                                </td>
+	const validationMessageNonSelected = document.getElementById('validation-message_non_selected');
 
-                                <td><?php echo $acceptedStudent['AcceptedStudent']['university_attended']; ?>&nbsp;
-                                </td>
+	$('#generateStudentID').click(function() {
 
-                                <td><?php echo $acceptedStudent['AcceptedStudent']['attended_stream']; ?>&nbsp;
-                                </td>
+		var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+		var checkedOne = Array.prototype.slice.call(checkboxes).some(x => x.checked);
 
+		var isValid = true;
 
+		if (!checkedOne) {
+			alert('At least one student must be selected to generate Student ID.');
+			validationMessageNonSelected.innerHTML = 'At least one student must be selected to generate Student ID.';
+			isValid = false;
+			return false;
+		}
 
-                                </tr>
-                                <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    <table>
-                        <tbody>
+		if (form_being_submitted) {
+			alert('Generating Student IDs, please wait a moment...');
+			$('#generateStudentID').attr('disabled', true);
+			isValid = false;
+			return false;
+		} else {
+			form_being_submitted = false;
+		}
 
-                            <tr>
-                                <td>
-                                    <?php
-											echo $this->Form->Submit('Generate ID', array('name' => 'generateid', 'div' => 'false', 'class' => 'tiny radius button bg-blue'));
+		if (!form_being_submitted && isValid) {
+			$('#generateStudentID').val('Generating Student IDs...');
+			form_being_submitted = true;
+			return true;
+		} else {
+			return false;
+		}
+	});
 
-											?>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p>
-                        <?php
-								echo $this->Paginator->counter(array(
-									'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
-								));
-								?> </p>
-
-                    <div class="paging">
-                        <?php echo $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class' => 'disabled')); ?>
-                        |
-                        <?php echo $this->Paginator->numbers(); ?>
-                        |
-                        <?php echo $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled')); ?>
-                    </div>
-                    <?php
-						} else if (empty($acceptedStudents) && !($isbeforesearch)) {
-							echo "<div class='info-box info-message'> <span></span> No Accepted students without student identification in these selected criteria</div>";
-						}
-						?>
-                </div>
-            </div>
-            <!-- end of columns 12 -->
-        </div>
-        <!--- end of row -->
-    </div> <!-- end of box-body -->
-</div><!-- end of box -->
-<?php
-
-echo $this->Form->end();
-?>
-
-<script type="text/javascript">
-$(document).ready(function() {
-
-    getDepartments();
-
-});
-</script>
-<script type="text/javascript">
-function getDepartments() {
-    //serialize form data
-    var col = $("#ajax_college_id")
-    .val();
-    $("#ajax_department_id").attr(
-        'disabled', true);
-    $("#ajax_department_id").empty();
-    $("#ajax_year_level_id").empty();
-    //get form action
-    var formUrl =
-        '/course_schedules/get_departments/' +
-        col;
-    $.ajax({
-        type: 'get',
-        url: formUrl,
-        data: col,
-        success: function(data,
-            textStatus, xhr
-            ) {
-            $("#ajax_department_id")
-                .attr(
-                    'disabled',
-                    false);
-            $("#ajax_department_id")
-                .empty();
-            $("#ajax_department_id")
-                .append(
-                    data);
-        },
-        error: function(xhr,
-            textStatus,
-            error) {
-            alert(
-                textStatus);
-        }
-    });
-    return false;
-}
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
 </script>

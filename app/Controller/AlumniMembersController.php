@@ -2,7 +2,7 @@
 App::uses('AppController', 'Controller');
 
 class AlumniMembersController extends AppController {
-    public $components = array('Paginator');
+    public $components = array('Paginator','MathCaptcha');
     public $name = 'AlumniMembers';
 	public $menuOptions = array(
             //'parent' => 'Alumni',

@@ -1,6 +1,21 @@
 <?php
-class Securitysetting extends AppModel {
+class Securitysetting extends AppModel
+{
 	var $name = 'Securitysetting';
+
+	var $actsAs = array(
+		'Containable',
+		'Tools.Logable' => array(
+			'change' => 'full',
+			//'change' => 'list',
+			'description_ids' => 'true',
+			'displayField' => 'username',
+			'foreignKey' => 'foreign_key',
+			//'skip' => array('search', 'view'), // functions to skip logging
+			'ignore' => array('created', 'modified') // fields to ignore in log
+		)
+	);
+	
 	var $validate = array(
 		'session_duration' => array(
 			'numeric' => array(
@@ -8,7 +23,7 @@ class Securitysetting extends AppModel {
 				'message' => 'The session duration should be numeric',
 				'allowEmpty' => false,
 				'required' => false,
-			
+
 			),
 		),
 		'minimum_password_length' => array(
@@ -23,10 +38,10 @@ class Securitysetting extends AppModel {
 		),
 		'maximum_password_length' => array(
 			'numeric' => array(
-			    'rule' => array('numeric'),
+				'rule' => array('numeric'),
 				'message' => 'The maximum password length should be numeric',
 				'allowEmpty' => false
-				
+
 			)
 		),
 		'password_duration' => array(
@@ -34,7 +49,7 @@ class Securitysetting extends AppModel {
 				'rule' => array('numeric'),
 				'message' => 'The password duration  should be numeric',
 				'allowEmpty' => false,
-				
+
 			),
 		),
 		'previous_password_use_allowance' => array(

@@ -1,46 +1,52 @@
-<div class="gradeTypes index">
-	<div class="smallheading"><?php echo __('Grade Types');?></div>
-	<table cellpadding="0" cellspacing="0">
-	<tr>
-			<th style="width:2%">S.No</th>
-			<th style="width:38%"><?php echo $this->Paginator->sort('type');?></th>
-			<th style="width:20%"><?php echo $this->Paginator->sort('Date Created', 'created');?></th>
-			<th style="width:20%"><?php echo $this->Paginator->sort('Date Modified', 'modified');?></th>
-			<th style="width:20%; text-align:center" class="actions"><?php echo __('Actions');?></th>
-	</tr>
-	<?php
-	$i = 0;
-	$count=1;
-	foreach ($gradeTypes as $gradeType):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-	?>
-	<tr<?php echo $class;?>>
-		<td><?php echo $count++;?></td>
-		<td><?php echo $gradeType['GradeType']['type']; ?>&nbsp;</td>
-		<td><?php echo $this->Format->humanize_date($gradeType['GradeType']['created']); ?>&nbsp;</td>
-		<td><?php echo $this->Format->humanize_date($gradeType['GradeType']['modified']); ?>&nbsp;</td>
-		<td class="actions">
-			<?php echo $this->Html->link(__('View'), array('action' => 'view', $gradeType['GradeType']['id'])); ?>
-			<?php echo $this->Html->link(__('Edit'), array('action' => 'edit', $gradeType['GradeType']['id'])); ?>
-			<?php echo $this->Html->link(__('Delete'), array('action' => 'delete', $gradeType['GradeType']['id']), null, sprintf(__('Are you sure you want to delete # %s?'), $gradeType['GradeType']['id'])); ?>
-		</td>
-	</tr>
-<?php endforeach; ?>
-	</table>
-	<p>
-	<?php
-	echo $this->Paginator->counter(array(
-	'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
-	));
-	?>	</p>
+<div class="box">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Grade Types'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<table cellpadding="0" cellspacing="0" class="responsive table-borderless fs13">
+					<thead>
+						<tr>
+							<td>#</td>
+							<td><?= $this->Paginator->sort('type', 'Grade Type'); ?></td>
+							<td style="text-align: center;"><?= $this->Paginator->sort('used_in_gpa', 'Used in GPA'); ?></td>
+							<td style="text-align: center;"><?= $this->Paginator->sort('active'); ?></td>
+							<td><?= $this->Paginator->sort('created', 'Date Created'); ?></td>
+							<td><?= $this->Paginator->sort('modified', 'Date Modified'); ?></td>
+							<td style="text-align:center" class="actions"><?= __('Actions'); ?></td>
+						</tr></thead>
+					</thead>
+					<tbody>
+						<?php
+						$count = 1;
+						foreach ($gradeTypes as $gradeType) { ?>
+							<tr>
+								<td><?= $count++; ?></td>
+								<td><?= $gradeType['GradeType']['type']; ?></td>
+								<td style="text-align: center;"><?= (($gradeType['GradeType']['used_in_gpa'] == 1) ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?> </td>
+								<td style="text-align: center;"><?= (($gradeType['GradeType']['active'] == 1) ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?> </td>
+								<td><?= $this->Time->format("M j, Y g:i A", $gradeType['GradeType']['created'], NULL, NULL); ?></td>
+								<td><?= $this->Time->format("M j, Y g:i A", $gradeType['GradeType']['modified'], NULL, NULL); ?></td>
+								<td style="text-align: center;">
+									<?= $this->Html->link(__(''), array('action' => 'view', $gradeType['GradeType']['id']), array('class' => 'fontello-eye', 'title' => 'View')); ?>&nbsp;
+									<?= $this->Html->link(__(''), array('action' => 'edit', $gradeType['GradeType']['id']), array('class' => 'fontello-pencil', 'title' => 'Edit')); ?>&nbsp;
+									<?= $this->Html->link(__(''), array('action' => 'delete', $gradeType['GradeType']['id']), array('class' => 'fontello-trash', 'title' => 'Delete'), sprintf(__('Are you sure you want to delete %s?'), $gradeType['GradeType']['type'])); ?>
+								</td>
+							</tr>
+							<?php 
+						} ?>
+					</tbody>
+				</table>
 
-	<div class="paging">
-		<?php echo $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class'=>'disabled'));?>
-	 | 	<?php echo $this->Paginator->numbers();?>
- |
-		<?php echo $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled'));?>
+				<p><?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%'))); ?></p>
+
+				<div class="paging">
+					<?= $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class' => 'disabled')); ?> | <?= $this->Paginator->numbers(); ?> | <?= $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled')); ?>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>

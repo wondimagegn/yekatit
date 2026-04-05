@@ -18,7 +18,7 @@ $pobox=  Configure::read('POBOX');
    
     $header = '<table style="width:100%;">
     	<tr>
-    		<td style="text-align:center; font-weight:bold">YEKATIT 12 HOSPITAL MEDICAL COLLEGE</td>
+    		<td style="text-align:center; font-weight:bold">ARBA MINCH UNIVERSITY</td>
     	</tr>
 <tr>
     		<td style="text-align:center; font-weight:bold">OFFICE OF THE REGISTRAR</td>

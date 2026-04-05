@@ -1,110 +1,119 @@
-<?php 
-/*
-This file should be in app/views/elements/export_xls.ctp
-Thanks to Marco Tulio Santos for this simple XLS Report
-*/
-header ("Expires: " . gmdate("D,d M YH:i:s") . " GMT");
-header ("Last-Modified: " . gmdate("D,d M YH:i:s") . " GMT");
-header ("Cache-Control: no-cache, must-revalidate");
-header ("Pragma: no-cache");
-header ("Content-type: application/vnd.ms-excel");
-header ("Content-Disposition: attachment; filename=".$filename.".xls" );
-header ("Content-Description: Exported as XLS" );
+<?php
+header("Expires: " . gmdate("D,d M YH:i:s") . " GMT");
+header("Last-Modified: " . gmdate("D,d M YH:i:s") . " GMT");
+header("Cache-Control: no-cache, must-revalidate");
+header("Pragma: no-cache");
+header("Content-type: application/vnd.ms-excel");
+header("Content-Disposition: attachment; filename=" . $filename . ".xls");
+header("Content-Description: Exported as XLS");
 ?>
 
 <style>
-.bordering {
-border-left:1px #cccccc solid;
-border-right:1px #cccccc solid;
-}
-.bordering2 {
-border-left:1px #000000 solid;
-border-right:1px #000000 solid;
-border-top:1px #000000 solid;
-border-bottom:1px #000000 solid;
-}
-.courses_table tr td, .courses_table tr th {
-padding:1px
-}
+    table {
+        border-collapse: collapse;
+        text-align: center;
+        width: 100%;
+        table-layout: auto; /* Let columns grow naturally */
+        /* border: 1px solid #000; */
+    }
+    th, td {
+        /* border: 1px solid #000; */
+        /* padding: 5px; */
+        text-align: left; /* Aligns text naturally */
+        white-space: nowrap; /* Prevents text wrapping */
+    }
+    thead tr {
+        background-color: #f2f2f2;
+        /* border-bottom: 2px solid #000; */
+    }
+    thead th {
+        background-color: #d9edf7;
+    }
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tbody tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
 </style>
 
-<?php 
+<?php
+if (isset($notAssignedCourseeList) && !empty($notAssignedCourseeList)) { 
+    foreach ($notAssignedCourseeList as $dept => $yearLevel) {
+        $filteredLevels = array();
+        foreach ($yearLevel as $ykey => $courses) {
+            if (!empty($courses)) {
+                $filteredLevels[$ykey] = $courses;
+            }
+        }
 
-if (isset($notAssignedCourseeList) && 
-!empty($notAssignedCourseeList)) {
-  ?>
- <h5><?php echo $headerLabel;?></h5>
- <table style="width:100%">
-                   
-			<tr>
-			<td class="bordering2">S.N<u>o</u> </td> 
-			<td class="bordering2">Course Department </td> 
-			<td class="bordering2">Course</td> 
-
-			<td class="bordering2">Section </td> 
-			<td class="bordering2">Program </td> 
-			<td class="bordering2">Program Type </td> 
-
-			</tr>     
-               
-<?php  
-$count=0;  
-foreach($notAssignedCourseeList as $departmentNamee=>$courseList) {
-?>
-  <tr>
-         <td colspan="6">Student Department: <?php echo $departmentNamee ?></td> 
- </tr>     
-<?php 
-    foreach ($courseList as $rkey => $rvalue) {
-      $count=0;
-     
-    ?>
-   <tr>
-         <td colspan="6">Year: <?php echo $rkey ?></td> 
- </tr>     
-     
-    
-        <?php 
-    if(isset($rvalue) && !empty($rvalue)){
-        foreach($rvalue as $mn=>$ym){ 
-         
-          ?>
-          <tr>
-        <td class="bordering" > 
-<?php 
-           echo ++$count;      
-?>
-        </td>
-        <td class="bordering" > 
-         <?php 
-          echo $ym['GivenByDepartment']['name'];
-	?>
-         </td> 
-         <td class="bordering" >  <?php 
-          echo $ym['Course']['course_title'].' '.$ym['Course']['course_code'];
-	?>  </td> 
-        <td class="bordering"><?php echo $ym['Section']['name']?> 
-        </td>
-        <td class="bordering"><?php echo $ym['Program']['name']?> 
-        </td>
-        <td class="bordering"><?php echo $ym['ProgramType']['name'];?> 
-        </td>
-    </tr>
-   
-        <?php 
-        
-          }
+        if (!empty($filteredLevels)) {
+            $notAssignedCourseeList[$dept] = $filteredLevels;
         } else {
-        
-         ?>
-          <tr><td colspan="6" class="info-message info-box">There is no course in given criteria which is not assigned to instructors.</td></tr>
-         <?php 
-		}
+            unset($notAssignedCourseeList[$dept]);
+        }
+    }  
     
+    if (!empty($notAssignedCourseeList)) {
+        if (!empty($headerLabel)) { ?>
+            <hr>
+            <table cellpadding="0" cellspacing="0" class="table" style="border: none;">
+                <thead>
+                    <tr>
+                        <td colspan=6 style="border: none;"><b><?= $headerLabel; ?></b></td>
+                    </tr>
+                </thead>
+            </table>
+            <hr>
+            <?php
+        }
+
+        $count = 0;
+        foreach ($notAssignedCourseeList as $departmentNamee => $courseList) { 
+            $dptName = !empty($departmentNamee) ? $departmentNamee : 'Freshman';
+            if (!empty($courseList)) {
+                foreach ($courseList as $rkey => $rvalue) { ?>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%" cellpadding="0" cellspacing="0" class='table'>
+                            <thead>
+                                <tr>
+                                    <th colspan="6" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+                                        <?= $dptName . ', ' . ($year = !empty($rkey) ? $rkey . ' year' : '1st'); ?>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th class="center">#</th>
+                                    <th class="vcenter">Course Given By</th>
+                                    <th class="vcenter">Course</th>
+                                    <th class="center">Section</th>
+                                    <th class="center">Program</th>
+                                    <th class="center">Program Type</th>
+                                </tr>
+                            </thead>
+                            <tbody> 
+                                <?php
+                                $count = 0;
+                                if (isset($rvalue) && !empty($rvalue)) {
+                                    foreach ($rvalue as $mn => $ym) { ?>
+                                        <tr>
+                                            <td class="center"><?= ++$count; ?></td>
+                                            <td class="vcenter"><?= (isset($ym['GivenByDepartment']['name']) ? $ym['GivenByDepartment']['name'] : '<span class="rejected"><<-- Not Dispatched -->></span>'); ?></td>
+                                            <td class="vcenter"><?= $ym['Course']['course_title'] . ' (' . $ym['Course']['course_code'] .')'; ?> </td>
+                                            <td class="center"><?= $ym['Section']['name'] ?></td>
+                                            <td class="center"><?= $ym['Program']['name'] ?></td>
+                                            <td class="center"><?= $ym['ProgramType']['name']; ?></td>
+                                        </tr>
+                                        <?php
+                                    }
+                                } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <br>
+                    <br>
+                    <?php
+                }
+            }
+        }      
     }
- }
- ?>
- </table>
- <?php 
-}   
-?>
+ } ?>

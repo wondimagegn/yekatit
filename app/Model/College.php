@@ -1,8 +1,21 @@
 <?php
-class College extends AppModel {
+class College extends AppModel
+{
 	var $name = 'College';
 	var $displayField = 'name';
-	//The Associations below have been created with all possible keys, those that are not needed can be removed
+
+	var $actsAs = array(
+		'Containable',
+		'Tools.Logable' => array(
+			'change' => 'full',
+			//'change' => 'list',
+			'description_ids' => 'true',
+			'displayField' => 'username',
+			'foreignKey' => 'foreign_key',
+			//'skip' => array('search', 'view'), // functions to skip logging
+			'ignore' => array('created', 'modified') // fields to ignore in log
+		)
+	);
 
 	var $belongsTo = array(
 		'Campus' => array(
@@ -54,7 +67,7 @@ class College extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-		'Note' => array(
+		/* 'Note' => array(
 			'className' => 'Note',
 			'foreignKey' => 'college_id',
 			'dependent' => false,
@@ -66,7 +79,7 @@ class College extends AppModel {
 			'exclusive' => '',
 			'finderQuery' => '',
 			'counterQuery' => ''
-		),
+		), */
 		'Staff' => array(
 			'className' => 'Staff',
 			'foreignKey' => 'college_id',
@@ -106,7 +119,7 @@ class College extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-        'Section' => array(
+		'Section' => array(
 			'className' => 'Section',
 			'foreignKey' => 'college_id',
 			'dependent' => false,
@@ -119,13 +132,13 @@ class College extends AppModel {
 			'finderQuery' => '',
 			'counterQuery' => ''
 		),
-		'GradeScale' => array( 
-            'className' => 'GradeScale', 
-            'foreignKey' => 'foreign_key', 
-            'conditions'    => array('model' => 'College'),
-            'dependent' => true, 
-        ),
-        'AcademicCalendar' => array(
+		'GradeScale' => array(
+			'className' => 'GradeScale',
+			'foreignKey' => 'foreign_key',
+			'conditions'    => array('model' => 'College'),
+			'dependent' => true,
+		),
+		'AcademicCalendar' => array(
 			'className' => 'AcademicCalendar',
 			'foreignKey' => 'college_id',
 			'dependent' => false,
@@ -243,51 +256,59 @@ class College extends AppModel {
 			'counterQuery' => ''
 		),
 	);
-	 var $validate = array(
-			'name' => array(
-				'notBlank' => array(
-					'rule' => 'notBlank',
-					'message' => 'Name is required'
-				
-			    ),
-			    'isUniqueCollegeInCampus' => array(
-			        'rule' => array('isUniqueCollegeInCampus'),
-				    'message' => 'The college name should be unique in the campus. 
-				    The name is already taken. Use another one.'
-			    ),
-			  ),
-    );
-    function isUniqueCollegeInCampus () {
-        $count=0;
-        if (!empty($this->data['College']['id'])) {
-          $count=$this->find('count',array('conditions'=>array('College.campus_id'=>$this->data['College']['campus_id'],'College.name'=>trim($this->data['College']['name']),'College.id <> '=>$this->data['College']['id'])));
-        } else {
-          $count=$this->find('count',array('conditions'=>array('College.campus_id'=>$this->data['College']['campus_id'],'College.name'=>trim($this->data['College']['name']))));
-        }
-	    
-	    if ($count>0) {
-	        return false;
-	    } 
-	    return true; 
-	}
-    
-    function allowDelete($id = null) {
-		    if($this->Student->find('count', array('conditions' => array('Student.college_id' =>$id))) > 0)
-			    return false;
-		    else
-			    return true;
-	  }
-	 	
-        function canItBeDeleted($college_id = null) {
-		        if($this->PublishedCourse->find('count', array('conditions' => array('PublishedCourse.college_id' =>$college_id))) > 0)
-			        return false;
-			    if($this->Student->find('count', array('conditions' => array('Student.college_id' =>$college_id))) > 0)
-			        return false;
-		        else if($this->Section->find('count', array('conditions' => array('Section.college_id' => $college_id))) > 0)
-			        return false;
-		        else if($this->GradeScale->find('count', array('conditions' => array('GradeScale.model' =>'College','GradeScale.foreign_key'=>$college_id))) > 0)
-			        return false;
-		        else
-			        return true;
+
+	var $validate = array(
+		'name' => array(
+			'notBlank' => array(
+				'rule' => 'notBlank',
+				'message' => 'Name is required'
+
+			),
+			'isUniqueCollegeInCampus' => array(
+				'rule' => array('isUniqueCollegeInCampus'),
+				'message' => 'The college name should be unique in the campus. The name is already taken. Use another one.'
+			),
+		),
+	);
+
+	function isUniqueCollegeInCampus()
+	{
+		$count = 0;
+
+		if (!empty($this->data['College']['id'])) {
+			$count = $this->find('count', array('conditions' => array('College.campus_id' => $this->data['College']['campus_id'], 'College.name' => trim($this->data['College']['name']), 'College.id <> ' => $this->data['College']['id'])));
+		} else {
+			$count = $this->find('count', array('conditions' => array('College.campus_id' => $this->data['College']['campus_id'], 'College.name' => trim($this->data['College']['name']))));
 		}
+
+		if ($count > 0) {
+			return false;
+		}
+		return true;
+	}
+
+	function allowDelete($id = null)
+	{
+		if ($this->Student->find('count', array('conditions' => array('Student.college_id' => $id))) > 0) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	function canItBeDeleted($college_id = null)
+	{
+		if ($this->PublishedCourse->find('count', array('conditions' => array('PublishedCourse.college_id' => $college_id))) > 0) {
+			return false;
+		}
+		if ($this->Student->find('count', array('conditions' => array('Student.college_id' => $college_id))) > 0) {
+			return false;
+		} else if ($this->Section->find('count', array('conditions' => array('Section.college_id' => $college_id))) > 0) {
+			return false;
+		} else if ($this->GradeScale->find('count', array('conditions' => array('GradeScale.model' => 'College', 'GradeScale.foreign_key' => $college_id))) > 0) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 }

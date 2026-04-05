@@ -1,65 +1,39 @@
-<?php ?>
-<style>
-.bordering {
-border-left:1px #cccccc solid;
-border-right:1px #cccccc solid;
-}
-.bordering2 {
-border-left:1px #000000 solid;
-border-right:1px #000000 solid;
-border-top:1px #000000 solid;
-border-bottom:1px #000000 solid;
-}
-.courses_table tr td, .courses_table tr th {
-padding:1px
-}
-</style>
-
-<?php 
-
-if (isset($distributionStatistics['distributionStatsTeachersByGender']) && !empty($distributionStatistics['distributionStatsTeachersByGender'])) {
-
-  ?>
- <h5><?php echo $headerLabel;?></h5>
-  <?php 
-  echo $this->element('staffs/graph');
-  ?>
- <table style="width:100%">
-                   
-                <tr>
-                    <td class="bordering2"> S.N<u>o</u> </td> 
-                    <td class="bordering2"> Department </td> 
-                    <td class="bordering2"> Gender </td> 
-                     <td class="bordering2"> Number </td> 
-                </tr>     
-            
-<?php  
- $count=0;  
-foreach($distributionStatistics['distributionStatsTeachersByGender'] as $departmentName=>$yll) {
-    ?>
-      <tr>
-
-
-        <td class="bordering2" > <?php echo ++$count; ?> </td> 
-        <td class="bordering2" > <?php echo $departmentName; ?>  </td> 
-        <td class="bordering2" > Male</td> 
-        <td class="bordering2" > <?php echo $yll['male']; ?> </td> 
-       
-    </tr>
-
-      <tr>
-
-
-        <td class="bordering2" > </td> 
-        <td class="bordering2" > </td>
-        <td class="bordering2" > Female</td> 
-        <td class="bordering2" > <?php echo $yll['female']; ?> </td> 
-    </tr>
-        
-  <?php 
- }
- ?>
- </table>
- <?php 
-}   
-?>
+<?php
+if (isset($distributionStatistics['distributionStatsTeachersByGender']) && !empty($distributionStatistics['distributionStatsTeachersByGender'])) { ?>
+	<!-- <h6><?php //echo $headerLabel; ?></h6> -->
+	<?= $this->element('staffs/graph'); ?>
+	<hr>
+	<div style="overflow-x:auto;">
+		<table cellpadding="0" cellspacing="0" class="table">
+			<thead>
+				<tr>
+					<th class="center" style="width: 5%;">#</th>
+					<th class="vcenter" style="width: 65%;">Department</th>
+					<th class="center" style="width: 10%;">Male</th>
+					<th class="center" style="width: 10%;">Female</th>
+					<th class="center" style="width: 10%;">Total</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				$count = 0;
+				foreach ($distributionStatistics['distributionStatsTeachersByGender'] as $departmentName => $yll) { 
+					$maleCount = (isset($yll['Male']) && !empty($yll['Male']) ? $yll['Male'] : (isset($yll['male']) && !empty($yll['male']) ? $yll['male'] : 0)); 
+					$femaleCount = (isset($yll['Female']) && !empty($yll['Female']) ? $yll['Female'] : (isset($yll['female']) && !empty($yll['female']) ? $yll['female'] : 0)); 
+					$totalCount = $maleCount + $femaleCount;
+					?>
+					<tr>
+						<td class="center"><?= ++$count; ?></td>
+						<td class="vcenter"><?= $departmentName; ?></td>
+						<td class="center"><?= $maleCount; ?></td>
+						<td class="center"><?= $femaleCount; ?></td>
+						<td class="center"><?= $totalCount; ?></td>
+					</tr>
+					<?php
+				} ?>
+			</tbody>
+		</table>
+	</div>
+	<br>
+	<?php
+} ?>

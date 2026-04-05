@@ -1,488 +1,556 @@
-<?php ?>
-<script>
-function toggleView(obj) {
-	if($('#c'+obj.id).css("display") == 'none')
-		$('#i'+obj.id).attr("src", '/img/minus2.gif');
-	else
-		$('#i'+obj.id).attr("src", '/img/plus2.gif');
-	$('#c'+obj.id).toggle("slow");
-}
-</script>
-<?php
-$st_count = 1;
-?>
-<?php ?>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-             <div style="margin-bottom:10px" class="smallheading">Exam Grade Change, Makeup &amp; Supplementary Exam Approval</div>
-<?php echo $this->Form->create('ExamGradeChange');
-if(!empty($exam_grade_changes)) {
-?>
-<div style="font-size:14px; font-weight:bold">Exam grade change which is requested by instructor and/or department and approved by the department/freshman program &amp; college/institute.</div>
-<?php
-	}
-foreach($exam_grade_changes as $college_name => $college_grade_changes) {
-	foreach($college_grade_changes as $department_name => $department_grade_changes) {
-		foreach($department_grade_changes as $program_name => $program_grade_changes) {
-			foreach($program_grade_changes as $program_type_name => $program_type_grade_changes) {
-			?>
-<table>
-	<tr>
-		<td colspan="8">
-			<table style="margin:0px; border:dashed 2px #CCCCCC">
-				<tr class="fs13">
-					<td style="font-weight:bold; width:4%">College:</td>
-					<td style="width:30%"><?php echo $college_name; ?></td>
-					<td style="font-weight:bold; width:5%">Department:</td>
-					<td style="width:20%"><?php echo $department_name; ?></td>
-					<td style="font-weight:bold; width:5%">Program:</td>
-					<td style="width:13%"><?php echo $program_name; ?></td>
-					<td style="font-weight:bold; width:13%">Program Type:</td>
-					<td style="width:10%"><?php echo $program_type_name; ?></td>
-				</tr>
-			</table>
-		</td>
-	</tr>
-	<tr>
-	  <th style="width:10%"><?php echo $this->Form->input('Mass.ExamGradeChange.select_all', array('type' => 'checkbox', 'id' => 'select-all', 'div' => false,'label' => false)); ?>
-	    Select All</th>
-	    <th style="width:2%">&nbsp;</td>
-		<th style="width:15%">Student Name</th>
-		<th style="width:10%">ID</th>
-		<th style="width:25%">Course</th>
-		<th style="width:10%">Previous Grade</th>
-		<th style="width:10%">New Grade</th>
-		<th style="width:15%">Request Date</th>
-		
-	</tr>
-	<?php
-	foreach($program_type_grade_changes as $key => $grade_change) {
-	?>
-	<tr>
-	    <td>
-	    <?php 
-	      echo $this->Form->input('Mass.ExamGradeChange.'.$st_count.'.gp', array('type' => 'checkbox', 'label' => false, 'id' => 'ExamGradeChange'.$st_count,'class'=>'checkbox1'));
-	      
-	      echo $this->Form->input('Mass.ExamGradeChange.'.$st_count.'.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
-	      
-	      
-	      
-	      ?>
-	    </td>
-	    
-		<td onclick="toggleView(this)" id="<?php echo $st_count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$st_count)); ?></td>
-		<td><?php echo $grade_change['Student']['first_name'].' '.$grade_change['Student']['middle_name'].' '.$grade_change['Student']['last_name']; ?></td>
-		<td><?php echo $grade_change['Student']['studentnumber']; ?></td>
-		<td><?php echo $grade_change['Course']['course_title'].' ('.$grade_change['Course']['course_code'].')'; ?></td>
-		<td><?php echo $grade_change['latest_grade']; ?></td>
-		<td><?php echo $grade_change['ExamGradeChange']['grade']; ?></td>
-		<td><?php echo $this->Format->humanize_date($grade_change['ExamGradeChange']['created']); ?></td>
-	</tr>
-	<tr id="c<?php echo $st_count; ?>" style="display:none">
-		<td>&nbsp;</td>
-		<td colspan="7">
-		<table>
-			<?php
-				if($grade_change['ExamGradeChange']['initiated_by_department'] == 1) {
-				?>
-				<tr>
-					<td class="fs14" colspan="2" style="font-weight:bold">Importnat Note: This exam grade change is requested by the department; not instructor.</td>
-				</tr>
+	<div class="box-header bg-transparent">
+        <div class="box-title" style="margin-top: 10px;"><i class="fontello-check" style="font-size: larger; font-weight: bold;"></i>
+            <span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Exam Grade Change, Makeup & Supplementary Exam Approval') . (isset($years_to_look_list_for_display) ? ' (' . $years_to_look_list_for_display . ')' : ''); ?></span>
+        </div>
+    </div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<div style="margin-top: -30px;"><hr></div>
+				
+				<?php $st_count = 1; ?>
+				<?= $this->Form->create('ExamGradeChange', array('onSubmit' => 'return checkForm(this);')); ?>
+
+				<h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+
 				<?php
+				if (!empty($exam_grade_changes)) { ?>
+			
+					<hr>
+					<h6 class="fs16 text-gray">Exam Grade Changes which are requested by Instructor and approved by the Department and College</h6>
+					<hr>
+
+					<?php
+					foreach ($exam_grade_changes as $college_name => $college_grade_changes) {
+						foreach ($college_grade_changes as $department_name => $department_grade_changes) {
+							foreach ($department_grade_changes as $program_name => $program_grade_changes) {
+								foreach ($program_grade_changes as $program_type_name => $program_type_grade_changes) { ?>
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="9" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+														<span style="font-size:16px;font-weight:bold; margin-top: 25px;"><?= $department_name; ?></span>
+															<br>
+															<span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+																<?= $college_name; ?>
+																<br>
+															</span>
+														</span>
+														<span class="text-gray" style="padding-top: 14px; font-size: 13px; font-weight: bold"> 
+															<?= $program_name . ' &nbsp; | &nbsp; ' . $program_type_name; ?><br>
+														</span>
+													</td>
+												</tr>
+												<tr>
+													<th style="width:5%;" class="center"><div style="padding-left: 10%;"><?= $this->Form->input('Mass.ExamGradeChange.select_all', array('disabled', 'type' => 'checkbox', 'id' => 'select-all', 'label' => false)); ?></div></th>
+													<th style="width:2%;" class="center">#</th>
+													<th style="width:4%;" class="center">&nbsp;</th>
+													<th style="width:20%;" class="vcenter">Student Name</th>
+													<th style="width:10%;" class="center">Student ID</th>
+													<th style="width:27%;" class="center">Course</th>
+													<th style="width:7%;" class="center">Previous</th>
+													<th style="width:7%;" class="center">New</th>
+													<th style="width:18%;" class="center">Request Date</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												$counter = 1;
+												foreach ($program_type_grade_changes as $key => $grade_change) { ?>
+													<tr>
+														<td class="center">
+															<div style="padding-left: 15%;"><?= $this->Form->input('Mass.ExamGradeChange.' . $st_count . '.gp', array('disabled', 'type' => 'checkbox', 'label' => false, 'id' => 'ExamGradeChange' . $st_count, 'class' => 'checkbox1')); ?></div>
+															<?=  $this->Form->input('Mass.ExamGradeChange.' . $st_count . '.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id'])); ?>
+														</td>
+														<td class="center"><?= $counter++; ?></td>
+														<td onclick="toggleView(this)" id="<?= $st_count; ?>" class="center"><?= $this->Html->image('plus2.gif', array('id' => 'i' . $st_count)); ?></td>
+														<td class="vcenter"><?= $grade_change['Student']['first_name'] . ' ' . $grade_change['Student']['middle_name'] . ' ' . $grade_change['Student']['last_name']; ?></td>
+														<td class="center"><?= $grade_change['Student']['studentnumber']; ?></td>
+														<td class="center"><?= $grade_change['Course']['course_title'] . ' (' . $grade_change['Course']['course_code'] . ')'; ?></td>
+														<td class="center"><?= $grade_change['latest_grade']; ?></td>
+														<td class="center"><?= $grade_change['ExamGradeChange']['grade']; ?></td>
+														<td class="center"><?= $this->Time->format("M j, Y g:i:s A", $grade_change['ExamGradeChange']['created'], NULL, NULL) ; ?></td>
+													</tr>
+													<tr id="c<?= $st_count; ?>" style="display:none;">
+														<td style="background-color: white;">&nbsp;</td>
+														<td colspan="2" style="background-color:white;">&nbsp;</td>
+														<td colspan="6" style="background-color:white;">
+															<table cellpadding="0" cellspacing="0" class="table">
+																<?php
+																//debug($grade_change['Section']);
+																if ($grade_change['ExamGradeChange']['initiated_by_department'] == 1) { ?>
+																	<tr>
+																		<td class="fs14" style="font-weight:bold;" class="vcenter"><span class="text-red">Importnat Note: This exam grade change is requested by the department, not by the course instructor!.</span></td>
+																	</tr>
+																	<?php
+																} ?>
+																<tr>
+																	<td style="font-weight:bold; background-color:white;" class="vcenter">Section: &nbsp; <?= $grade_change['Section']['name'] . ' (' . (isset($grade_change['Section']['YearLevel']['id']) && !empty($grade_change['Section']['YearLevel']['name']) ? $grade_change['Section']['YearLevel']['name'] : ($grade_change['Section']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial' : 'Pre/Freshman')) . ', '.   $grade_change['Section']['academicyear'] . ')'; ?></td>
+																</tr>
+																<tr>
+																	<td style="font-weight:bold; background-color:white;" class="vcenter">Instructor: &nbsp; <?= $grade_change['Staff']['Title']['title'] . '. ' . $grade_change['Staff']['first_name'] . ' ' . $grade_change['Staff']['middle_name'] . ' ' . $grade_change['Staff']['last_name'] . ' (' . $grade_change['Staff']['Position']['position'] . ')'; ?></td>
+																</tr>
+																<tr>
+																	<td style="font-weight:bold;background-color:white;" class="vcenter">Reason for Change: &nbsp; <?= $grade_change['ExamGradeChange']['reason']; ?></td>
+																</tr>
+															</table>
+															<br>
+															<table cellpadding="0" cellspacing="0" class="table">
+																<tr>
+																	<td style="vertical-align:top; width:60%; background-color:white;">
+																		<?php
+																		//debug($grade_change);
+																		$register_or_add = 'gh';
+																		if (isset($grade_change['ExamGradeHistory'])) {
+																			$grade_history = $grade_change['ExamGradeHistory'];
+																		} else {
+																			$grade_history = array();
+																		}
+
+																		if (is_null($grade_change['Section']['department_id'])) {
+																			$freshman_program = true;
+																		} else {
+																			$freshman_program = false;
+																		}
+
+																		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
+																		echo $this->element('registered_or_add_course_grade_history'); ?>
+																	</td>
+																	<td style="vertical-align:top; width:40%; background-color:white;">
+																		<?php
+																		//debug($grade_change);
+																		if (!$grade_change['Student']['graduated']) { ?>
+																			<table cellpadding="0" cellspacing="0" class="table">
+																				<tr>
+																					<td colspan="2">
+																						<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>
+																					</td>
+																				</tr>
+																				<tr>
+																					<td style="width:20%; background-color:white;">Decision:</td>
+																					<td style="width:80%; background-color:white;">
+																						<?php
+																						echo $this->Form->input('ExamGradeChange.' . $st_count . '.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
+																						$options = array('1' => ' Accept (Finalize)', '-1' => ' Reject (Back to Department)');
+																						$attributes = array('legend' => false, 'label' => false, 'separator' => "<br />", 'default' => 1);
+
+																						if (!empty($grade_change['ExamGradeHistory'][0]['rejected'])) {
+																							//$options = array('1' => 'Accept(forward to Regisrar)', '-1' => 'Reject(Send back to department');
+																							//$attributes = array('legend' => false, 'label' => false, 'separator' => "<br />", 'default' => 1);
+																						}
+																						echo $this->Form->radio('ExamGradeChange.' . $st_count . '.registrar_approval', $options, $attributes); ?>
+																						<br>
+																					</td>
+																				</tr>
+																				<tr>
+																					<td style="background-color:white;">Remark:</td>
+																					<td style="background-color:white;"><?= $this->Form->input('ExamGradeChange.' . $st_count . '.registrar_reason', array('label' => false, 'cols' => 40)); ?></td>
+																				</tr>
+																				
+																			</table>
+																			<br>
+																			<?= $this->Form->Submit('Approve Grade Change Request', array('div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'approveGradeChangeByRegistrar_' . $st_count++)); ?>
+																			<?php
+																		} else { ?>
+																			<div class='warning-box warning-message'><span style='margin-right: 15px;'></span>Grade Change is not available for graduated student.</div>
+																			<?php
+																		} ?>
+																	</td>
+																</tr>
+															</table>
+															<br>
+															<?php
+															$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
+															$student_exam_grade_history = $grade_change['ExamGrade'];
+															$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
+															echo $this->element('registered_or_add_course_grade_detail_history'); ?>
+															<br>
+														</td>
+													</tr>
+													<?php
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<hr>
+									<?php
+								}
+							}
+						}
+					}
 				}
-				?>
-			<tr>
-				<td style="width:15%; font-weight:bold">Section:</td>
-				<td style="width:85%"><?php echo $grade_change['Section']['name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Instructor:</td>
-				<td><?php echo $grade_change['Staff']['first_name'].' '.$grade_change['Staff']['middle_name'].' '.$grade_change['Staff']['last_name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Reason for Change:</td>
-				<td><?php echo $grade_change['ExamGradeChange']['reason']; ?></td>
-			</tr>
-		</table>
-		<table>
-			<tr>
-				<td style="vertical-align:top; width:40%">
-		<?php
-		//debug($grade_change);
-		$register_or_add = 'gh';
-		if(isset($grade_change['ExamGradeHistory']))
-			$grade_history = $grade_change['ExamGradeHistory'];
-		else
-			$grade_history = array();
-		if($grade_change['Section']['department_id'] == null)
-			$freshman_program = true;
-		else
-			$freshman_program = false;
-		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
-		echo $this->element('registered_or_add_course_grade_history');
-		?>
-				</td>
-				<td style="vertical-align:top; width:60%">
-					<table>
-						<tr>
-							<th colspan="2">
-							<?php
-							echo '<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>';
-							?>
-							</th>
-						</tr>
-						<tr>
-							<td style="width:18%">Accept / Reject:</td>
-							<td style="width:82%">
-								<?php
-								echo $this->Form->input('ExamGradeChange.'.$st_count.'.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
-								$options=array('1'=>'Accept','-1'=>'Reject');
-								$attributes=array('legend'=>false,'label'=>false,
-								'separator'=>"<br />", 'default' => 1);
-								echo $this->Form->radio('ExamGradeChange.'.$st_count.'.registrar_approval', $options, $attributes);
-								?>							
-							</td>
-						</tr>
-						<tr>
-							<td>Remark:</td>
-							<td><?php echo $this->Form->input('ExamGradeChange.'.$st_count.'.registrar_reason',array('label'=>false, 'cols' => 40)); ?></td>
-						</tr>
-						<tr>
-							<td colspan="2"><?php echo $this->Form->Submit('Approve Grade Change Request',array('div'=>false,'class'=>'tiny radius button bg-blue', 'name'=>'approveGradeChangeByRegistrar_'.$st_count++)); ?></td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</table>
-		<?php
-		$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
-		$student_exam_grade_history = $grade_change['ExamGrade'];
-		$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
-		echo $this->element('registered_or_add_course_grade_detail_history');
-		//debug($grade_change);
-		?>
-		</td>
-	</tr>
-	<?php
-	}
-	?>
-</table>
-			<?php
-			}
-		}
-	}
-}
- if(count($exam_grade_changes)>1) { 
-    	echo $this->Form->Submit('Accept All Grade Change Request',array('div'=>false,'class'=>'tiny radius button bg-blue', 'name'=>'ApproveAllGradeChangeByRegistrar')); 
-}
 
-echo " <p class='fs13'>Approving/reject individual grade change is possible by cliking on '+' icon and accept or reject request by giving reason.</p>";
-   
-/************************************  MAKEUP EXAM **************************************/
-if(!empty($makeup_exam_grade_changes)) {
-?>
-<div style="font-size:14px; font-weight:bold">Makeup exam approval which is requested by instructor/s and approved by the departement.</div>
-<?php
-	}
-foreach($makeup_exam_grade_changes as $college_name => $college_grade_changes) {
-	foreach($college_grade_changes as $department_name => $department_grade_changes) {
-		foreach($department_grade_changes as $program_name => $program_grade_changes) {
-			foreach($program_grade_changes as $program_type_name => $program_type_grade_changes) {
-	?>
-<table>
-	<tr>
-		<td colspan="7">
-			<table style="margin:0px; border:dashed 2px #CCCCCC">
-				<tr class="fs13">
-					<td style="font-weight:bold; width:4%">College:</td>
-					<td style="width:30%"><?php echo $college_name; ?></td>
-					<td style="font-weight:bold; width:5%">Department:</td>
-					<td style="width:20%"><?php echo $department_name; ?></td>
-					<td style="font-weight:bold; width:5%">Program:</td>
-					<td style="width:13%"><?php echo $program_name; ?></td>
-					<td style="font-weight:bold; width:13%">Program Type:</td>
-					<td style="width:10%"><?php echo $program_type_name; ?></td>
-				</tr>
-			</table>
-		</td>
-	</tr>
-	<tr>
-		<th style="width:2%">&nbsp;</td>
-		<th style="width:15%">Student Name</th>
-		<th style="width:10%">ID</th>
-		<th style="width:25%">Exam Taken for</th>
-		<th style="width:25%">Exam Course</th>
-		<th style="width:5%">Grade</th>
-		<th style="width:18%">Request Date</th>
-	</tr>
-	<?php
-	foreach($program_type_grade_changes as $key => $grade_change) {
-	?>
-	<tr>
-		<td onclick="toggleView(this)" id="<?php echo $st_count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$st_count)); ?></td>
-		<td><?php echo $grade_change['Student']['first_name'].' '.$grade_change['Student']['middle_name'].' '.$grade_change['Student']['last_name']; ?></td>
-		<td><?php echo $grade_change['Student']['studentnumber']; ?></td>
-		<td><?php echo $grade_change['Course']['course_title'].' ('.$grade_change['Course']['course_code'].')'; ?></td>
-		<td><?php echo $grade_change['ExamCourse']['course_title'].' ('.$grade_change['ExamCourse']['course_code'].')'; ?></td>
-		<td><?php echo $grade_change['ExamGradeChange']['grade']; ?></td>
-		<td><?php echo $this->Format->humanize_date($grade_change['ExamGradeChange']['created']); ?></td>
-	</tr>
-	<tr id="c<?php echo $st_count; ?>" style="display:none">
-		<td>&nbsp;</td>
-		<td colspan="6">
-		<?php
-		if(!isset($grade_change['MakeupExam'])) {
-		?>
-		<table>
-			<tr>
-				<td style="width:15%; font-weight:bold">Section:</td>
-				<td style="width:85%"><?php echo $grade_change['Section']['name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Instructor:</td>
-				<td><?php echo $grade_change['Staff']['first_name'].' '.$grade_change['Staff']['middle_name'].' '.$grade_change['Staff']['last_name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Reason for Change:</td>
-				<td><?php echo $grade_change['ExamGradeChange']['reason']; ?></td>
-			</tr>
-		</table>
-		<?php
-		}
-		else {
-		?>
-		<table>
-			<tr>
-				<td style="width:12%; font-weight:bold">Minute number:</td>
-				<td style="width:88%"><?php echo $grade_change['MakeupExam']['minute_number']; ?></td>
-			</tr>
-			<tr>
-				<td style="width:12%; font-weight:bold">Exam section:</td>
-				<td style="width:88%"><?php echo $grade_change['ExamSection']['name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Exam given by:</td>
-				<td><?php echo $grade_change['Staff']['first_name'].' '.$grade_change['Staff']['middle_name'].' '.$grade_change['Staff']['last_name']; ?></td>
-			</tr>
-		</table>
-		<?php
-		}
-		?>
-		<table>
-			<tr>
-				<td style="vertical-align:top; width:40%">
-		<?php
-		//debug($grade_change);
-		$register_or_add = 'gh';
-		if(isset($grade_change['ExamGradeHistory']))
-			$grade_history = $grade_change['ExamGradeHistory'];
-		else
-			$grade_history = array();
-		if($grade_change['Section']['department_id'] == null)
-			$freshman_program = true;
-		else
-			$freshman_program = false;
-		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
-		echo $this->element('registered_or_add_course_grade_history');
-		?>
-				</td>
-				<td style="vertical-align:top; width:60%">
-					<table>
-						<tr>
-							<th colspan="2">
-							<?php
-							echo '<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>';
-							?>
-							</th>
-						</tr>
-						<tr>
-							<td style="width:18%">Accept / Reject:</td>
-							<td style="width:82%">
-								<?php
-								echo $this->Form->input('ExamGradeChange.'.$st_count.'.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
-								$options=array('1'=>'Accept','-1'=>'Reject');
-								$attributes=array('legend'=>false,'label'=>false,
-								'separator'=>"<br />", 'default' => 1);
-								echo $this->Form->radio('ExamGradeChange.'.$st_count.'.registrar_approval', $options, $attributes);
-								?>							
-							</td>
-						</tr>
-						<tr>
-							<td>Remark:</td>
-							<td><?php echo $this->Form->input('ExamGradeChange.'.$st_count.'.registrar_reason',array('label'=>false, 'cols' => 40)); ?></td>
-						</tr>
-						<tr>
-							<td colspan="2"><?php echo $this->Form->Submit('Approve Grade Change Request',array('div'=>false, 'name'=>'approveGradeChangeByRegistrar_'.$st_count++)); ?></td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</table>
-		<?php
-		$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
-		$student_exam_grade_history = $grade_change['ExamGrade'];
-		$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
-		echo $this->element('registered_or_add_course_grade_detail_history');
-		//debug($grade_change);
-		?>
-		</td>
-	</tr>
-	<?php
-	}
-	?>
-</table>
-			<?php
-			}
-		}
-	}
-}
-echo '<br />';
-/************************************ MAKEUP REQUESTED BY THE DEPARTMENT **************************/
-if(!empty($department_makeup_exam_grade_changes)) {
-?>
-<div style="font-size:14px; font-weight:bold">Grade change through supplementary exam (Requested by department).</div>
-<?php
-	}
-foreach($department_makeup_exam_grade_changes as $college_name => $college_grade_changes) {
-	foreach($college_grade_changes as $department_name => $department_grade_changes) {
-		foreach($department_grade_changes as $program_name => $program_grade_changes) {
-			foreach($program_grade_changes as $program_type_name => $program_type_grade_changes) {
-			?>
-<table>
-	<tr>
-		<td colspan="7">
-			<table style="margin:0px; border:dashed 2px #CCCCCC">
-				<tr class="fs13">
-					<td style="font-weight:bold; width:4%">College:</td>
-					<td style="width:30%"><?php echo $college_name; ?></td>
-					<td style="font-weight:bold; width:5%">Department:</td>
-					<td style="width:20%"><?php echo $department_name; ?></td>
-					<td style="font-weight:bold; width:5%">Program:</td>
-					<td style="width:13%"><?php echo $program_name; ?></td>
-					<td style="font-weight:bold; width:13%">Program Type:</td>
-					<td style="width:10%"><?php echo $program_type_name; ?></td>
-				</tr>
-			</table>
-		</td>
-	</tr>
-	<tr>
-		<th style="width:2%">&nbsp;</td>
-		<th style="width:18%">Student Name</th>
-		<th style="width:10%">ID</th>
-		<th style="width:30%">Course</th>
-		<th style="width:10%">Previous Grade</th>
-		<th style="width:10%">New Grade</th>
-		<th style="width:20%">Request Date</th>
-	</tr>
-	<?php
-	if($program_type_grade_changes[0]['Section']['department_id'] == null)
-		$freshman_program = true;
-	else
-		$freshman_program = false;
-	foreach($program_type_grade_changes as $key => $grade_change) {
-	?>
-	<tr>
-		<td onclick="toggleView(this)" id="<?php echo $st_count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$st_count)); ?></td>
-		<td><?php echo $grade_change['Student']['first_name'].' '.$grade_change['Student']['middle_name'].' '.$grade_change['Student']['last_name']; ?></td>
-		<td><?php echo $grade_change['Student']['studentnumber']; ?></td>
-		<td><?php echo $grade_change['Course']['course_title'].' ('.$grade_change['Course']['course_code'].')'; ?></td>
-		<td><?php echo $grade_change['latest_grade']; ?></td>
-		<td><?php echo $grade_change['ExamGradeChange']['grade']; ?></td>
-		<td><?php echo $this->Format->humanize_date($grade_change['ExamGradeChange']['created']); ?></td>
-	</tr>
-	<tr id="c<?php echo $st_count; ?>" style="display:none">
-		<td>&nbsp;</td>
-		<td colspan="6">
-		<table>
-			<tr>
-				<td style="width:20%; font-weight:bold">Student Section:</td>
-				<td style="width:80%"><?php echo $grade_change['Section']['name']; ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Course Instructor:</td>
-				<td><?php echo (isset($grade_change['Staff']) && !empty($grade_change['Staff']) ? $grade_change['Staff']['first_name'].' '.$grade_change['Staff']['middle_name'].' '.$grade_change['Staff']['last_name'] : 'Instructor not assigned by the departement'); ?></td>
-			</tr>
-			<tr>
-				<td style="font-weight:bold">Makeup exam remark by <?php echo ($freshman_program ? 'freshman program' : 'department'); ?>:</td>
-				<td><?php echo $grade_change['ExamGradeChange']['reason']; ?></td>
-			</tr>
-		</table>
-		<table>
-			<tr>
-				<td style="vertical-align:top; width:40%">
-		<?php
-		//debug($grade_change);
-		$register_or_add = 'gh';
-		if(isset($grade_change['ExamGradeHistory']))
-			$grade_history = $grade_change['ExamGradeHistory'];
-		else
-			$grade_history = array();
-		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
-		echo $this->element('registered_or_add_course_grade_history');
-		?>
-				</td>
-				<td style="vertical-align:top; width:60%">
-					<table>
-						<tr>
-							<th colspan="2">
-							<?php
-							echo '<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>';
-							?>
-							</th>
-						</tr>
-						<tr>
-							<td style="width:18%">Accept / Reject:</td>
-							<td style="width:82%">
-								<?php
-								echo $this->Form->input('ExamGradeChange.'.$st_count.'.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
-								$options=array('1'=>'Accept','-1'=>'Reject');
-								$attributes=array('legend'=>false,'label'=>false,
-								'separator'=>"<br />", 'default' => 1);
-								echo $this->Form->radio('ExamGradeChange.'.$st_count.'.registrar_approval', $options, $attributes);
-								?>							
-							</td>
-						</tr>
-						<tr>
-							<td>Remark:</td>
-							<td><?php echo $this->Form->input('ExamGradeChange.'.$st_count.'.registrar_reason',array('label'=>false, 'cols' => 40)); ?></td>
-						</tr>
-						<tr>
-							<td colspan="2"><?php echo $this->Form->Submit('Approve Grade Change Request',array('div'=>false, 'name'=>'approveGradeChangeByRegistrar_'.$st_count++)); ?></td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</table>
-		<?php
-		$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
-		$student_exam_grade_history = $grade_change['ExamGrade'];
-		$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
-		echo $this->element('registered_or_add_course_grade_detail_history');
-		//debug($grade_change);
-		?>
-		</td>
-	</tr>
-	<?php
-	}
-	?>
-</table>
-			<?php
-			}
-		}
-	}
-}
+				/************************************  MAKEUP EXAM **************************************/
 
-echo $this->Form->input('grade_change_count', array('type' => 'hidden', 'value' => ($st_count-1)));
-if(empty($makeup_exam_grade_changes) && empty($exam_grade_changes) && empty($department_makeup_exam_grade_changes)) {
-?>
-<div id="flashMessage" class="info-box info-message"><span style="margin-bottom:20px"></span>There is no exam grade change request and makeup exam grade submission to approve. Exam grade changes and makeup exams are required to be submitted by instructor and approved by department & college (for grade change) in-order to appear here. You can use the "View Grade Change" tool to see the status of any grade change from any college and department.</div>
-<?php
+				if (isset($makeup_exam_grade_changes) && !empty($makeup_exam_grade_changes)) { ?>
+					<hr>
+					<h6 class="fs14 text-gray">Makeup Exam approval which is requested by Instructors and approved by the departement.</h6>
+					<hr>
+					<?php
+					foreach ($makeup_exam_grade_changes as $college_name => $college_grade_changes) {
+						foreach ($college_grade_changes as $department_name => $department_grade_changes) {
+							foreach ($department_grade_changes as $program_name => $program_grade_changes) {
+								foreach ($program_grade_changes as $program_type_name => $program_type_grade_changes) { ?>
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="8" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+														<span style="font-size:16px;font-weight:bold; margin-top: 25px;"><?= $department_name; ?></span>
+															<br>
+															<span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+																<?= $college_name; ?>
+																<br>
+															</span>
+														</span>
+														<span class="text-gray" style="padding-top: 14px; font-size: 13px; font-weight: bold"> 
+															<?= $program_name . ' &nbsp; | &nbsp; ' . $program_type_name; ?><br>
+														</span>
+													</td>
+												</tr>
+												<tr>
+													<th style="width:3%;" class="center">&nbsp;</th>
+													<th style="width:4%;" class="center">#</th>
+													<th style="width:15%;" class="vcenter">Student Name</th>
+													<th style="width:10%;" class="center">Student ID</th>
+													<th style="width:23%;" class="center">Exam Taken for</th>
+													<th style="width:23%;" class="center">Exam Course</th>
+													<th style="width:5%;" class="center">Grade</th>
+													<th style="width:17%;" class="center">Request Date</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												$cntr = 1;
+												foreach ($program_type_grade_changes as $key => $grade_change) { ?>
+													<tr>
+														<td onclick="toggleView(this)" id="<?= $st_count; ?>" class="center"><?= $this->Html->image('plus2.gif', array('id' => 'i' . $st_count)); ?></td>
+														<td class="center"><?= $cntr++; ?></td>
+														<td class="center"><?= $grade_change['Student']['first_name'] . ' ' . $grade_change['Student']['middle_name'] . ' ' . $grade_change['Student']['last_name']; ?></td>
+														<td class="center"><?= $grade_change['Student']['studentnumber']; ?></td>
+														<td class="center"><?= $grade_change['Course']['course_title'] . ' (' . $grade_change['Course']['course_code'] . ')'; ?></td>
+														<td class="center"><?= $grade_change['ExamCourse']['course_title'] . ' (' . $grade_change['ExamCourse']['course_code'] . ')'; ?></td>
+														<td class="center"><?= $grade_change['ExamGradeChange']['grade']; ?></td>
+														<td class="center"><?= $this->Time->format("M j, Y h:i:s A", $grade_change['ExamGradeChange']['created'], NULL, NULL); ?></td>
+													</tr>
+													<tr id="c<?= $st_count; ?>" style="display:none">
+														<td style="background-color: white;">&nbsp;</td>
+														<td style="background-color: white;">&nbsp;</td>
+														<td colspan="6" style="background-color: white;">
+															<?php
+															if (!isset($grade_change['MakeupExam'])) { ?>
+																<table cellpadding="0" cellspacing="0" class="table">
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Section: &nbsp; <?= $grade_change['Section']['name'] . ' (' . (isset($grade_change['Section']['YearLevel']['id']) && !empty($grade_change['Section']['YearLevel']['name']) ? $grade_change['Section']['YearLevel']['name'] : ($grade_change['Section']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial' : 'Pre/Freshman')) . ', '.   $grade_change['Section']['academicyear'] . ')'; ?></td>
+																	</tr>
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Instructor: &nbsp; <?= $grade_change['Staff']['first_name'] . ' ' . $grade_change['Staff']['middle_name'] . ' ' . $grade_change['Staff']['last_name']; ?></td>
+																	</tr>
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Reason for Change: &nbsp; <?= $grade_change['ExamGradeChange']['reason']; ?></td>
+																	</tr>
+																</table>
+																<br>
+																<?php
+															} else { ?>
+																<table cellpadding="0" cellspacing="0" class="table">
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Minute Number: &nbsp; <?= $grade_change['MakeupExam']['minute_number']; ?></td>
+																	</tr>
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Exam Section: &nbsp; <?= $grade_change['ExamSection']['name']; ?></td>
+																	</tr>
+																	<tr>
+																		<td style="font-weight:bold; background-color: white;" class="vcenter">Exam Given By: &nbsp; <?= $grade_change['Staff']['first_name'] . ' ' . $grade_change['Staff']['middle_name'] . ' ' . $grade_change['Staff']['last_name']; ?></td>
+																	</tr>
+																</table>
+																<br>
+																<?php
+															} ?>
+															<table cellpadding="0" cellspacing="0" class="table">
+																<tr>
+																	<td style="vertical-align:top; width:60%; background-color: white;">
+																		<?php
+																		//debug($grade_change);
+																		$register_or_add = 'gh';
+																		if (isset($grade_change['ExamGradeHistory'])) {
+																			$grade_history = $grade_change['ExamGradeHistory'];
+																		} else {
+																			$grade_history = array();
+																		}
+
+																		if (is_null($grade_change['Section']['department_id'])) {
+																			$freshman_program = true;
+																		} else {
+																			$freshman_program = false;
+																		}
+
+																		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
+																		echo $this->element('registered_or_add_course_grade_history'); ?>
+																		<br>
+																	</td>
+																	<td style="vertical-align:top; width:40%; background-color: white;">
+																		<table cellpadding="0" cellspacing="0" class="table">
+																			<tr>
+																				<td colspan="2">
+																					<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>
+																				</td>
+																			</tr>
+																			<tr>
+																				<td style="width:20%; background-color: white;">Decision:</td>
+																				<td style="width:80%; background-color: white;">
+																					<?php
+																					echo $this->Form->input('ExamGradeChange.' . $st_count . '.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
+																					$options = array('1' => ' Accept (Finalize)', '-1' => ' Reject (Back to Department)');
+																					$attributes = array('legend' => false, 'label' => false, 'separator' => "<br />", 'default' => 1);
+																					echo $this->Form->radio('ExamGradeChange.' . $st_count . '.registrar_approval', $options, $attributes); ?>
+																				</td>
+																			</tr>
+																			<tr>
+																				<td style="background-color: white;">Remark:</td>
+																				<td style="background-color: white;"><?= $this->Form->input('ExamGradeChange.' . $st_count . '.registrar_reason', array('label' => false, 'cols' => 40)); ?></td>
+																			</tr>
+																		</table>
+																		<br>
+																		<?= $this->Form->Submit('Approve Grade Change Request', array('div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'approveGradeChangeByRegistrar_' . $st_count++)); ?>
+																	</td>
+																</tr>
+															</table>
+															<br>
+															<?php
+															$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
+															$student_exam_grade_history = $grade_change['ExamGrade'];
+															$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
+															echo $this->element('registered_or_add_course_grade_detail_history'); ?>
+															<br>
+														</td>
+													</tr>
+													<?php
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<hr>
+									<?php
+								}
+							}
+						}
+					}
+				} 
+
+
+				/************************************ MAKEUP REQUESTED BY THE DEPARTMENT **************************/
+				
+				if (isset($department_makeup_exam_grade_changes) && !empty($department_makeup_exam_grade_changes)) { ?>
+					
+					<hr>
+					<h6 class="fs16 text-gray">Exam Grade Change through Supplementary Exam <!-- (Requested by department) --></h6>
+					<hr>
+
+					<?php
+					foreach ($department_makeup_exam_grade_changes as $college_name => $college_grade_changes) {
+						foreach ($college_grade_changes as $department_name => $department_grade_changes) {
+							foreach ($department_grade_changes as $program_name => $program_grade_changes) {
+								foreach ($program_grade_changes as $program_type_name => $program_type_grade_changes) { ?>
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="8" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+														<span style="font-size:16px;font-weight:bold; margin-top: 25px;"><?= $department_name; ?></span>
+															<br>
+															<span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+																<?= $college_name; ?>
+																<br>
+															</span>
+														</span>
+														<span class="text-gray" style="padding-top: 14px; font-size: 13px; font-weight: bold"> 
+															<?= $program_name . ' &nbsp; | &nbsp; ' . $program_type_name; ?><br>
+														</span>
+													</td>
+												</tr>
+												<tr>
+													<th style="width:4%;" class="center">&nbsp;</th>
+													<th style="width:3%;" class="center">#</th>
+													<th style="width:18%;" class="vcenter">Student Name</th>
+													<th style="width:10%;" class="center">Student ID</th>
+													<th style="width:30%;" class="center">Course</th>
+													<th style="width:8%;" class="center">Previous</th>
+													<th style="width:8%;" class="center">New</th>
+													<th style="width:19%;" class="center">Request Date</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												if (is_null($program_type_grade_changes[0]['Section']['department_id'])) {
+													$freshman_program = true;
+												} else {
+													$freshman_program = false;
+												}
+
+												$cntrr = 1;
+
+												foreach ($program_type_grade_changes as $key => $grade_change) { ?>
+													<tr>
+														<td onclick="toggleView(this)" id="<?= $st_count; ?>" class="center"><?= $this->Html->image('plus2.gif', array('id' => 'i' . $st_count)); ?></td>
+														<td class="center"><?= $cntrr++; ?></td>
+														<td class="vcenter"><?= $grade_change['Student']['first_name'] . ' ' . $grade_change['Student']['middle_name'] . ' ' . $grade_change['Student']['last_name']; ?></td>
+														<td class="center"><?= $grade_change['Student']['studentnumber']; ?></td>
+														<td class="center"><?= $grade_change['Course']['course_title'] . ' (' . $grade_change['Course']['course_code'] . ')'; ?></td>
+														<td class="center"><?= $grade_change['latest_grade']; ?></td>
+														<td class="center"><?= $grade_change['ExamGradeChange']['grade']; ?></td>
+														<td class="center"><?= $this->Time->format("M j, Y h:i:s A", $grade_change['ExamGradeChange']['created'], NULL, NULL); ?></td>
+													</tr>
+													<tr id="c<?= $st_count; ?>" style="display:none">
+														<td style="background-color: white;">&nbsp;</td>
+														<td style="background-color: white;">&nbsp;</td>
+														<td colspan="6" style="background-color: white;">
+															<table cellpadding="0" cellspacing="0" class="table">
+																<tr>
+																	<td class="vcenter" style="background-color: white;"><b>Section:</b> &nbsp; <?= $grade_change['Section']['name'] . ' (' . (isset($grade_change['Section']['YearLevel']['id']) && !empty($grade_change['Section']['YearLevel']['name']) ? $grade_change['Section']['YearLevel']['name'] : ($grade_change['Section']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial' : 'Pre/Freshman')) . ', '.   $grade_change['Section']['academicyear'] . ')'; ?></td>
+																</tr>
+																<tr>
+																	<td class="vcenter" style="background-color: white;"><b>Course Instructor:</b> &nbsp; <?= (isset($grade_change['Staff']) && !empty($grade_change['Staff']) ? $grade_change['Staff']['first_name'] . ' ' . $grade_change['Staff']['middle_name'] . ' ' . $grade_change['Staff']['last_name'] : 'Instructor not assigned by the departement'); ?></td>
+																</tr>
+																<tr>
+																	<td class="vcenter" style="background-color: white;"><b>Makeup Exam Remark By <?= ($freshman_program ? 'freshman program' : 'department'); ?>:</b> &nbsp; <?= $grade_change['ExamGradeChange']['reason']; ?></td>
+																</tr>
+															</table>
+															<br>
+															<table cellpadding="0" cellspacing="0" class="table">
+																<tr>
+																	<td style="vertical-align:top; width:60%; background-color: white;">
+																		<?php
+																		//debug($grade_change);
+																		$register_or_add = 'gh';
+
+																		if (isset($grade_change['ExamGradeHistory'])) {
+																			$grade_history = $grade_change['ExamGradeHistory'];
+																		} else {
+																			$grade_history = array();
+																		}
+
+																		$this->set(compact('register_or_add', 'grade_history', 'freshman_program'));
+																		echo $this->element('registered_or_add_course_grade_history'); ?>
+																		<br>
+																	</td>
+																	<td style="vertical-align:top; width:40%; background-color: white;">
+																		<table cellpadding="0" cellspacing="0" class="table">
+																			<tr>
+																				<td colspan="2">
+																					<div style="font-weight:bold; font-size:14px">Grade Change Request Approval</div>
+																				</td>
+																			</tr>
+																			<tr>
+																				<td style="width:18%; background-color: white;">Decision:</td>
+																				<td style="width:82%; background-color: white;">
+																					<?php
+																					echo $this->Form->input('ExamGradeChange.' . $st_count . '.id', array('type' => 'hidden', 'value' => $grade_change['ExamGradeChange']['id']));
+																					$options = array('1' => ' Accept (Finalize)', '-1' => ' Reject (Back to Department)');
+																					$attributes = array('legend' => false, 'label' => false, 'separator' => "<br />", 'default' => 1);
+																					echo $this->Form->radio('ExamGradeChange.' . $st_count . '.registrar_approval', $options, $attributes); ?>
+																				</td>
+																			</tr>
+																			<tr>
+																				<td style="background-color: white;"><b>Remark:</b></td>
+																				<td style="background-color: white;"><?= $this->Form->input('ExamGradeChange.' . $st_count . '.registrar_reason', array('label' => false, 'cols' => 40)); ?></td>
+																			</tr>
+																		</table>
+																		<br>
+																		<?= $this->Form->Submit('Approve Grade Change Request', array('div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'approveGradeChangeByRegistrar_' . $st_count++)); ?>
+																	</td>
+																</tr>
+															</table>
+															<br>
+															<?php
+															$student_exam_grade_change_history = $grade_change['ExamGradeHistory'];
+															$student_exam_grade_history = $grade_change['ExamGrade'];
+															$this->set(compact('student_exam_grade_history', 'student_exam_grade_change_history'));
+															echo $this->element('registered_or_add_course_grade_detail_history'); ?>
+															<br>
+														</td>
+													</tr>
+													<?php
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<hr>
+									<?php
+								}
+							}
+						}
+					}
+				}
+
+				if (count($exam_grade_changes) > 1) {
+					//echo $this->Form->Submit('Accept All Grade Change Request', array('id' => 'approveRejectGradeChange', 'div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'ApproveAllGradeChangeByRegistrar'));
+					// they should check each and every grade change. Neway
+				}
+
+				echo $this->Form->input('grade_change_count', array('type' => 'hidden', 'value' => ($st_count - 1)));
+
+				if (empty($makeup_exam_grade_changes) && empty($exam_grade_changes) && empty($department_makeup_exam_grade_changes)) { ?>
+					<div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>There is no Exam Grade Change or Makeup Exam Grade submission request to confirm <?= (!empty($years_to_look_list_for_display) ? $years_to_look_list_for_display : ''); ?>. Exam grade changes and makeup exams are required to be submitted by instructor and approved by department & college(for grade change) in-order to appear here. You can use the "View Grade Change" tool to see the status of any grade change from assigned and department.</div>
+					<?php
+				} ?>
+				<?= $this->Form->end(); ?>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	
+</script>
+
+<script type="text/javascript">
+
+	function toggleView(obj) {
+		if ($('#c' + obj.id).css("display") == 'none')
+			$('#i' + obj.id).attr("src", '/img/minus2.gif');
+		else
+			$('#i' + obj.id).attr("src", '/img/plus2.gif');
+		$('#c' + obj.id).toggle("slow");
 	}
-echo $this->Form->end();
-?>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row -->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+
+	var form_being_submitted = false;
+
+    const validationMessageNonSelected = document.getElementById('validation-message_non_selected');
+
+	var checkForm = function(form) {
+
+        var radios = document.querySelectorAll('input[type="radio"]');
+		var checkedOneRadio = Array.prototype.slice.call(radios).some(x => x.checked);
+
+		var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+		var checkedOneCheckbox = Array.prototype.slice.call(checkboxes).some(x => x.checked);
+
+		if (!checkedOneRadio) {
+            alert('At least one Grade Change Must be Accepted or Rejected!');
+			validationMessageNonSelected.innerHTML = 'At least one Grade Change Must be Accepted or Rejected!';
+			return false;
+		} /* else if (!checkedOneCheckbox) {
+			//I do not want to check it at this time, Neway
+            alert('At least one Grade Change Must be Accepted or Rejected!');
+			validationMessageNonSelected.innerHTML = 'At least one Grade Change Must be Accepted or Rejected!';
+			return false;
+		} */
+
+		if (form_being_submitted) {
+			alert("Approving/Rejecting Grade Change, please wait a moment...");
+			//form.approveRejectGradeChange.disabled = true;
+			return false;
+		}
+
+		//form.approveRejectAdd.value = 'Approving/Rejecting Course Add...';
+		form_being_submitted = true;
+		return true;
+	};
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
+</script>

@@ -1,5 +1,6 @@
 <?php
-class Log extends AppModel {
+class Log extends AppModel
+{
 	var $name = 'Log';
 	var $belongsTo = array(
 		'User' => array(
@@ -10,7 +11,4 @@ class Log extends AppModel {
 			'order' => ''
 		)
 	);
-	
-	
-	
 }

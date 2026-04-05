@@ -7,13 +7,15 @@ class OnlineApplicantsController extends AppController
 	public $name = 'OnlineApplicants';
 	public $menuOptions = array(
 		'parent' => 'placement',
-		'exclude' => array('search'),
+		'exclude' => array('search', 'accepted_document', 'get_department_combo','get_campus_department_combo'),
 		'alias' => array(
+			'new_applicant_requests' => 'New Applicant Requests',
 			'index' => 'View Online Request',
 			'process_selected' => 'Process Selected'
 
 		)
 	);
+
 	var $helpers = array('DatePicker', 'Media.Media');
 
 	public $paginate = array();
@@ -22,43 +24,64 @@ class OnlineApplicantsController extends AppController
 	public function beforeFilter()
 	{
 		parent::beforeFilter();
-		$this->Auth->Allow('get_department_combo');
+		$this->Auth->Allow('get_department_combo', 'edit','new_applicant_requests','accept_document',
+        'get_campus_department_combo');
 	}
 	public function beforeRender()
 	{
+		parent::beforeRender();
 		//$acyear_array_data = $this->AcademicYear->acyear_array();
-		$acyear_array_data = $this->AcademicYear->academicYearInArray(date('Y') - 1, date('Y'));
-		$acYearMinuSeparated = $this->AcademicYear->acYearMinuSeparated();
+		$acyear_array_data = $this->AcademicYear->academicYearInArray(date('Y') - 1, date('Y') + 1);
+
+
+
+		//	$acyear_array_data = $this->AcademicYear->acyear_array(); //acyear_array
 		//To diplay current academic year as default in drop down list
 		$defaultacademicyear = $this->AcademicYear->current_academicyear();
-		$defaultacademicyearMinusSeparted = str_replace('/', '-', $defaultacademicyear);
+
+
+		//To diplay current academic year as default in drop down list
+		$defaultacademicyear = $this->AcademicYear->current_academicyear();
+
 
 		if (!empty($this->program_type_id)) {
-			$program_types = $programTypes =  $this->OnlineApplicant->ProgramType->find('list', array('conditions' =>
-			array('ProgramType.id' => $this->program_type_id)));
+			$program_types = $programTypes = $this->OnlineApplicant->ProgramType->find(
+				'list',
+				array(
+					'conditions' =>
+						array('ProgramType.id' => $this->program_type_id)
+				)
+			);
 		} else {
 			$program_types = $programTypes = $this->OnlineApplicant->ProgramType->find('list');
 		}
 		if (!empty($this->program_id)) {
-			$programs =  $this->OnlineApplicant->Program->find('list', array('conditions' =>
-			array('Program.id' => $this->program_id)));
+			$programs = $this->OnlineApplicant->Program->find(
+				'list',
+				array(
+					'conditions' =>
+						array('Program.id' => $this->program_id)
+				)
+			);
 		} else {
-			$programs =  $this->OnlineApplicant->Program->find('list');
+			$programs = $this->OnlineApplicant->Program->find('list');
 		}
 
-		$this->set(compact(
-			'acyear_array_data',
-			'acYearMinuSeparated',
-			'defaultacademicyear',
-			'program_types',
-			'programs',
-			'programTypes',
-			'defaultacademicyearMinusSeparted'
-		));
+		$this->set(
+			compact(
+				'acyear_array_data',
+				'acYearMinuSeparated',
+				'defaultacademicyear',
+				'program_types',
+				'programs',
+				'programTypes',
+				'defaultacademicyearMinusSeparted'
+			)
+		);
 	}
 	/*
-    *Generic search for returned items
-    */
+	 *Generic search for returned items
+	 */
 	public function search()
 	{
 		// the page we will redirect to
@@ -84,30 +107,26 @@ class OnlineApplicantsController extends AppController
 	public function index()
 	{
 		$this->paginate = array(
-			
-			'maxLimit' => 100, 'limit' => 100, 'contain' => array(
+
+			'maxLimit' => 100,
+			'limit' => 100,
+			'contain' => array(
 				'OnlineApplicantStatus',
-				'College', 'Program', 'ProgramType',
-				'Department'
+
+				'HigherEducationBackground',
+				'HighSchoolEducationBackground',
+				'College' => array('Campus'),
+				'Program',
+				'ProgramType',
+				'Department',
+				'Invoice'=>array('Transaction'),
+				'Attachment'
 			),
-			/*
-			'joins' => array(
-				array(
-					'table' => 'online_applicant_statuses',
-					'alias' => 'OnlineApplicantStatus',
-					'type' => 'LEFT',
-					'conditions' => array(
-						'OnlineApplicant.id = OnlineApplicantStatus.online_applicant_id'
-					),
-					'order'=>array('OnlineApplicantStatus.created'=>'DESC'),
-					'limit'=>1,
-				)
-			),
-			//'fields'=>array('OnlineApplicant.*','OnlineApplicantStatus.*','College.*','Department.*','Program.*','ProgramType.*'),
-			'group'=>array('OnlineApplicantStatus.online_applicant_id'),
-			*/
-			'order' => array('OnlineApplicant.full_name' => 'ASC')
+
+			'order' => array('OnlineApplicant.full_name' => 'ASC', 'OnlineApplicant.created' => 'DESC')
 		);
+
+
 		debug($this->request->data);
 		// Sort
 
@@ -170,15 +189,13 @@ class OnlineApplicantsController extends AppController
 			$department_id = $this->request->data['OnlineApplicant']['department_id'];
 			$this->paginate['conditions'][]['OnlineApplicant.department_id'] = $department_id;
 		}
-		// filter by department or college
 
 		if (
-			isset($this->request->data['OnlineApplicant']['college_id']) &&
-			!empty($this->request->data['OnlineApplicant']['college_id'])
+			isset($this->request->data['OnlineApplicant']['academic_year']) &&
+			!empty($this->request->data['OnlineApplicant']['academic_year'])
 		) {
 
-			$college_id = $this->request->data['OnlineApplicant']['college_id'];
-			$this->paginate['conditions'][]['OnlineApplicant.college_id'] = $college_id;
+			$this->paginate['conditions'][]['OnlineApplicant.academic_year'] = $this->request->data['OnlineApplicant']['academic_year'];
 		}
 
 		// filter by period
@@ -187,6 +204,7 @@ class OnlineApplicantsController extends AppController
 			$this->paginate['conditions'][] = array('OnlineApplicant.created >= \'' . $this->request->data['OnlineApplicant']['request_from']['year'] . '-' . $this->request->data['OnlineApplicant']['request_from']['month'] . '-' . $this->request->data['OnlineApplicant']['request_from']['day'] . '\'');
 			$this->paginate['conditions'][] = array('OnlineApplicant.created <= \'' . $this->request->data['OnlineApplicant']['request_to']['year'] . '-' . $this->request->data['OnlineApplicant']['request_to']['month'] . '-' . $this->request->data['OnlineApplicant']['request_to']['day'] . '\'');
 		}
+
 
 		if (isset($this->request->data['OnlineApplicant']['limit']) && !empty($this->request->data['OnlineApplicant']['limit'])) {
 			$this->paginate['limit'] = $this->request->data['OnlineApplicant']['limit'];
@@ -197,36 +215,36 @@ class OnlineApplicantsController extends AppController
 		}
 
 
-		// filter by tracking number
-		if (!empty($this->request->data['OnlineApplicant']['applicationnumber'])) {
 
-			unset($this->paginate['conditions']);
-
-			$trackingnumber = $this->request->data['OnlineApplicant']['applicationnumber'];
-			if (!empty($trackingnumber)) {
-				$this->paginate['conditions'][]['OnlineApplicant.applicationnumber'] = $trackingnumber;
-			}
-		}
 
 		if (isset($this->request->data['OnlineApplicant']['page']) && !empty($this->request->data['OnlineApplicant']['page'])) {
 
 			$this->paginate['page'] = $this->request->data['OnlineApplicant']['page'];
 		}
-		$status='';
+		$status = '';
 		if (
 			isset($this->request->data['OnlineApplicant']['statuses']) &&
 			!empty($this->request->data['OnlineApplicant']['statuses'])
 		) {
 
 			$status = $this->request->data['OnlineApplicant']['statuses'];
-			//$this->paginate['conditions'][]['OnlineApplicantStatus.status'] = $status;
-			//$this->paginate['joins'][0]['conditions']['OnlineApplicantStatus.status']=$status;
+		}
+
+		// filter by tracking number
+		if (isset($this->request->data['OnlineApplicant']['applicationnumber'])) {
+
+			$trackingnumber = $this->request->data['OnlineApplicant']['applicationnumber'];
+			debug($trackingnumber);
+			if (!empty($trackingnumber)) {
+				unset($this->paginate['conditions']);
+				$this->paginate['conditions'][]['OnlineApplicant.applicationnumber'] = $trackingnumber;
+			}
 		}
 
 
 
-
 		$this->Paginator->settings = $this->paginate;
+		debug($this->Paginator->settings);
 
 		if (isset($this->Paginator->settings['conditions'])) {
 
@@ -235,126 +253,76 @@ class OnlineApplicantsController extends AppController
 
 			$onlineApplicants = array();
 		}
-		//debug($onlineApplicants);
+		debug($onlineApplicants);
 		if (empty($onlineApplicants) && isset($this->request->data) && !empty($this->request->data)) {
 
 			$this->Session->setFlash('<span></span>' . __('There is no online applicants in the application list based on the given criteria.'), 'default', array('class' => 'info-box info-message'));
 		}
 		debug(count($onlineApplicants));
-		if(isset($onlineApplicants) && !empty($onlineApplicants)){
+		if (isset($onlineApplicants) && !empty($onlineApplicants)) {
 			foreach ($onlineApplicants as $k => &$v) {
-				$st='';
-				if(isset($status) && !empty($status)){
+				$st = '';
+				if (isset($status) && !empty($status)) {
 					$highest = 0;
-					$hindex=0;
-					foreach($v['OnlineApplicantStatus'] as $onst=>$onval){
-		    				if($onval['id']>$highest){
-		        				$highest = $onval['id'];
-		        				$hindex=$onst;
-		    				}
+					$hindex = 0;
+					foreach ($v['OnlineApplicantStatus'] as $onst => $onval) {
+						if ($onval['id'] > $highest) {
+							$highest = $onval['id'];
+							$hindex = $onst;
+						}
 					}
-					if($highest){
-		    				$st=$v['OnlineApplicantStatus'][$hindex]['status'];
+					if ($highest) {
+						$st = $v['OnlineApplicantStatus'][$hindex]['status'];
 					}
-			  		if(strcasecmp($status,$st)==0){
-			
-		    				$v['OnlineApplicant']['status']=$st;
-						$v['OnlineApplicant']['status_remark']=$v['OnlineApplicantStatus'][$hindex]['remark'];
-		   
-			   		} else {
+					if (strcasecmp($status, $st) == 0) {
+
+						$v['OnlineApplicant']['status'] = $st;
+						$v['OnlineApplicant']['status_remark'] = $v['OnlineApplicantStatus'][$hindex]['remark'];
+					} else {
 						unset($onlineApplicants[$k]);
-			   		}
+					}
 				} else {
-	    				$v['OnlineApplicant']['status']=$st;
-					$v['OnlineApplicant']['status_remark']='';
+					$v['OnlineApplicant']['status'] = $st;
+					$v['OnlineApplicant']['status_remark'] = '';
 				}
-	                }
+			}
 		}
-		
-		debug(count($onlineApplicants));
+
 
 		$programs = $this->OnlineApplicant->Program->find('list');
 
 		$program_types = $this->OnlineApplicant->ProgramType->find('list');
-		$departments = $this->OnlineApplicant->Department->find('list');
-		$colleges = $this->OnlineApplicant->College->find('list');
+
 		if ((!empty($this->request->data['OnlineApplicant']) && !empty($this->request->data['viewPDF']))) {
 			$onlineapplicant_list_pdf = array();
 			//$count = 1;
 			//debug($onlineApplicants);
 			//die;
-			foreach ($onlineApplicants as $k => $v) {    
-				if (isset($v['Program']['name']) && !empty($v['Program']['name']) && 
-isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($v['Department']['name']) && !empty($v['Department']['name'])
-                                ) {
-                                        $onlineapplicant_list_pdf[$v['Program']['name'] . '~' . $v['ProgramType']['name'] . '~' . $v['College']['name'] . '~' . $v['Department']['name']][] = $v;
-                                       // $count++;
-                                        
-                                }			
-				
+			foreach ($onlineApplicants as $k => $v) {
+				if (
+					isset($v['Program']['name']) && !empty($v['Program']['name']) &&
+					isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($v['Department']['name']) && !empty($v['Department']['name'])
+				) {
+					$onlineapplicant_list_pdf[$v['Program']['name'] . '~' . $v['ProgramType']['name'] . '~' . $v['College']['Campus']['name'] . '~' . $v['College']['name'] . '~' . $v['Department']['name']][] = $v;
+					// $count++;
+
+				}
 			}
-			
+
 			$this->set(compact('onlineapplicant_list_pdf'));
 			$this->response->type('application/pdf');
 			$this->layout = '/pdf/default';
 			$this->render('onlineapplicantlist_pdf');
 		}
+        $campuses = ClassRegistry::init('Campus')->find(
+            'list',
+            array(
+                'fields' => array('Campus.id', 'Campus.name')
+            )
+        );
 
 		$statuses = array('0' => 'All', 'Pending' => 'Pending', 'Accepted' => 'Accepted', 'Rejected' => 'Rejected');
-		$this->set(compact('programs', 'colleges', 'onlineApplicants', 'programTypes', 'departments', 'statuses'));
-
-
-
-
-
-
-		/*
-
-		// filter by tracking number
-		if (
-			isset($this->passedArgs['OnlineApplicant.trackingnumber'])
-		) {
-			$trackingnumber = $this->passedArgs['OnlineApplicant.trackingnumber'];
-			if (!empty($trackingnumber)) {
-				$this->paginate['conditions'][]['OnlineApplicant.trackingnumber'] = $trackingnumber;
-			}
-			$this->request->data['OnlineApplicant']['trackingnumber'] = $this->passedArgs['OnlineApplicant.trackingnumber'];
-		}
-		// filter by name
-		if (isset($this->passedArgs['OnlineApplicant.name'])) {
-			$name = $this->passedArgs['OnlineApplicant.name'];
-			if (!empty($name)) {
-				$this->paginate['conditions'][]['OnlineApplicant.first_name like'] = '%' . $name . '%';
-			}
-			$this->request->data['OnlineApplicant']['name'] = $this->passedArgs['OnlineApplicant.name'];
-		}
-		// filter by period
-		if (isset($this->passedArgs['OnlineApplicant.request_to.year'])) {
-			$this->paginate['conditions'][] = array('OnlineApplicant.created <= \'' . $this->passedArgs['OnlineApplicant.request_to.year']
-				. '-' . $this->passedArgs['OnlineApplicant.request_to.month'] . '-' . $this->passedArgs['OnlineApplicant.request_to.day'] . '\'');
-
-			$this->paginate['conditions'][] = array('OnlineApplicant.created >= \'' . $this->passedArgs['OnlineApplicant.request_from.year']
-				. '-' . $this->passedArgs['OnlineApplicant.request_from.month'] . '-' . $this->passedArgs['OnlineApplicant.request_from.day'] . '\'');
-			$this->request->data['OnlineApplicant']['request_from'] = $this->passedArgs['OnlineApplicant.request_from.year']
-				. '-' . $this->passedArgs['OnlineApplicant.request_from.month'] . '-' . $this->passedArgs['OnlineApplicant.request_from.day'];
-
-			$this->request->data['OnlineApplicant']['request_to'] = $this->passedArgs['OnlineApplicant.request_to.year']
-				. '-' . $this->passedArgs['OnlineApplicant.request_to.month'] . '-' . $this->passedArgs['OnlineApplicant.request_to.day'];
-		}
-
-		debug($this->request->data);
-
-		$this->Paginator->settings = $this->paginate;
-		$onlineApplicants = $this->Paginator->paginate('OnlineApplicant');
-
-		if (empty($onlineApplicants) && isset($this->request->data) && !empty($this->request->data)) {
-			$this->Session->setFlash('<span></span>' . __('There is no online admission request based on the given criteria.'), 'default', array('class' => 'info-box info-message'));
-		}
-
-
-
-		$this->set(compact('onlineApplicants'));
-		*/
+		$this->set(compact('programs', 'campuses', 'onlineApplicants', 'statuses'));
 	}
 	public function process_selected()
 	{
@@ -367,38 +335,94 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 				unset($this->request->data['OnlineApplicant']['SelectAll']);
 				$admittedStudentsLists = array();
 				$selectedAdmittedCount = 0;
-				foreach ($this->request->data['OnlineApplicant']['approve']
-					as $id => $selected) {
-					if ($selected == 1) {
+				$dptSearch = $this->Session->read('dptSearch');
+				$batchNotDefinedCount=0;
+				foreach ($this->request->data['OnlineApplicant']['approve'] as $id => $selected) {
+
+					$checkIfAccepted = ClassRegistry::init('AcceptedStudent')->find(
+						'count',
+						array(
+							'conditions' => array('AcceptedStudent.online_applicant_id' => $id),
+							'recursive' => -1
+						)
+					);
+
+					if ($selected == 1 && $checkIfAccepted == 0) {
 						$selected_students[] = $id;
 						$basicData = $this->OnlineApplicant->find(
 							'first',
-							array('conditions' => array('OnlineApplicant.id' => $id))
+							array(
+								'conditions' => array('OnlineApplicant.id' => $id),
+								'contain' => array('College', 'Department')
+							)
 						);
-						if (!empty($basicData)) {
-							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['first_name'] = $basicData['OnlineApplicant']['first_name'];
-							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['middle_name'] = $basicData['OnlineApplicant']['father_name'];
-							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['last_name'] = $basicData['OnlineApplicant']['grand_father_name'];
 
-							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['sex'] = $basicData['OnlineApplicant']['gender'];
+						if (!empty($basicData)) {
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['first_name'] = ucwords(strtolower($basicData['OnlineApplicant']['first_name']));
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['middle_name'] = ucwords(strtolower($basicData['OnlineApplicant']['father_name']));
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['last_name'] = ucwords(strtolower($basicData['OnlineApplicant']['grand_father_name']));
+
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['sex'] = ucwords(strtolower($basicData['OnlineApplicant']['gender']));
+
+							// amharic name explode
+							$amharicNameExplode = mb_split(" ", $basicData['OnlineApplicant']['amharic_fullname']);
+
+
+
+							if (isset($amharicNameExplode[0]) && !empty($amharicNameExplode[0])) {
+								$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['amharic_first_name'] = $amharicNameExplode[0];
+							}
+
+							if (isset($amharicNameExplode[1]) && !empty($amharicNameExplode[1])) {
+								$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['amharic_middle_name'] = $amharicNameExplode[1];
+							}
+							if (isset($amharicNameExplode[2]) && !empty($amharicNameExplode[2])) {
+								$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['amharic_last_name'] = $amharicNameExplode[2];
+							}
+
+
 
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['department_id'] = $basicData['OnlineApplicant']['department_id'];
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['program_id'] = $basicData['OnlineApplicant']['program_id'];
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['program_type_id'] = $basicData['OnlineApplicant']['program_type_id'];
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['college_id'] = $basicData['OnlineApplicant']['college_id'];
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['campus_id'] = $basicData['College']['campus_id'];
+
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['online_applicant_id'] = $basicData['OnlineApplicant']['id'];
 
+
 							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['academicyear'] = $basicData['OnlineApplicant']['academic_year'];
-						}
+
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['nationality'] = $basicData['OnlineApplicant']['nationality'];
+
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['zone_id'] = $basicData['OnlineApplicant']['zone_id'];
+
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['woreda_id'] = $basicData['OnlineApplicant']['woreda_id'];
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['region_id'] = $basicData['OnlineApplicant']['region_id'];
+
+							$admittedStudentsLists['AcceptedStudent'][$selectedAdmittedCount]['place_of_birth'] = $basicData['OnlineApplicant']['place_of_birth'];
+
+
+                        }
 						$selectedAdmittedCount++;
 					}
 				}
 
-				if (ClassRegistry::init('AcceptedStudent')->saveAll($admittedStudentsLists['AcceptedStudent'], array('validate' => 'first'))) {
+				if ($batchNotDefinedCount==0 && ClassRegistry::init('AcceptedStudent')->saveAll($admittedStudentsLists['AcceptedStudent'],
+                        array('validate' => 'first'))) {
 					$this->Session->setFlash(__('<span></span>All selected students has been ready for in the registrar accepted student list for further processing.'), 'default', array('class' => 'success-box success-message'));
 					$this->redirect(array('action' => 'index'));
 				} else {
+					$error = ClassRegistry::init('AcceptedStudent')->invalidFields();
+					debug($error);
+					if($batchNotDefinedCount>0){
+						$this->Session->setFlash(__('<span></span> '.$batchNotDefinedCount.
+                            ' student could not be saved since their batch fee setting is not defined.'), 'default',
+                            array('class' => 'error-box error-message'));
+
+					}
 					$this->Session->setFlash(__('<span></span>The student could not be saved. Please, try again.'), 'default', array('class' => 'error-box error-message'));
+
 				}
 			} else {
 				$this->Session->setFlash('<span></span>' . __('Please select atleast one student to process.'), 'default', array('class' => 'error-box error-message'));
@@ -410,6 +434,7 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 		if (!empty($this->request->data) && !empty($this->request->data['getonlineapplicant'])) {
 
 			if (!empty($this->request->data['OnlineApplicant']['academicyear'])) {
+				$this->Session->write('dptSearch', $this->request->data['OnlineApplicant']);
 				$conditions = null;
 				$ssacdemicyear = $this->request->data['OnlineApplicant']['academicyear'];
 				$pprogram_id = $this->request->data['OnlineApplicant']['program_id'];
@@ -442,7 +467,7 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 							"OnlineApplicant.college_id" => $college_ids,
 							"OnlineApplicant.program_id" => $pprogram_id,
 							"OnlineApplicant.program_type_id" => $pprogram_type_id,
-							//"OnlineApplicant.department_id" => $this->request->data['OnlineApplicant']['department_id'],
+							"OnlineApplicant.department_id" => $this->request->data['OnlineApplicant']['department_id'],
 							"OnlineApplicant.id NOT IN (select online_applicant_id from accepted_students where online_applicant_id is not null )",
 						);
 					}
@@ -455,13 +480,14 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 							"OnlineApplicant.department_id" => $this->request->data['OnlineApplicant']['department_id'],
 							"OnlineApplicant.program_id" => $pprogram_id,
 							"OnlineApplicant.program_type_id" => $pprogram_type_id,
-							 "OnlineApplicant.id NOT IN (select online_applicant_id from accepted_students where online_applicant_id is not null )",
+							"OnlineApplicant.id NOT IN (select online_applicant_id from accepted_students where online_applicant_id is not null )",
 
 						);
 						debug($conditions);
 					} else {
 						$conditions = array(
-							"OnlineApplicant.application_status" => 1,                 "OnlineApplicant.academic_year LIKE" => "$ssacdemicyear%",
+							"OnlineApplicant.application_status" => 1,
+							"OnlineApplicant.academic_year LIKE" => "$ssacdemicyear%",
 							"OnlineApplicant.first_name LIKE" => "$name%",
 							"OnlineApplicant.department_id" => $department_ids,
 							"OnlineApplicant.program_id" => $pprogram_id,
@@ -481,7 +507,8 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 					$this->paginate = array(
 						'limit' => $limit,
 						'maxLimit' => $limit,
-						'order'=>array('OnlineApplicant.first_name ASC'),
+						'order' => array('OnlineApplicant.first_name ASC'),
+						'contain' => array('Invoice', 'Department', 'College')
 					);
 					$this->paginate['conditions'] = $conditions;
 					$this->Paginator->settings = $this->paginate;
@@ -490,7 +517,7 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 					if (!empty($onlineApplicants)) {
 						$this->set('admitsearch', true);
 					} else {
-						$this->Session->setFlash(__('<span></span>No data is found with your search criteria that needs admission, either all students has been process or no student is applied online in the given criteria.'), 'default', array('class' => 'info-box info-message'));
+						$this->Session->setFlash(__('<span></span>There is no applicants who was accepted and required admission. Either all students has been processed or no student is applied online in the given criteria.'), 'default', array('class' => 'info-box info-message'));
 					}
 					$admitsearch = true;
 					$this->request->data['getonlineapplicant'] = true;
@@ -509,41 +536,46 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 			if (!empty($this->college_ids)) {
 
 				$college_ids = $this->college_ids;
-				$this->set('colleges', $this->OnlineApplicant->College->find(
-					'list',
-					array('conditions' => array('College.id' => $college_ids))
-				));
-				$this->set('departments', $this->OnlineApplicant->Department->find(
+
+				$colleges = $this->OnlineApplicant->Department->allCollegeByCampus($this->college_ids);
+
+				$departments = $this->OnlineApplicant->Department->find(
 					'list',
 					array('conditions' => array('Department.college_id' => $college_ids))
-				));
+				);
+
 				$this->set('college_level', true);
 			} elseif (!empty($this->department_ids)) {
 				$department_ids = $this->department_ids;
-				$this->set('departments', $this->OnlineApplicant->Department->find(
+
+				$departments = $this->OnlineApplicant->Department->find(
 					'list',
 					array('conditions' => array('Department.id' => $department_ids))
-				));
-				$this->set('colleges', $this->OnlineApplicant->College->find(
-					'list',
-					array('conditions' => array('College.id' => $college_ids))
-				));
+				);
+				$colleges = $this->OnlineApplicant->Department->allCollegeByCampus($this->college_ids);
+
 				$this->set('department_level', true);
 			}
-			$this->set(compact('colleges'));
+			//$this->set(compact('colleges'));
 		} else {
-			$colleges = $this->OnlineApplicant->College->find('list');
+			//$colleges = $this->OnlineApplicant->Department->allCollegeByCampus($this->college_ids);
 			$departments = $this->OnlineApplicant->Department->find('list');
-			$this->set(compact('colleges', 'departments'));
+			//$this->set(compact('colleges', 'departments'));
 		}
 
+
+
+
+        $campuses=$this->OnlineApplicant->College->Campus->find('list');
 		$programs = $this->OnlineApplicant->Program->find('list');
 		$programTypes = $this->OnlineApplicant->ProgramType->find('list');
-		$this->set(compact(
-			'programs',
-			'programTypes',
-			'departments'
-		));
+		$this->set(
+			compact(
+				'programs',
+				'programTypes',
+                'campuses'
+			)
+		);
 	}
 
 
@@ -555,22 +587,19 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 		$options = array(
 			'conditions' => array('OnlineApplicant.' . $this->OnlineApplicant->primaryKey => $id),
 			'contain' => array(
-			'Attachment' => array(
-                'order' => array('Attachment.created' => 'DESC') // most recent first
-            ), 
-			'Program', 
-			'ProgramType', 
-			'Department', 
-			'College', 
-			'OnlineApplicantStatus')
+				'Attachment',
+				'Program',
+				'ProgramType',
+				'Department',
+				'College',
+				'OnlineApplicantStatus',
+				'HigherEducationBackground',
+				'HighSchoolEducationBackground',
+			)
 		);
+		$applicant = $onlineApplicant = $this->OnlineApplicant->find('first', $options);
 
-		
-		$onlineApplicant = $this->OnlineApplicant->find('first', $options);
-
-		debug($onlineApplicant);
-		$this->set('onlineApplicant', $onlineApplicant);
-
+		$this->set(compact('onlineApplicant', 'applicant'));
 
 
 		//$this->set(compact('statuses'));
@@ -583,18 +612,47 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 			return $this->redirect(array('action' => 'index'));
 		}
 		if (!empty($this->request->data)) {
+			
+			
 			if (isset($this->request->data['Attachment']) && !empty($this->request->data['Attachment'])) {
 				$this->request->data = $this->OnlineApplicant->preparedAttachment($this->request->data);
+				debug($this->request->data);
 			}
 
-			if ($this->OnlineApplicant->saveAll(
-				$this->request->data,
-				array('validate' => 'first')
-			)) {
+			if($this->OnlineApplicant->HighSchoolEducationBackground->deleteHighSchoolEducationBackgroundForOnlineList($id,$this->request->data)){
+
+			}
+
+			if (
+				$this->OnlineApplicant->saveAll(
+					$this->request->data,
+					array('validate' => 'first')
+				)
+			) {
+				//update accepted student and admitted student if exist
+				$studentDD=ClassRegistry::init('AcceptedStudent')->find('first',
+					array('conditions'=>array('AcceptedStudent.online_applicant_id'=>$this->OnlineApplicant->id),
+						'recursive'=>-1));
+				debug($studentDD);
+				if(isset($studentDD) && !empty($studentDD)){
+					$x=$this->OnlineApplicant->updateAcceptedAdmitted($this->OnlineApplicant->id);
+					debug($x);
+					/*
+					ClassRegistry::init('Student')->saveField('archive'
+				  ,'1');
+				ClassRegistry::init('AcceptedStudent')->
+
+				  $this->AcceptedStudent->Student->StudentsSection->
+				  */
+
+				}
+
+
+
 
 				$this->Session->setFlash('<span></span>' . __("The online applicants has been saved "), 'default', array('class' => 'success-box success-message'));
 
-				return $this->redirect(array('action' => 'index'));
+				//return $this->redirect(array('action' => 'index'));
 			} else {
 				$this->Session->setFlash(__('The  online applicants could not be saved. Please, try again.'));
 
@@ -604,12 +662,72 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 		if (empty($this->request->data)) {
 			$this->request->data = $this->OnlineApplicant->read(null, $id);
 		}
-
 		$programs = $this->OnlineApplicant->Program->find('list');
 		$programTypes = $this->OnlineApplicant->ProgramType->find('list');
-		$colleges = $this->OnlineApplicant->College->find('list');
-		$departments = $this->OnlineApplicant->Department->find('list');
-		$this->set(compact('programs', 'programTypes', 'departments', 'colleges'));
+		$countries = ClassRegistry::init('Country')->find('list');
+
+		$academicCalendars = ClassRegistry::init('AcademicCalendar')->find(
+			'all',
+			array(
+				'conditions' => array(
+					'AcademicCalendar.semester' => $this->request->data['OnlineApplicant']['semester'],
+					'AcademicCalendar.academic_year' => $this->request->data['OnlineApplicant']['academic_year']
+				)
+			)
+		);
+		//
+
+
+		if (isset($academicCalendars) && !empty($academicCalendars)) {
+			$departmentIds = array();
+			$programIds = array();
+			$programTypesIds = array();
+			foreach ($academicCalendars as $k => $v) {
+				$tmp = unserialize($v['AcademicCalendar']['department_id']);
+				$departmentIds = array_merge($departmentIds, $tmp);
+				$programIds[$v['AcademicCalendar']['program_id']] = $v['AcademicCalendar']['program_id'];
+				$programTypesIds[$v['AcademicCalendar']['program_type_id']] = $v['AcademicCalendar']['program_type_id'];
+				$acyeardatas[$v['AcademicCalendar']['academic_year']] = $v['AcademicCalendar']['academic_year'];
+				$semester[$v['AcademicCalendar']['semester']] = $v['AcademicCalendar']['semester'];
+			}
+
+			$academicCalendar['AcademicCalendar']['department_id'] = $departmentIds;
+			
+			$departments = ClassRegistry::init('Department')->find('list',
+				array('conditions' => array('Department.id' => $departmentIds)));
+			$college_ids = ClassRegistry::init('Department')->find('list', 
+				array('conditions' => array('Department.id' => $departmentIds), 
+					'fields' => array('Department.college_id', 'Department.college_id')));
+
+			$colleges_opened_all = ClassRegistry::init('College')->find('all', 
+				array('conditions' => array('College.id' => $college_ids),
+					'contain'=>array('Campus')
+					));
+			foreach($colleges_opened_all as $cop=>$cov){
+				$colleges_opened[$cov['Campus']['name']][$cov['College']['id']] = $cov['College']['name'];
+			}
+			debug($colleges_opened);
+			$department_opened= ClassRegistry::init('Department')->find('list',
+				array('conditions' => array('Department.college_id' =>
+					$this->request->data['OnlineApplicant']['college_id'])));
+			
+			debug($colleges_opened);
+
+
+			//$colleges = ClassRegistry::init('Department')->allCollegeByCampus($college_ids);
+			$programs = ClassRegistry::init('Program')->find(
+				'list',
+				array('conditions' => array('Program.id' => $programIds))
+			);
+
+			$programTypes = ClassRegistry::init('ProgramType')->find(
+				'list',
+				array('conditions' => array('ProgramType.id' => $programTypesIds))
+			);
+		}
+
+		$this->set(compact('programs', 'countries', 'programTypes',
+			'colleges_opened','department_opened', 'departments'));
 	}
 
 
@@ -620,12 +738,23 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 			throw new NotFoundException(__('Invalid online applicant request'));
 		}
 		$this->request->allowMethod('post', 'delete');
-		if ($this->OnlineApplicant->delete()) {
 
-			$this->Session->setFlash('<span></span>' . __('The online applicant request has been deleted.'), 'default', array('class' => 'success-box	success-message'));
+		//check if the online applicant is accepted
+		$countAccepted = $this->OnlineApplicant->AcceptedStudent->find(
+			'count',
+			array('conditions' => array('AcceptedStudent.online_applicant_id' => $id))
+		);
+		if ($countAccepted == 0) {
+			if ($this->OnlineApplicant->delete($id, true)) {
+
+				$this->Session->setFlash('<span></span>' . __('The online applicant request has been deleted.'), 'default', array('class' => 'success-box	success-message'));
+			} else {
+				$this->Flash->error(__(''));
+				$this->Session->setFlash('<span></span>' . __('The online applicant request could not be deleted. Please, try again.'), 'default', array('class' => 'error-box error-message'));
+			}
 		} else {
-			$this->Flash->error(__(''));
-			$this->Session->setFlash('<span></span>' . __('The online applicant request could not be deleted. Please, try again.'), 'default', array('class' => 'error-box error-message'));
+			$this->Session->setFlash('<span></span>' . __('The online applicant request could not be deleted since student was admitted.'), 'default', array('class' => 'error-box error-message'));
+
 		}
 		return $this->redirect(array('action' => 'index'));
 	}
@@ -649,11 +778,271 @@ isset($v['ProgramType']['name']) && !empty($v['ProgramType']['name']) && isset($
 		$departments = array();
 
 		if (isset($college_id) && !empty($college_id)) {
-			$departments = ClassRegistry::init('Department')->find('list', array('conditions' => array(
-				'Department.college_id' => $college_id
-			)));
+			$departments = ClassRegistry::init('Department')->find(
+				'list',
+				array(
+					'conditions' => array(
+						'Department.college_id' => $college_id
+					)
+				)
+			);
 		}
 
 		$this->set(compact('departments'));
 	}
+
+	public function accept_document($id = null)
+	{
+		if (isset($id) && !empty($id)) {
+			$this->layout = 'ajax';
+
+			$applicant_details = $this->OnlineApplicant->find(
+				'first',
+				array(
+					'conditions' => array(
+						'OnlineApplicant.id' => $id,
+
+					),
+					'recursive' => -1
+				)
+			);
+		} else if (isset($this->request->data['updateDocumentStaus']) && !empty($this->request->data['updateDocumentStaus'])) {
+
+
+			// up on success show them a link to download invoice and settle payment
+
+			$applicantDetail = $this->OnlineApplicant->find(
+				'first',
+				array(
+					'conditions' => array(
+						'OnlineApplicant.id' => $this->request->data['OnlineApplicant']['id'],
+
+					),
+					'recursive' => -1
+				)
+			);
+
+			if (isset($this->request->data['OnlineApplicant']) && !empty($this->request->data['OnlineApplicant'])) {
+				$this->request->data['OnlineApplicantStatus']['user_id'] = $this->Auth->user('id');
+				$this->request->data['OnlineApplicantStatus']['online_applicant_id'] = $this->request->data['OnlineApplicant']['id'];
+				if (isset($this->request->data['OnlineApplicant']['remark']) && !empty($this->request->data['OnlineApplicant']['remark'])) {
+					$this->request->data['OnlineApplicantStatus']['remark'] = $this->request->data['OnlineApplicant']['remark'];
+				} else {
+					$this->request->data['OnlineApplicantStatus']['remark'] = 'No remark';
+				}
+
+
+				if ($this->request->data['OnlineApplicant']['document_submitted'] == "Yes") {
+					// generate invoice and send email about the payment settlement
+					$this->request->data['OnlineApplicantStatus']['status'] = 'Accepted';
+				} else {
+					// only update the status
+					$this->request->data['OnlineApplicantStatus']['status'] = 'Pending';
+				}
+
+				debug($this->request->data);
+
+
+
+				$this->OnlineApplicant->OnlineApplicantStatus->create();
+
+				if ($this->OnlineApplicant->OnlineApplicantStatus->save($this->request->data['OnlineApplicantStatus'])) {
+					//update processed when the status of is document_sent
+
+					$this->OnlineApplicant->id = $this->request->data['OnlineApplicantStatus']['online_applicant_id'];
+
+					if ($this->request->data['OnlineApplicantStatus']['status'] == "Accepted") {
+						$request_processed = 1;
+					} else {
+						$request_processed = 0;
+					}
+
+					$trackingUrl = Router::url(
+						array(
+							'controller' => 'pages',
+							'action' => 'online_admission_tracking',
+							$applicantDetail['OnlineApplicant']['applicationnumber']
+						)
+					);
+					// check if the appplicant status is complete and send payment for applicant
+
+					if ($request_processed) {
+
+						$invoiceNumberr = $this->OnlineApplicant->Payment->find(
+							'first',
+							array(
+								'conditions' => array(
+									'Payment.online_applicant_id' => $applicantDetail['OnlineApplicant']['id']
+								)
+							)
+						);
+						$invoiceNumber = $invoiceNumberr['Payment']['receipt_number'];
+
+
+
+
+						$this->OnlineApplicant->saveField(
+							'document_submitted',
+							$request_processed
+						);
+						$this->OnlineApplicant->saveField(
+							'application_status',
+							$request_processed
+						);
+						$this->OnlineApplicant->saveField(
+							'approved_by',
+							$this->Auth->user('full_name')
+						);
+					}
+
+
+					$message = "Your online application status has been updated and please check  the most recent status using your application  number  <u> <a href='" . $trackingUrl . "' > " . $applicantDetail['OnlineApplicant']['applicationnumber'] . "</a></u>  <br/> ";
+					/*
+
+
+																																										  $Email = new CakeEmail();
+																																										  $Email->config('default');
+																																										  $Email->template('status_notification', 'default');
+																																										  $Email->emailFormat('html');
+																																										  $emailFrom = Configure::read('Email.default.replyTo');
+																																										  $portalName = Configure::read('portalName');
+
+																																										  $Email->from(array($emailFrom => $portalName));
+																																										  $Email->to($applicantDetail['OnlineApplicant']['email']);
+
+																																										  $Email->subject('Online Unity University Applicant Status Updated: ' . $applicantDetail['OnlineApplicant']['first_name'] . ' ' . $applicantDetail['OnlineApplicant']['father_name'] . ' for ' . $applicantDetail['OnlineApplicant']['academic_year'] . '');
+																																										  $Email->viewVars(array('message' => $message, 'applicantDetail' => $applicantDetail));
+																																										  $Email->delivery = 'smtp';
+
+																																										  try {
+																																											  if ($Email->send()) {
+																																												  $this->Session->setFlash('<span></span>' . __("Status updated and notification sent to " . $applicantDetail['OnlineApplicant']['email'] . " email address. "), 'default', array('class' => 'success-box success-message'));
+																																											  } else {
+																																												  $this->Session->setFlash('<span></span>' . __("Status updated but unable to send notification to . "), 'default', array('class' => 'success-box success-message'));
+																																											  }
+																																										  } catch (Exception $e) {
+																																											  $this->Session->setFlash('<span></span>' . __("Someting went wrong when sending notification  to " . $applicantDetail['OnlineApplicant']['email'] . " email address."), 'default', array('class' => 'success-box success-message'));
+																																											  //return $this->redirect(array('action' => 'index'));
+																																										  }
+																																										  */
+					$this->Session->setFlash('<span></span>' . __("Someting went wrong when sending notification  to " . $applicantDetail['OnlineApplicant']['email'] . " email address."), 'default', array('class' => 'success-box success-message'));
+
+					return $this->redirect(array('action' => 'new_applicant_requests'));
+				} else {
+					$error = $this->OnlineApplicant->OnlineApplicantStatus->invalidFields();
+					debug($error);
+					$this->Session->setFlash('<span></span>' . __('The online applicant status could not be saved. Please, try again.'), 'default', array('class' => 'error-box success-message'));
+				}
+			}
+			return $this->redirect(array('action' => 'new_applicant_requests'));
+		}
+
+		$this->set(
+			compact(
+				'applicant_details'
+
+			)
+		);
+		//return $this->redirect(array('action' => 'index'));
+	}
+
+	public function new_applicant_requests()
+	{
+		$this->paginate = array(
+
+			'maxLimit' => 100,
+			'limit' => 100,
+			'contain' => array(
+				'OnlineApplicantStatus' => array('User'),
+
+				'HigherEducationBackground',
+				'HighSchoolEducationBackground',
+				'Attachment',
+				'Country',
+				'Region',
+				'Invoice'=>array(
+                    'order' => 'Invoice.created DESC',
+                    'Transaction'=>array('PaymentMethod',
+                    'PaymentCurrency')
+                ),
+				'College' => array('Campus'),
+				'Program',
+				'ProgramType',
+				'Department'
+			),
+
+			'order' => array(
+                'OnlineApplicant.full_name' => 'ASC',
+				'OnlineApplicant.created' => 'DESC'
+			)
+		);
+		$defaultacademicyear = $this->AcademicYear->current_academicyear();
+		if(isset($defaultacademicyear) && !empty($defaultacademicyear)){
+			$this->paginate['conditions'][]['OnlineApplicant.academic_year'] = $defaultacademicyear;
+
+		}
+
+		if (!empty($this->department_ids)) {
+			$this->paginate['conditions'][]['OnlineApplicant.department_id'] = $this->department_ids;
+		} else if (!empty($this->college_ids)) {
+			$this->paginate['conditions'][]['OnlineApplicant.college_id'] = $this->college_ids;
+		}
+
+
+		if (isset($this->request->data['OnlineApplicant']['limit']) && !empty($this->request->data['OnlineApplicant']['limit'])) {
+
+			$this->paginate['limit'] = $this->request->data['OnlineApplicant']['limit'];
+
+			$this->paginate['maxLimit'] = $this->request->data['OnlineApplicant']['limit'];
+		}
+
+		$this->paginate['conditions'][]['OnlineApplicant.application_status'] = 0;
+		$this->paginate['conditions'][]['OnlineApplicant.document_submitted'] = 0;
+		$this->Paginator->settings = $this->paginate;
+
+		if (isset($this->Paginator->settings['conditions'])) {
+
+			$applicant_lists = $this->Paginator->paginate('OnlineApplicant');
+		} else {
+
+			$applicant_lists = array();
+		}
+
+
+		if (empty($applicant_lists) && isset($this->request->data) && !empty($this->request->data)) {
+
+			$this->Session->setFlash('<span></span>' . __('There is no new registered applicant.'), 'default', array('class' => 'info-box info-message'));
+		}
+
+
+		$this->set(compact('applicant_lists', 'statuses'));
+	}
+
+    function get_campus_department_combo()
+    {
+        $this->layout = 'ajax';
+        $departments = array();
+        debug($this->request->data);
+        if (isset($this->request->data['OnlineApplicant']) && !empty($this->request->data['OnlineApplicant'])) {
+
+            if(isset($this->request->data['OnlineApplicant']['campus_id']) &&
+                !empty($this->request->data['OnlineApplicant']['campus_id'])){
+                $allCollegeIds=ClassRegistry::init('College')->find('list',
+                    array('conditions' => array('College.campus_id' =>
+                        $this->request->data['OnlineApplicant']['campus_id']),
+
+                        'fields' => array('College.id', 'College.id')));
+                $allDeptInAdmission=$this->OnlineApplicant->find('list',
+                    array('conditions' => array('OnlineApplicant.college_id' =>$allCollegeIds),
+
+                        'fields' => array('OnlineApplicant.department_id', 'OnlineApplicant.department_id')));
+                $departments=ClassRegistry::init('Department')->find('list',
+                    array('conditions' => array('Department.id' =>
+                        $allDeptInAdmission
+                    ), 'fields' => array('Department.id', 'Department.name')));
+            }
+        }
+        $this->set(compact('departments'));
+    }
+
 }

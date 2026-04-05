@@ -1,53 +1,79 @@
-<?php ?>
+<?= $this->Html->script('amharictyping'); ?>
 <div class="box">
-     <div class="box-header bg-transparent">
-  	 <h2 class="box-title"> <?php echo __('Correct Name');?></h2>
-     </div>
-     <div class="box-body">
-         <div class="row">
-		    <div class="large-12 columns">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-edit" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= 'Correct Name: ' . $studentDetail['Student']['full_name'] . '  (' .  $studentDetail['Student']['studentnumber'] . ')'; ?></span>
+		</div>
 
-<div class="student form">
-<?php echo $this->Form->create('Student');?>
-<?php echo $this->Html->script('amharictyping'); ?> 
+		<a class="close-reveal-modal">&#215;</a>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
 
-<p class="fs16">
-           <strong> Important Note: </strong> 
-           This tool will help you to correct student name. It is important when there is spell error. For legal change of name use change of name functionality. 
-	
-</p>
- <table>
-  <tr>
-	<td> 
-	 <table> 
-         <tr><td>First Name</td><td>
-           <?php echo $this->Form->input('Student.first_name',array('label'=>false)); ?></td></tr>
-           <tr><td>Middle Name</td><td> <?php echo $this->Form->input('Student.middle_name',array('label'=>false)); ?></td></tr>
-           <tr><td>Last Name</td><td> <?php echo $this->Form->input('Student.last_name',array('label'=>false)); ?></td></tr>
-	  </table>
-      </td>
-      <td>
-         <table> 
-         <tr><td>Amharic First Name</td><td>
-           <?php echo $this->Form->input('Student.amharic_first_name',array('label'=>false)); ?></td></tr>
-           <tr><td>Amharic Middle Name</td><td> <?php echo $this->Form->input('Student.amharic_middle_name',array('label'=>false)); ?></td></tr>
-           <tr><td>Amharic Last Name</td><td> <?php echo $this->Form->input('Student.amharic_last_name',array('label'=>false)); 
-echo $this->Form->input('id');
+				<div class="student form">
 
-?></td></tr>
-	  </table>
-      </td>
-    </tr>
-</table>
-<?php 
+					<?= $this->Form->create('Student'); ?>
 
- echo $this->Form->submit('Update',array('name'=>'correctName','div'=>'false',
-'class'=>'tiny radius button bg-blue'));
-// echo $this->Form->end(__('Submit', true));
-?>
-</div>
+					<div style="margin-top: -30px;">
+						<hr>
+						<blockquote>
+							<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+							<p style="text-align:justify;" class="fs16 text-black">This tool will help you to correct student name. Use this utility <b class="rejected">to correct minor spelling errors in students' name.</b> <br> <strong>For legal name change, Please use "Change Name By Court Decision" functionality.</strong></p> 
+						</blockquote>
+						<hr>
+					</div>
 
-</div>
-</div>
-</div>
+					<?= $this->Form->hidden('Student.id', array('value' => $studentDetail['Student']['id'])); ?>
+
+					<div class="row">
+						<div class="large-6 columns">
+							<fieldset style="padding-bottom: 10px;">
+								<legend>&nbsp;&nbsp; Student's Name (English) &nbsp;&nbsp;</legend>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.first_name', array('label' => 'First Name: ')); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.middle_name', array('label' => 'Middle Name: ')); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.last_name', array('label' => 'Last Name: ')); ?>
+									</div>
+								</div>
+							</fieldset>
+						</div>
+
+						<div class="large-6 columns">
+							<fieldset style="padding-bottom: 10px;">
+								<legend>&nbsp;&nbsp; Student's Name (Amharic) &nbsp;&nbsp;</legend>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.amharic_first_name', array('label' => 'First Name (Amharic): ')); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.amharic_middle_name', array('label' => 'Middle Name (Amharic): ')); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-12 columns">
+										<?= $this->Form->input('Student.amharic_last_name', array('label' => 'Last Name (Amharic): ')); ?>
+									</div>
+								</div>
+							</fieldset>
+						</div>
+					</div>
+					<hr>
+					<?= $this->Form->submit('Update Name', array('name' => 'correctName', 'div' => 'false', 'class' => 'tiny radius button bg-blue')); ?>
+					<?= $this->Form->end(); ?>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

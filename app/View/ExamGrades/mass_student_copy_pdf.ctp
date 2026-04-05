@@ -2,23 +2,23 @@
 //debug($student_copy);
 //$student_copy=$student_copies[0];
 App::import('Vendor','tcpdf/tcpdf');
-    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);  
-	
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);
+
     //show header or footer
-    $pdf->SetPrintHeader(false); 
+    $pdf->SetPrintHeader(false);
     $pdf->SetPrintFooter(false);
-    $countryAmharic = Configure::read('ApplicationDeployedCountryAmharic'); 
-   $cityAmharic = Configure::read('ApplicationDeployedCityAmharic');	
-   $countryEnglish = Configure::read('ApplicationDeployedCountryEnglish'); 
+    $countryAmharic = Configure::read('ApplicationDeployedCountryAmharic');
+   $cityAmharic = Configure::read('ApplicationDeployedCityAmharic');
+   $countryEnglish = Configure::read('ApplicationDeployedCountryEnglish');
 	$cityEnglish = Configure::read('ApplicationDeployedCityEnglish');
 	$pobox=  Configure::read('POBOX');
-	
+
     // set font
     $pdf->SetMargins(5, 3, 5);
     $pdf->SetFont("freeserif", "", 11);
 foreach($student_copies as $k=>$student_copy ) {
     $pdf->setPageOrientation('L', true, 0);
-   
+
     for($i = 0; ($i*$no_of_semester*2) < count($student_copy['courses_taken']); $i++) {
     // add a page
     $pdf->AddPage("L");
@@ -26,7 +26,7 @@ foreach($student_copies as $k=>$student_copy ) {
     //The first part of the grade
     $x = $font_size + 4;
     $y = $font_size + 158;
-    
+
     $pdf->SetLineWidth(0.1);
     $pdf->Line(24, $x, 24, $y);
     $pdf->Line(36, $x, 36, $y);
@@ -60,9 +60,9 @@ foreach($student_copies as $k=>$student_copy ) {
     				</tr>
     				<tr>
     					<td style="text-align:left">P.O.Box: '.
-    					(!empty($student_copy['student_detail']['University']) ? 
+    					(!empty($student_copy['student_detail']['University']) ?
     					$student_copy['student_detail']['University']['University']['p_o_box'] : ''.$pobox.'')
-    					.' '.$cityEnglish.', '.$countryEnglish.'<br />Phone: '.(!empty($student_copy['student_detail']['University']) ? 
+    					.' '.$cityEnglish.', '.$countryEnglish.'<br />Phone: '.(!empty($student_copy['student_detail']['University']) ?
     					$student_copy['student_detail']['University']['University']['telephone'] : ''.$pobox.''). '</td>
     					<td valign="bottom" style="vertical-align:bottom; text-align:center"><br /><br />Medium of Instruction: English</td>
     					<td style="text-align:right">Degree Award Date: '.(!empty($student_copy['student_detail']['GraduateList']) && $student_copy['student_detail']['GraduateList']['id'] != "" ? $this->Format->humanize_date_short($student_copy['student_detail']['GraduateList']['graduate_date']) : 'Not Graduated').'<br />Department: '.(isset($student_copy['student_detail']['Department']['name']) && !empty($student_copy['student_detail']['Department']['name']) ? $student_copy['student_detail']['Department']['name'] : 'Freshman Program').'</td>
@@ -93,7 +93,7 @@ foreach($student_copies as $k=>$student_copy ) {
     											<td style="width:19%">ID Number: <strong>'.$student_copy['student_detail']['Student']['studentnumber'].'</strong></td>
     											<td style="width:8%">Sex: <strong>'.(strcasecmp($student_copy['student_detail']['Student']['gender'], 'male') == 0 ? 'M' : 'F').'</strong></td>
     											<td style="width:45%">Entry From: <strong>'.
-    											(!empty($student_copy['student_detail']['HighSchoolEducationBackground']) 
+    											(!empty($student_copy['student_detail']['HighSchoolEducationBackground'])
     											? $student_copy['student_detail']
     											['HighSchoolEducationBackground'][0]['name'].
     											' ('.$student_copy['student_detail']
@@ -101,13 +101,13 @@ foreach($student_copies as $k=>$student_copy ) {
     											.$student_copy['student_detail']['HighSchoolEducationBackground']
     											[0]['Region']['name'].')' : '').'</strong></td>
     											<td style="width:28%">Test Date: <strong>'.
-    											(isset($student_copy['student_detail']['EheeceResult']) 
-    											&& !empty($student_copy['student_detail']['EheeceResult']) ? 
+    											(isset($student_copy['student_detail']['EheeceResult'])
+    											&& !empty($student_copy['student_detail']['EheeceResult']) ?
     											'EHEECE '.
     											$this->Format->humanize_date_short_extended(
     											$student_copy['student_detail']['EheeceResult'][0]['exam_year']).
-    											' (G.C.)' : (isset($student_copy['student_detail']['EslceResult']) 
-    											&& !empty($student_copy['student_detail']['EslceResult']) ? 
+    											' (G.C.)' : (isset($student_copy['student_detail']['EslceResult'])
+    											&& !empty($student_copy['student_detail']['EslceResult']) ?
     											'ESLCE '.
     											$this->Format->humanize_date_short_extended(
     											$student_copy['student_detail']['EslceResult'][0]['exam_year']).
@@ -314,7 +314,7 @@ $student_copy_content .= '</table></td>
 	}
     $student_copy_content .= '<br /><table style="width:100%; padding-top:10px">
     	<tr>
-    		<td style="width:50%">Date of Issue: <u>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</u></td>
+    		<td style="width:50%">Date of Issue: <u>'.date('Y-m-d').'</u></td>
     		<td style="width:50%">Registrar: <u>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</u></td>
     	</tr>
     </table>
@@ -333,4 +333,3 @@ $student_copy_content .= '</table></td>
     F: save to a local file with the name given by name.
     S: return the document as a string.
     */
-?>

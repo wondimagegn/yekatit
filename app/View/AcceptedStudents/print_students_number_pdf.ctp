@@ -1,80 +1,89 @@
 <?php
+    App::import('Vendor', 'tcpdf/tcpdf');
+    // create new PDF document
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true);
 
-App::import('Vendor','tcpdf/tcpdf');
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true);
-//show header or footer
-$pdf->SetPrintHeader(false);
-$pdf->SetPrintFooter(false);
+    //show header or footer
+    $pdf->SetPrintHeader(false);
+    $pdf->SetPrintFooter(false);
+    //$textfont = 'freesans'; // looks better, finer, and more condensed than 'dejavusans' 
+    // set default header data
 
-// set font
-$pdf->SetMargins(3, 1, 3);
-$pdf->SetFont("freeserif", "", 11);
+    //$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
 
-$pdf->setPageOrientation('L', true, 0);
+    // set header and footer fonts
+    $pdf->setHeaderFont(array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+    $pdf->setFooterFont(array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
 
-$header = '<table style="width:100%;">
-<tr>
-    <td style="text-align:center; font-weight:bold">  YEKATIT 12 HOSPITAL MEDICAL COLLEGE</td>
-</tr>
-<tr>
-    <td style="text-align:center; font-weight:bold">OFFICE OF THE REGISTRAR</td>
-</tr>
-</table>';
+    //set margins
+
+    //$pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+    $pdf->SetMargins(10,10,10);
+
+    //$pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+    //$pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+    //set auto page breaks
+    $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+    //set image scale factor
+    $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+    // set font
+    $pdf->SetFont("freeserif", "", 11);
 
     // add a page
     $pdf->AddPage();
 
-    if(!empty($acceptedStudents)){
-        $pdf->writeHTML($header, true, false, false, false, '');
-         $headingFor = '<br/><table class="fs13 summery">
-         <tr>
-            <td style="width:22%">Department:</td>
-            <td style="width:78%; font-weight:bold">'. $selected_college_name.'</td>
-        </tr>
+    if (!empty($acceptedStudents)) {
+        //$pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">College: ' . $selected_college_name . '</div>', true, 0, true, 0, '');
+        //$pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">Campus: ' . $selected_campus_name . '</div>', true, 0, true, 0, '');
 
-        <tr>
-            <td style="width:22%">Field of study:</td>
-            <td style="width:78%; font-weight:bold">'.$selected_department_name.'</td>
-        </tr>
+        
 
-        <tr>
-            <td>Program:</td>
-            <td style="font-weight:bold">'.$selected_program_name.'</td>
-        </tr>
+        /* if (!empty($selected_department_name)) {
+            $pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">Department: ' . $selected_department_name . '</div>', true, 0, true, 0, '');
+        } */
 
-        <tr>
-            <td>Program Type:</td>
-            <td style="font-weight:bold">'.$selected_program_type_name.'</td>
-        </tr>
+        //$pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">Program: ' . $selected_program_name . '</div>', true, 0, true, 0, '');
+        //$pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">Program Type: ' . $selected_program_type_name . '</div>', true, 0, true, 0, '');
+        //$pdf->writeHTML('<div style="width:800px;text-align:left;font-size:60px;font-weight:bold">Academic Year: ' . $selected_acdemicyear . '</div>', true, 0, true, 0, '');
 
-        <tr>
-            <td>AcademicYear:</td>
-            <td style="font-weight:bold">'.$selected_acdemicyear.'</td>
-        </tr>
-        </table><br/>';
+        $pdf->writeHTML("<span class='fs14'><strong class='text-gray'>College: </strong><b>" . $selected_college_name. '</b></span>', true, 0, true, 0, '');
+		$pdf->writeHTML("<span class='fs14'><strong class='text-gray'>Campus: </strong><b>" . $selected_campus_name . '</b></span>', true, 0, true, 0, '');
+		$pdf->writeHTML("<span class='fs14'><strong class='text-gray'>Program: </strong><b>" . $selected_program_name . '</b></span>', true, 0, true, 0, '');
+		$pdf->writeHTML("<span class='fs14'><strong class='text-gray'>Program Type: </strong><b>" . $selected_program_type_name . '</b></span>', true, 0, true, 0, '');
+		$pdf->writeHTML("<span class='fs14'><strong class='text-gray'>Admission Year: </strong><b>". $selected_acdemicyear. '</b></span><br>', true, 0, true, 0, '');
 
-		$pdf->writeHTML($headingFor, true, false, false, false, '');
-		$tbl = '<table style="width: 800px;" cellspacing="0">';
-		$tbl .= '<tr><th style="border: 1px solid #000000; width: 40px;font-size:40px;font-weight:bold;">No</th>
-				<th style="border: 1px solid #000000; width: 260px;font-size:40px;font-weight:bold;">Full Name</th>
-				<th style="border: 1px solid #000000; width: 50px;font-size:40px;font-weight:bold;">Sex</th>
-				<th style="border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">Student Id</th>
-				<th style="border: 1px solid #000000; width: 150px;font-size:40px;font-weight:bold;">University Attended</th></tr>';
+        $tbl = '
+        <table style="width: 800px;" cellspacing="0">
+            <tr>
+                <th style="text-align: center; border: 1px solid #000000; width: 30px;font-size:40px;font-weight:bold;">#</th>
+                <th style="border: 1px solid #000000; width: 200px;font-size:40px;font-weight:bold;">&nbsp; Full Name</th>
+                <th style="text-align: center; border: 1px solid #000000; width: 50px;font-size:40px;font-weight:bold;">Sex</th>
+                <th style="text-align: center; border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">Student ID</th>
+                <th style="text-align: center; border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">Department</th>
+                <th style="text-align: center; border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">Region</th>
+                <th style="text-align: center; border: 1px solid #000000; width: 100px;font-size:40px;font-weight:bold;">National ID</th>
+            </tr>';
+            $count = 1;
+            foreach ($acceptedStudents as $acceptedStudent) {
+                $tbl .= '
+                    <tr>
+                        <td style="text-align: center; border: 1px solid #000000;">' . $count++ . '</td>
+                        <td style="border: 1px solid #000000;">&nbsp;' . $acceptedStudent['AcceptedStudent']['full_name'] . '</td>
+                        <td style="text-align: center; border: 1px solid #000000;">' . (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'male') == 0 ? 'M' : (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'female') == 0 ? 'F' : '')) . '</td>
+                        <td style="text-align: center; border: 1px solid #000000;">' . $acceptedStudent['AcceptedStudent']['studentnumber'] . '</td>
+                        <td style="text-align: center; border: 1px solid #000000;">' . (isset($acceptedStudent['Department']) && !is_null($acceptedStudent['Department']['name']) ? $acceptedStudent['Department']['name'] : 'Pre/Freshman'). '</td>
+                        <td style="text-align: center; border: 1px solid #000000;">' . $acceptedStudent['Region']['name'] . '</td>
+                        <td style="text-align: center; border: 1px solid #000000;">' . (isset($acceptedStudent['Student']) ? $acceptedStudent['Student']['student_national_id'] : '') . '</td>
+                    </tr>';
+            }
+            $tbl .= '
+        </table>';
 
-		$count=1;
-	   foreach ($acceptedStudents as $acceptedStudent) {
-			$tbl .= '
-			<tr>
-				<td style="border: 1px solid #000000; width: 40px;">'.$count++.'</td>
-				<td style="border: 1px solid #000000; width: 260px;">'.$acceptedStudent['AcceptedStudent']['full_name'].'</td>
-				<td style="border: 1px solid #000000; width: 50px;">'.$acceptedStudent['AcceptedStudent']['sex'].'</td>
-				<td style="border: 1px solid #000000; width: 100px;">'. $acceptedStudent['AcceptedStudent']['studentnumber'].'</td>
-				<td style="border: 1px solid #000000; width: 150px;">'. $acceptedStudent['AcceptedStudent']['university_attended'].'</td>
-			</tr>';
-		   }
-		  $tbl .= '</table>';
-		  $pdf->writeHTML($tbl, true, false, false, false, '');
-	}
+
+        $pdf->writeHTML($tbl, true, false, false, false, '');
+    }
 
 
     // reset pointer to the last page
@@ -82,10 +91,10 @@ $header = '<table style="width:100%;">
 
     //output the PDF to the browser
 
-    $pdf->Output('Student Id of '.$selected_college_name.'.pdf', 'D');
+    $pdf->Output('Student_IDs_for_' . (!empty($selected_department_name) ? $selected_department_name : $selected_college_name) . '_' . str_replace('/','-',$selected_acdemicyear) .'_'.date('Y-m-d'). '.pdf', 'D');
     /*
-    I: send the file inline to the browser.
-    D: send to the browser and force a file download with the name given by name.
-    F: save to a local file with the name given by name.
-    S: return the document as a string.
+        I: send the file inline to the browser.
+        D: send to the browser and force a file download with the name given by name.
+        F: save to a local file with the name given by name.
+        S: return the document as a string.
     */

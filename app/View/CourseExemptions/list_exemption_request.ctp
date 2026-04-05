@@ -124,7 +124,7 @@
 			}
 			?>
 			<?php 
-			if ($role_id != ROLE_STUDENT) {
+			if ($role_id != ROLE_STUDENT && isset($courseExemption['Student']['graduated']) && $courseExemption['Student']['graduated'] == 0) {
 			echo $this->Html->link(__('Accpet/Reject Exemption'), array('action' => 'approve_request', $courseExemption['CourseExemption']['id']));
 			}
 			 ?>

@@ -1,7 +1,16 @@
 <?php
+//debug($student_copies);
 App::import('Vendor','tcpdf/tcpdf');
-// create new PDF document
-$pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
+	// create new PDF document
+    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
+
+	if ($this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR) {
+		// it is impossible to prevent pdf editing now a days but limit the ability to edit the document by techno-savy students, if downloading is allowed to student role in general setting. 
+		// prevent students from printing the pdf file by software printers or online tools, 
+		$pdf->SetProtection($permissions = array('modify', 'copy', 'extract', 'assemble', 'print'), $user_pass = USER_PASSWORD, $owner_pass = OWNER_PASSWORD, $mode = 0, $pubkeys = null);
+	} else {
+		$pdf->SetProtection($permissions = array('modify', 'copy', 'extract', 'assemble'), $user_pass = USER_PASSWORD, $owner_pass = OWNER_PASSWORD, $mode = 0, $pubkeys = null);
+	}
 	 
     //show header or footer
     $pdf->SetPrintHeader(false); 
@@ -12,242 +21,401 @@ $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
     //Font Family, Style, Size
     //$pdf->SetFont("pdfacourier", "", 11);
     $pdf->setPageOrientation('P', true, 0);
-   	$countryAmharic = Configure::read('ApplicationDeployedCountryAmharic'); 
+
+
+	$universityName = Configure::read('CompanyName'); 
+	$universityAmharicName = Configure::read('CompanyAmharicName');
+
+    $registrarName = Configure::read('RegistrarName'); 
+	$registrarAmharicName = Configure::read('RegistrarAmharicName');
+
+    $countryAmharic = Configure::read('ApplicationDeployedCountryAmharic'); 
 	$cityAmharic = Configure::read('ApplicationDeployedCityAmharic');
-	
 	$countryEnglish = Configure::read('ApplicationDeployedCountryEnglish'); 
 	$cityEnglish = Configure::read('ApplicationDeployedCityEnglish');
-	$pobox=  Configure::read('POBOX');
+	$pobox = Configure::read('POBOX');
+
+	//debug($studentnumber);
+
+	if ((isset($student_copies) && count($student_copies) > 1) && empty($studentnumber)) {
+		$pdf->SetCreator(PDF_CREATOR);
+		$pdf->SetAuthor('SIS, '.Configure::read('CompanyName').'');
+		$pdf->SetTitle('Registration Slip for ' .(isset($student_copies[$first_student_id]['Department']) && !empty($student_copies[$first_student_id]['Department']['name']) ? $student_copies[$first_student_id]['Department']['name']: $student_copies[$first_student_id]['College']['name']).' '.(isset($student_copies[$first_student_id]['YearLevel']) && !empty($student_copies[$first_student_id]['YearLevel']['name']) ? $student_copies[$first_student_id]['YearLevel']['name'] : ($student_copies[$first_student_id]['Student']['program_id'] == PROGRAM_REMEDIAL ?  'Remedial Program':'Pre/Freshman')).' for '.$student_copies[$first_student_id]['academic_year'] . ' academic year semester '.$student_copies[$first_student_id]['semester'] .'');
+		$pdf->SetSubject('Registration Slip');
+		$pdf->SetKeywords('Registration, Slip, '.$student_copies[$first_student_id]['Student']['full_name'].', '.$student_copies[$first_student_id]['academic_year'].','.$student_copies[$first_student_id]['Section']['name'].', '. (isset($student_copies[$first_student_id]['Department']) && !empty($student_copies[$first_student_id]['Department']['name']) ? $student_copies[$first_student_id]['Department']['name'] : $student_copies[$first_student_id]['College']['name']).', SIS');
+	} else if ((count($student_copies) == 1 ) || !empty($studentnumber)) {
+		$pdf->SetCreator(PDF_CREATOR);
+		$pdf->SetAuthor('SIS, '.Configure::read('CompanyName').'');
+		$pdf->SetTitle('Registration Slip for ' . $student_copies[$first_student_id]['Student']['full_name'] .' (' .$student_copies[$first_student_id]['Student']['studentnumber'].')' .' '.(isset($student_copies[$first_student_id]['YearLevel']) && !empty($student_copies[$first_student_id]['YearLevel']['name']) ? $student_copies[$first_student_id]['YearLevel']['name'] : ($student_copies[$first_student_id]['Student']['program_id'] == PROGRAM_REMEDIAL ?  'Remedial Program':'Pre/Freshman')).' for '.$student_copies[$first_student_id]['academic_year'].' academic year semester '.$student_copies[$first_student_id]['semester'] .'');
+		$pdf->SetSubject('Registration Slip');
+		$pdf->SetKeywords('Registration, Slip, '.$student_copies[$first_student_id]['Student']['full_name'].', '.$student_copies[$first_student_id]['academic_year'].','.$student_copies[$first_student_id]['Section']['name'].', '. (isset($student_copies[$first_student_id]['Department']) && !empty($student_copies[$first_student_id]['Department']['name']) ? $student_copies[$first_student_id]['Department']['name']: $student_copies[$first_student_id]['College']['name']).',   SIS');
+	}
 	 
-    foreach($student_copies as $key => $student_copy) {
-    $pdf->AddPage("P");
-    $pdf->SetLineStyle(array('dash' => 0, 'width' => '1'));
-    $pdf->Ln(50);
-    //Image processing
-    if(strcasecmp($student_copy['University']['Attachment']['0']['group'], 'logo') == 0)	{
-    	$logo_index = 0;
-    }
-    else {
-    	$logo_index = 1;
-    }
-	 $logo_path = $this->Media->file($student_copy['University']['Attachment'][$logo_index]['dirname'].DS.$student_copy['University']['Attachment'][$logo_index]['basename']);
-	 //HEADER
-    $pdf->Image($logo_path, '5', '5', 25, 25, '', '', 'N', true, 300, 'C');
-    $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/palatino_bold.ttf');
-    $pdf->SetFont($fontPath, '', 16, '', false);
-	$pdf->MultiCell(92, 7, ($student_copy['University']['University']['name']), 0, 'C', false, 0, 1, 4);
-/*
-
-	$pdf->MultiCell(92, 7, $student_copy['College']['name'], 0, 'C', false, 0, 1, 12);
-  */ 
-   /*
-    $pdf->SetFont($fontPath, 'U', 12, '', false);
-    if(!empty($student_copy['Department']) && !empty($student_copy['Department']['id'])) {
-		 $pdf->MultiCell(92, 7, $student_copy['Department']['name'].'', 0, 'C', false, 0, 1, 36);
-    }
-    else {
-		 $pdf->MultiCell(92, 7, 'Freshman Program', 0, 'C', false, 0, 1, 36);
-    }
-	*/
-    $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/jiret.ttf');
-    $pdf->SetFont($fontPath, '', 20, '', true);
-   
-    if(!empty($student_copy['University']) && !empty($student_copy['University']['University'])) {
-       $pdf->MultiCell(85, 7, strtoupper($student_copy['University']['University']['amharic_name']), 0, 'C', false, 0, 120, 4);
-	}  else {
-		  $pdf->MultiCell(85, 7,'', 0, 'C', false, 0, 120, 4);
-	}
-
-    $pdf->SetFont($fontPath, '', 15, '', false);
-
-    $pdf->MultiCell(85, 7, $student_copy['College']['amharic_name'], 0, 'C', false, 0, 120, 12);
-	
-		/*
-    $pdf->SetFont($fontPath, 'U', 12, '', false);
-    if(!empty($student_copy['Department']) && !empty($student_copy['Department']['id'])) {
-      $pdf->MultiCell(85, 7, $student_copy['Department']['amharic_name'], 0, 'C', false, 0, 120, 28);
-	} else {
-		 $pdf->MultiCell(85, 7, 'የመጀመሪያ አመት ተማሪዎች', 0, 'C', false, 0, 120, 28);
-	}
-	*/
-   
-	 //Department/College Address
-    $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
-    $pdf->SetFont($fontPath, '', 12, '', false);
-
-    $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/post_icon.png', '40', '42', 7, 7, 'PNG', '','', true, 300, '');
-     
-    $pdf->MultiCell(15, 7,$pobox, 0, 'C', false, 0, 45, 43);
-	
-    
-    if((!empty($student_copy['Department']) && !empty($student_copy['Department']['id']) && 
-    !empty($student_copy['Department']['phone'])) || 
-    	(empty($student_copy['Department']) && !empty($student_copy['Department']['id']) && 
-    	!empty($student_copy['College']['phone']))
-    	) {
-	 	$pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/phone_icon.png', '140', '42', 7, 7, 'PNG', '', '', true, 300, '');
-    	if((!empty($student_copy['Department']) && !empty($student_copy['Department']['id']))) {
-    		$pdf->MultiCell(100, 7, $student_copy['Department']['phone'], 0, 'L', false, 0, 146, 43);
-    	}
-		else {
-			$pdf->MultiCell(100, 7, $student_copy['College']['phone'], 0, 'L', false, 0, 146, 43);
-		}
-	 }
-	
- $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
-    $pdf->SetFont($fontPath, '', 12, '', false);
-    $pdf->Line(2, 49, 207, 49);
-    $pdf->SetFont('jiret', '', 15, '', true);
-    
-    $pdf->MultiCell(157, 7, $cityAmharic.'፡ '.$countryAmharic, 0, 'C', false, 0, 27, 31);
-    $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style_b.ttf');
-    $pdf->SetFont($fontPath, '', 11, '', false);
-    $pdf->MultiCell(157, 7, ''.$cityEnglish.', '.$countryEnglish.'', 0, 'C', false, 0, 27, 36);
-
-    //Footer
-    //$pdf->Line(2, 266, 207, 266);
-    $student_copy_html = '<table style="width:100%">
-	<tr>
-		<td style="width:3%" rowspan="5"></td>
-		<td style="width:17%; font-weight:bold">Name:</td>
-		<td style="width:40%">'.$student_copy['Student']['full_name'].'</td>
-		<td style="width:17%; font-weight:bold">Program:</td>
-		<td style="width:20%">'.$student_copy['Program']['name'].'</td>
-		<td style="width:3%" rowspan="5"></td>
-	</tr>
-	<tr>
-		<td style="font-weight:bold">ID N<u>o</u>:</td>
-		<td>'.$student_copy['Student']['studentnumber'].'</td>
-		<td style="font-weight:bold">Program Type:</td>
-		<td>'.$student_copy['ProgramType']['name'].'</td>
-	</tr>
-	<tr>
-		<td style="font-weight:bold">'.(strpos(strtolower($student_copy['College']['name']), 'institute') !== false ? 'Institute' : 'College').':</td>
-		<td>'.$student_copy['College']['name'].'</td>
-		<td style="font-weight:bold">Department:</td>
-		<td>'.$student_copy['Department']['name'].'</td>
-	</tr>
-	<tr>
-		<td style="font-weight:bold">Section:</td>
-		<td>'.$student_copy['Section']['name'].'</td>
-		<td style="font-weight:bold">Year Level:</td>
-		<td>'.$student_copy['YearLevel']['name'].'</td>
-	</tr>
-	<tr>
-		<td style="font-weight:bold">Academic Year:</td>
-		<td>'.$student_copy['academic_year'].'</td>
-		<td style="font-weight:bold">Semester:</td>
-		<td>'.$student_copy['semester'].'</td>
-	</tr>
-</table>
-<br /><br />
-<table style="width:100%">
-	<tr>
-		<th rowspan="'.(count($student_copy['courses'])+2).'" style="width:5%"></th>
-		<th style="border:1px solid #000000; border-bottom:2px solid #000000; width:10%">N<u>o</u></th>
-		<th style="border:1px solid #000000; border-bottom:2px solid #000000; width:20%">Course Code</th>
-		<th style="border:1px solid #000000; border-bottom:2px solid #000000; width:40%">Course Title</th>
-		<th style="border:1px solid #000000; border-bottom:2px solid #000000; width:20%; text-align:center">'.(strcasecmp($student_copy['Curriculum']['type_credit'], 'Credit') == 0 ? 'Credit Hour' : 'ECTS').'</th>
+	if (!empty($student_copies)) {
 		
-		<th rowspan="'.(count($student_copy['courses'])+2).'" style="width:5%"></th>
-	</tr>';
-$c_count = 0;
-$credit_hour_sum = 0;
-$grade_point_sum = 0;
-foreach($student_copy['courses'] as $key => $course_reg_add) {
-$c_count++;
-if(isset($course_reg_add['Grade']['grade'])) {
-	if(isset($course_reg_add['Grade']['used_in_gpa']) && $course_reg_add['Grade']['used_in_gpa'] == 1) {
-		$credit_hour_sum += $course_reg_add['Course']['credit'];
-		$grade_point_sum += ($course_reg_add['Grade']['point_value']*$course_reg_add['Course']['credit']);
-	}
-	else if(strcasecmp($course_reg_add['Grade']['grade'], 'I') == 0) {
-		$credit_hour_sum += $course_reg_add['Course']['credit'];
-	}
-}
-else {
-	$credit_hour_sum += $course_reg_add['Course']['credit'];
-}
-$student_copy_html .= '<tr>
-		<td style="border:1px solid #000000">'.$c_count.'</td>
-		<td style="border:1px solid #000000">'.$course_reg_add['Course']['course_code'].'</td>
-		<td style="border:1px solid #000000">'.$course_reg_add['Course']['course_title'].'</td>
-		<td style="border:1px solid #000000; text-align:center">'.$course_reg_add['Course']['credit'].'</td>
-		
-	</tr>';
-}
-$student_copy_html .= '<tr>
-		<td colspan="3" style="border:1px solid #000000; text-align:right; font-weight:bold">TOTAL</td>
-		<td style="border:1px solid #000000; text-align:center; border-top:2px solid #000000; font-weight:bold">'.($credit_hour_sum != 0 ? $credit_hour_sum : '---').'</td>
-		
-	</tr>
-</table>';
+		foreach($student_copies as $key => $student_copy) {
+			
+			$pdf->AddPage("P");
+			$pdf->SetLineStyle(array('dash' => 0, 'width' => '1'));
+			$pdf->Ln(50);
 
+			$type_credit = 'Credit';
 
-$student_copy_html .= '<br /><br /><br/><br/>
-<table>
-	<tr>
-		<td style="width:2%"></td>
-		<td style="width:48%">
-			<table>
+			if (!empty($student_copy['Section']) && !is_numeric($student_copy['Section']['year_level_id']) || $student_copy['Section']['year_level_id'] == 0) {
+				
+				$preEngineeringColleges = Configure::read('preengineering_college_ids');
+
+				if (isset($student_copy['Section']['College']['stream']) && $student_copy['Section']['College']['stream'] == STREAM_NATURAL && in_array($student_copy['Section']['College']['id'], $preEngineeringColleges)) {
+					$stream[1] = 'Pre Engineering';
+				} else if (isset($student_copy['Section']['College']['stream']) && $student_copy['Section']['College']['stream'] == STREAM_NATURAL) {
+					$stream[1] = 'Natural';
+				} else if (isset($student_copy['Section']['College']['stream']) && $student_copy['Section']['College']['stream'] == STREAM_SOCIAL) {
+					$stream[1] = 'Social';
+				}
+
+				$type_credit = (count(explode('ECTS', $student_copy['Section']['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit');
+
+			} else if (isset($student_copy['Section']['Curriculum']) && !empty($student_copy['Section']['Curriculum']['name']) && !is_null($student_copy['Section']['department_id'])) {
+				if (isset($student_copy['Section']['Curriculum']['specialization_english_degree_nomenclature']) && !empty($student_copy['Section']['Curriculum']['specialization_english_degree_nomenclature'])) {
+					$stream = explode(' in ', $student_copy['Section']['Curriculum']['specialization_english_degree_nomenclature']);
+					if (count($stream) == 1) {
+						$stream2 = explode(' of ', $student_copy['Section']['Curriculum']['specialization_english_degree_nomenclature']);
+						if (count($stream2) == 2 && count($stream) == 1) {
+							$stream[1] = $stream2[1];
+						} else if (count($stream2) > 2 && count($stream) == 1) {
+							$stream[1] = $stream2[2];
+						} else {
+							$stream[1] = $student_copy['Section']['Curriculum']['specialization_english_degree_nomenclature'];
+						}
+					}
+				} else {
+					$stream = explode(' in ', $student_copy['Section']['Curriculum']['english_degree_nomenclature']);
+					if (count($stream) == 1) {
+						$stream = explode(' of ', $student_copy['Section']['Curriculum']['english_degree_nomenclature']);
+					}
+				}
+
+				$type_credit = (count(explode('ECTS', $student_copy['Section']['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit');
+
+			} else if (isset($student_copy['Curriculum']) && !empty($student_copy['Curriculum']['name'])) {
+				
+				if (isset($student_copy['Curriculum']['specialization_english_degree_nomenclature']) && !empty($student_copy['Curriculum']['specialization_english_degree_nomenclature'])) {
+					$stream = explode(' in ', $student_copy['Curriculum']['specialization_english_degree_nomenclature']);
+					if (count($stream) == 1) {
+						$stream2 = explode(' of ', $student_copy['Curriculum']['specialization_english_degree_nomenclature']);
+						if (count($stream2) == 2 && count($stream) == 1) {
+							$stream[1] = $stream2[1];
+						} else if (count($stream2) > 2 && count($stream) == 1) {
+							$stream[1] = $stream2[2];
+						} else {
+							$stream[1] = $student_copy['Curriculum']['specialization_english_degree_nomenclature'];
+						}
+					}
+				} else {
+					$stream = explode(' in ', $student_copy['Curriculum']['english_degree_nomenclature']);
+					if (count($stream) == 1) {
+						$stream = explode(' of ', $student_copy['Curriculum']['english_degree_nomenclature']);
+					}
+				}
+
+				$type_credit = (count(explode('ECTS', $student_copy['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit');
+
+			} else {
+				$stream[1] = '---';
+			}
+
+			if (isset($stream) && !empty($stream[1])) {
+				$searchBracket = explode('(', $stream[1]);
+				if (count($searchBracket) != 1) {
+					$searchBracket = explode(')', $searchBracket[1]);
+					$stream[1] = trim($searchBracket[0]);
+				}
+			}
+
+			$pdf->Image($_SERVER['DOCUMENT_ROOT'] . UNIVERSITY_LOGO_HEADER_FOR_TCPDF, '5', '5', 25, 25, '', '', 'N', true, 300, 'C');
+			
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerifBold.ttf');
+			$pdf->SetFont($fontPath, '', 13, '', false);
+			$pdf->MultiCell(92, 7, ((isset($universityName) ? $universityName : $student_copy['University']['University']['name'])), 0, 'C', false, 0, 1, 10);
+			
+			$pdf->SetFont($fontPath, '', 12, '', false);
+			if (!empty($student_copy['Section']['College']['id'])) {
+				$pdf->MultiCell(92, 7, $student_copy['Section']['College']['name'], 0, 'C', false, 0, 1, 16);
+			} else {
+				$pdf->MultiCell(92, 7, '', 0, 'C', false, 0, 1, 16);
+			}
+			
+			//$pdf->SetFont($fontPath, 'U', 13, '', false);
+			$pdf->SetFont($fontPath, '', 12, '', false);
+			if (!empty($student_copy['Section']['Department']['id'])) {
+				$pdf->MultiCell(92, 7,  $student_copy['Section']['Department']['type']. ' of '. $student_copy['Section']['Department']['name'], 0, 'C', false, 0, 1, 22);
+			} else {
+				$pdf->MultiCell(92, 7, (($student_copy['Program']['id'] == PROGRAM_REMEDIAL || $student_copy['Student']['program_id'] == PROGRAM_REMEDIAL) ?  'Remedial Program' : 'Freshman Program'), 0, 'C', false, 0, 1, 22);
+			}
+
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/jiret.ttf');
+			$pdf->SetFont($fontPath, '', 16, '', true);
+			$pdf->MultiCell(85, 7, (isset($universityAmharicName) ? $universityAmharicName : $student_copy['University']['University']['amharic_name']), 0, 'C', false, 0, 120, 10);
+			
+			$pdf->SetFont($fontPath, '', 15, '', false);
+			if (!empty($student_copy['Section']['College']['amharic_name']) && !empty($student_copy['Section']['College']['id'])) {
+				$pdf->MultiCell(85, 7, $student_copy['Section']['College']['amharic_name'], 0, 'C', false, 0, 120, 16);
+			} else {
+				$pdf->MultiCell(85, 7, '', 0, 'C', false, 0, 120, 16);
+			}
+
+			//$pdf->SetFont($fontPath, 'U', 16, '', false);
+			$pdf->SetFont($fontPath, '', 15, '', false);
+			if (!empty($student_copy['Section']['Department']['id'])) {
+				$pdf->MultiCell(85, 7,  'የ' . $student_copy['Section']['Department']['amharic_name'] . ' ' . $student_copy['Section']['Department']['type_amharic'], 0, 'C', false, 0, 120, 22);
+			}  else {
+				$pdf->MultiCell(85, 7, (($student_copy['Program']['id'] == PROGRAM_REMEDIAL || $student_copy['Student']['program_id'] == PROGRAM_REMEDIAL) ?  'የአቅም ማሻሻያ ፕሮግራም' : 'የመጀመሪያ አመት ተማሪዎች'), 0, 'C', false, 0, 120, 22);
+			}
+
+			//Department/College Address
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerif.ttf');
+			$pdf->SetFont($fontPath, '', 12, '', false);
+			// $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/post_icon.png', '40', '26', 7, 7, 'PNG', '', '', true, 300, '');
+			$pdf->MultiCell(30, 7, 'P.O.Box: '. $pobox, 0, 'C', false, 0, 34, 35);
+
+			if ((!empty($student_copy['Section']['Department']['id']) && !empty($student_copy['Section']['Department']['phone']) ) || (!empty($student_copy['Section']['College']['id']) && !empty($student_copy['Section']['College']['phone']))) {
+				//$pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/phone_icon.png', '140', '26', 7, 7, 'PNG', '', '', true, 300, '');
+				if (!empty($student_copy['Section']['Department']['id'])) {
+					$pdf->MultiCell(100, 7, 'Tel: '. $student_copy['Section']['Department']['phone'], 0, 'L', false, 0, 146, 35);
+				} else if (!empty($student_copy['College']['id'])) {
+					$pdf->MultiCell(100, 7, 'Tel: '. $student_copy['Section']['College']['phone'], 0, 'L', false, 0, 146, 35);
+				}
+			}
+
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerif.ttf');
+			$pdf->SetFont($fontPath, '', 12, '', false);
+			$pdf->Line(2, 43, 207, 43);
+
+			$pdf->SetFont('jiret', '', 12, '', true);
+			$pdf->MultiCell(157, 7, $cityAmharic . '፡ ' . $countryAmharic, 0, 'C', false, 0, 27, 31);
+
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerifBold.ttf');
+			$pdf->SetFont($fontPath, '', 10, '', false);
+			$pdf->MultiCell(157, 7, $cityEnglish . ', ' . $countryEnglish, 0, 'C', false, 0, 27, 36);
+
+			$pdf->Line(2, 264, 207, 264);
+
+			$student_copy_html = '
+			<table style="width:100%">
 				<tr>
-					<td><u>Generated By</u></td>
+					<td style="width:2%">&nbsp;</td>
+					<td style="width:45%"><span style="font-weight:bold">Name: </span> &nbsp;'.$student_copy['Student']['full_name'].'</td>
+					<td style="width:51%"><span style="font-weight:bold">'. (isset($student_copy['Section']['Department']['type']) ? $student_copy['Section']['Department']['type'] : 'Department').
+                ': </span> &nbsp;'.(!empty($student_copy['Section']['Department']['name']) ? $student_copy['Section']['Department']['name'] :
+                    (($student_copy['Program']['id'] == PROGRAM_REMEDIAL || $student_copy['Student']['program_id'] == PROGRAM_REMEDIAL)
+                        ? 'Remedial Program' : 'Pre/Freshman')).'</td>
+					<td style="width:2%">&nbsp;</td>
 				</tr>
 				<tr>
-					<td style="width:25%">System:</td>
-					<td style="width:75%; border-bottom:1px solid #000000">SIS</td>
+					<td>&nbsp;</td>
+					<td><span style="font-weight:bold">Student ID: </span> &nbsp;'.$student_copy['Student']['studentnumber'].'</td>
+					<td><span style="font-weight:bold"></span></td>
+					<td>&nbsp;</td>
 				</tr>
 				
 				<tr>
-					<td>Date:</td>
-					<td style="border-bottom:1px solid #000000">'.$student_copy['RegistrationDate'].'</td>
+					<td>&nbsp;</td>
+					<td><span style="font-weight:bold">Program Type: </span> &nbsp;'.$student_copy['ProgramType']['name'].'</td>
+				    <td><span style="font-weight:bold">Program: </span> &nbsp;'.$student_copy['Program']['name'].'</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td><span style="font-weight:bold">Section: </span> &nbsp;'.$student_copy['Section']['name'].'</td>
+					<td><span style="font-weight:bold">Year Level: </span> &nbsp;'.(!empty($student_copy['Section']['YearLevel']['name']) ? $student_copy['Section']['YearLevel']['name'] : (($student_copy['Program']['id'] == PROGRAM_REMEDIAL || $student_copy['Student']['program_id'] == PROGRAM_REMEDIAL) ? 'Remedial' : 'Pre/1st')).'</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+					<td><span style="font-weight:bold">Academic Year: </span> &nbsp;'.$student_copy['academic_year'].'</td>
+					<td><span style="font-weight:bold">Semester: </span> &nbsp;'.$student_copy['semester'].'</td>
+					<td>&nbsp;</td>
 				</tr>
 			</table>
-		</td>
-		<td style="width:2%"></td>
-		<td style="width:46%">
+
+
+			<br/>
+			<table style="width:100%" cellpadding="1" class="table">
+				<tr>
+					<th class="center" rowspan="'.(count($student_copy['courses'])+2).'" style="width:2%"></th>
+					<th class="center" style="font-weight: bold; border:1px solid #000000; vertical-align: middle; width:5%">&nbsp; N<u>o</u></th>
+					<th class="vcenter" style="font-weight: bold; border:1px solid #000000; vertical-align: middle; width:16%">&nbsp; Course Code</th>
+					<th class="vcenter" style="font-weight: bold; border:1px solid #000000; vertical-align: middle; width:60%">&nbsp; Course Title</th>
+					<th class="center" style="font-weight: bold; border:1px solid #000000;vertical-align: middle; text-align: center; width:15%;">'.$type_credit.'</th>
+					<th rowspan="'.(count($student_copy['courses'])+2).'" style="width:2%"></th>
+				</tr>';
+
+				$c_count = 0;
+				$credit_hour_sum = 0;
+				$grade_point_sum = 0;
+
+				foreach($student_copy['courses'] as $key => $course_reg_add) {
+					$c_count++;
+					if(isset($course_reg_add['Grade']['grade'])) {
+						if(isset($course_reg_add['Grade']['used_in_gpa']) && $course_reg_add['Grade']['used_in_gpa'] == 1) {
+							$credit_hour_sum += $course_reg_add['Course']['credit'];
+							$grade_point_sum += ($course_reg_add['Grade']['point_value']*$course_reg_add['Course']['credit']);
+						}
+						else if(strcasecmp($course_reg_add['Grade']['grade'], 'I') == 0) {
+							$credit_hour_sum += $course_reg_add['Course']['credit'];
+						}
+					}
+					else {
+						$credit_hour_sum += $course_reg_add['Course']['credit'];
+					}
+					$student_copy_html .= 
+					'<tr>
+						<td class="center" style="border:1px solid #000000; vertical-align: middle;">&nbsp;&nbsp; '.$c_count.'</td>
+						<td class="vcenter" style="border:1px solid #000000; vertical-align: middle;">&nbsp; '.$course_reg_add['Course']['course_code'].'</td>
+						<td class="center" style="border:1px solid #000000; vertical-align: middle;">&nbsp; '.$course_reg_add['Course']['course_title'].'</td>
+						<td class="center" style="border:1px solid #000000; vertical-align: middle; text-align: center;">'.$course_reg_add['Course']['credit'].'</td>
+					</tr>';
+				}
+
+				$student_copy_html .= 
+				'<tr>
+					<td colspan="3" style="border:1px solid #000000; text-align:right; font-weight:bold">TOTAL &nbsp;</td>
+					<td style="border:1px solid #000000; text-align:center; font-weight:bold">'.($credit_hour_sum != 0 ? $credit_hour_sum : '---').'</td>
+				</tr>
+			</table>';
+
+
+			$student_copy_html .= 
+			'<br/><br/>
 			<table>
 				<tr>
-					<td><u>Advisor</u></td>
+					<td style="width:2%"></td>
+					<td style="width:48%">
+						<table cellpadding="1" cellspacing="2">
+							<tr>
+								<td><b>Generated By:</b></td>
+							</tr>
+							<tr>
+								<td style="vertical-align:bottom; width:15%">Name:</td>
+								<td style="width:50%; border-bottom:1px solid #000000">SIS</td>
+							</tr>
+							<tr>
+								<td>Date:</td>
+								<td style="border-bottom:1px solid #000000">'.$this->Time->format("M j, Y h:i:s A", date('Y-m-d H:i:s'), NULL, NULL).'</td>
+							</tr>
+						</table>
+					</td>
+					<td style="width:8%"></td>
+					<td style="width:40%">
+						<table cellpadding="1" cellspacing="2">
+							<tr>
+								<td><b>Checked By:</b></td>
+							</tr>
+							<tr>
+								<td style="vertical-align:bottom; width:25%">Name:</td>
+								<td style="width:70%; border-bottom:1px solid #000000"></td>
+							</tr>
+							<tr>
+								<td>Signature:</td>
+								<td style="border-bottom:1px solid #000000"></td>
+							</tr>
+							<tr>
+								<td>Date:</td>
+								<td style="border-bottom:1px solid #000000"></td>
+							</tr>
+						</table>
+					</td>
+					<td style="width:2%"></td>
 				</tr>
-				<tr>
-					<td style="vertical-align:bottom; width:25%">Name:</td>
-					<td style="width:75%; border-bottom:1px solid #000000"></td>
-				</tr>
-				<tr>
-					<td>Signature:</td>
-					<td style="border-bottom:1px solid #000000"></td>
-				</tr>
-				<tr>
-					<td>Date:</td>
-					<td style="border-bottom:1px solid #000000"></td>
-				</tr>
-			</table>
-		</td>
-		<td style="width:2%"></td>
-	</tr>
-</table>
-';
-	
-   
-	$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style_b.ttf');
-	$pdf->SetFont($fontPath, '', 15, '', false);
-   $pdf->MultiCell(157, 7, 'Student\'s Registration  Report', 0, 'C', false, 0, 27, 52);
-	$pdf->Ln(15);
+			</table>';
+			
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerifBold.ttf');
+			$pdf->SetFont($fontPath, '', 14, '', false);
+			$pdf->MultiCell(157, 7, 'Student\'s Registration Slip', 0, 'C', false, 0, 27, 46);
+			$pdf->Ln(15);
+			
+			$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/webroot/fonts/FreeSerif.ttf');
+			$pdf->SetFont($fontPath, '', 11, '', false);
+			$pdf->writeHTML($student_copy_html);
 
-	$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
-	$pdf->SetFont($fontPath, '', 11, '', false);
-	$pdf->writeHTML($student_copy_html);
-  	 // reset pointer to the last page
+			/* if ($this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR) {
+				$pdf->Image($_SERVER['DOCUMENT_ROOT'] . REGISTRAR_TRANSPARENT_STAMP_FOR_TCPDF, '175', '175', 40, 40, '', '', 'N', true, 300, 'C');
+			} */
+
+
+			//Footer
+			$pdf->SetFont($fontPath, '', 12, '', false);
+			
+			//$pdf->MultiCell(100, 7, 'Web site: '.UNIVERSITY_WEBSITE.'  Email: '. REGISTRAR_EMAIL .'', 0, 'L', false, 0, 10, 270);
+			$pdf->MultiCell(100, 7, 'Portal: '. PORTAL_URL_HTTPS .'', 0, 'L', false, 0, 8, 268);
+			$pdf->SetFont('jiret', '', 12, '', true);
+			$pdf->MultiCell(100, 7, 'መልስ ሲጽፉልን የኛን ቁጥር ይጥቀሱ::', 0, 'L', false, 0, 75, 268);
+
+			// Amharic Motto
+			$pdf->MultiCell(100, 7, $universityAmharicName . '፣ ' . UNIVERSITY_MOTTO_AM, 0, 'L', false, 0, 70, 281);
+
+			$pdf->SetFont($fontPath, '', 11, '', false);
+			$pdf->MultiCell(130, 7, 'When replying, Please, indicate our reference number.', 0, 'L', false, 0, 55, 274);
+			$pdf->MultiCell(100, 7, 'Website: '. UNIVERSITY_WEBSITE .'', 0, 'L', false, 0, 145, 268);
+
+
+			// English Motto
+			$pdf->MultiCell(100, 7, $universityName . ', ' . UNIVERSITY_MOTTO_EN, 0, 'L', false, 0, 58, 286);
+
+			if ($this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR) {
+
+				////////////////////////////////////// WATER MARK //////////////////////////////////////
+
+				$waterMarkFont = "Helvetica";
+				$waterMarkFontSize = 40;
+				$waterMarkFontStyle = "B";
+
+
+				$chainWidth = $pdf->GetStringWidth(trim("FOR NON OFFICIAL USE ONLY"), $waterMarkFont, $waterMarkFontStyle, $waterMarkFontSize, false );
+				$centerfactor = round(($chainWidth * sin(deg2rad(45))) / 2 , 0);
+
+				// Get the page width/height
+				$myPageWidth = $pdf->getPageWidth();
+				$myPageHeight = $pdf->getPageHeight();
+
+				// Find the middle of the page and adjust.
+				$myX = ( $myPageWidth / 2 ) - $centerfactor;
+				$myY = ( $myPageHeight / 2 ) + $centerfactor;
+
+				// Set the transparency of the text to really light
+				//$pdf->SetAlpha(0.09);
+				$pdf->SetAlpha(0.08);
+
+				// Rotate 45 degrees and write the watermarking text
+				$pdf->StartTransform();
+				$pdf->Rotate(45, $myX, $myY);
+				$pdf->SetFont($waterMarkFont, $waterMarkFontStyle, $waterMarkFontSize);
+				$pdf->Text($myX, $myY ,trim("FOR NON OFFICIAL USE ONLY"));
+				$pdf->StopTransform();
+
+				// Reset the transparency to default
+				$pdf->SetAlpha(1);
+
+				////////////////////////////////////// END WATER MARK //////////////////////////////////////
+			}
+			
+		}
+
+		// reset pointer to the last page
+		$pdf->lastPage();
+		//output the PDF to the browser
+
+		if ((count($student_copies) == 1) || !empty($studentnumber)) {
+			$pdf->Output('Registration_Slip_'.str_replace('/','-',$student_copies[$first_student_id]['Student']['studentnumber']).'_'.$student_copies[$first_student_id]['Student']['full_name'].'_'.(isset($student_copies[$first_student_id]['YearLevel']) && !empty($student_copies[$first_student_id]['YearLevel']['name']) ? $student_copies[$first_student_id]['YearLevel']['name'] : ($student_copies[$first_student_id]['Student']['program_id'] == PROGRAM_REMEDIAL ?  'Remedial Program':'Pre/Freshman')).'_'.str_replace('/','-',$student_copies[$first_student_id]['academic_year']).'_'.$student_copies[$first_student_id]['semester'].'_'.date('Y-m-d').'.pdf', $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR ? 'I' : 'D');
+		} else {
+			$pdf->Output('Registration_Slip_'.(isset($student_copies[$first_student_id]['Department']) && !empty($student_copies[$first_student_id]['Department']['name']) ? $student_copies[$first_student_id]['Department']['name']: $student_copies[$first_student_id]['College']['name']).'_'.$student_copies[$first_student_id]['Section']['name'].'_'.(isset($student_copies[$first_student_id]['YearLevel']) && !empty($student_copies[$first_student_id]['YearLevel']['name']) ? $student_copies[$first_student_id]['YearLevel']['name'] : ($student_copies[$first_student_id]['Student']['program_id'] == PROGRAM_REMEDIAL ?  'Remedial Program':'Pre/Freshman')).'_'.str_replace('/','-',$student_copies[$first_student_id]['academic_year']).'_'.$student_copies[$first_student_id]['semester'].'_'.date('Y-m-d').'.pdf', $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR ? 'I' : 'D');
+		}
 	}
-	 $pdf->lastPage();
-    //output the PDF to the browser
 
-    $pdf->Output('registration_report.pdf', 'I');
+    //$pdf->Output('student_copy.pdf', 'I');
     /*
     I: send the file inline to the browser.
     D: send to the browser and force a file download with the name given by name.
     F: save to a local file with the name given by name.
     S: return the document as a string.
     */
-?>

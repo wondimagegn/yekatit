@@ -22,6 +22,8 @@
  * @license       http://www.opensource.org/licenses/mit-license.php MIT License
  */
 
+App::uses('Router', 'Routing');
+
 // Setup a 'default' cache configuration for use in the application.
 Cache::config('default', array('engine' => 'File'));
 
@@ -139,8 +141,10 @@ CakeLog::config('error', array(
 ));
 
 // include all php files from app/config_app
- foreach (glob(APP."Config_app/*.php") as $configFile) {
+/*
+foreach (glob(APP."Config_app/*.php") as $configFile) {
     include($configFile);
  }
-
+*/
+ require_once APP . 'Config_app/smis.php';
  require_once APP . 'Config' . DS . 'events.php';

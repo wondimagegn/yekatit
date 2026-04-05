@@ -5,6 +5,7 @@ echo $this->Form->create('CourseAdd');
   
 //Sub cat combo
 function updateDepartmentCollege(id) {
+
            
             //serialize form data
             var formData = $("#college_id_"+id).val();
@@ -30,9 +31,16 @@ function updateDepartmentCollege(id) {
 							//get form action
 							var formUrl = '/sections/get_sections_by_dept/'+subCat;
 							$.ajax({
+								/*
 								type: 'get',
 								url: formUrl,
 								data: subCat,
+								*/
+								type: 'post',
+        url: formUrl,
+        data: $('form')
+            .serialize(),
+
 								success: function(data,textStatus,xhr){
 										$("#section_id_"+id).attr('disabled', false);
 										$("#add_button_disable").attr('disabled', false);
@@ -58,6 +66,8 @@ function updateDepartmentCollege(id) {
 
 //Sub cat combo
 function updateSection(id) {
+
+	
            
             //serialize form data
             var formData = $("#department_id_"+id).val();
@@ -68,9 +78,16 @@ function updateSection(id) {
 					//get form action
 			var formUrl = '/sections/get_sections_by_dept/'+formData;
 			$.ajax({
+				/*
 				type: 'get',
 				url: formUrl,
 				data: formData,
+				*/
+				type: 'post',
+        url: formUrl,
+        data: $('form')
+            .serialize(),
+
 				success: function(data,textStatus,xhr){
 						$("#section_id_"+id).attr('disabled', false);
 						$("#college_id_"+id).attr('disabled', false);

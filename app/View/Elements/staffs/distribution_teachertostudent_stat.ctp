@@ -1,89 +1,51 @@
-<?php ?>
-<style>
-.bordering {
-border-left:1px #cccccc solid;
-border-right:1px #cccccc solid;
-}
-.bordering2 {
-border-left:1px #000000 solid;
-border-right:1px #000000 solid;
-border-top:1px #000000 solid;
-border-bottom:1px #000000 solid;
-}
-.courses_table tr td, .courses_table tr th {
-padding:1px
-}
-</style>
+<?php
+if (isset($distributionStatistics['getDistributionStatsTeacherToStudents']) && !empty($distributionStatistics['getDistributionStatsTeacherToStudents'])) { ?>
+	<!-- <h6><?php //echo $headerLabel; ?></h6> -->
+	<?= $this->element('staffs/graph'); ?>
+	<hr>
 
-<?php 
-
-if (isset($distributionStatistics['getDistributionStatsTeacherToStudents']) && !empty($distributionStatistics['getDistributionStatsTeacherToStudents'])) {
-  ?>
- <h5><?php echo $headerLabel;?></h5>
-  <?php 
-
-  echo $this->element('staffs/graph');
-  ?>
- <table style="width:100%">
-                   
-                <tr>
-                    <td class="bordering2"> S.N<u>o</u> </td> 
-                    <td class="bordering2"> Department </td> 
-                    <td class="bordering2"> Type </td>   
-                    <td class="bordering2"> Number </td>  
-                    <td class="bordering2"> Ratio </td>   
-                </tr>     
-               
-<?php  
-$count=0;  
-foreach($distributionStatistics['getDistributionStatsTeacherToStudents'] as $departmentNamee=>$genderWithRank) {
- ?>
-     <tr>
-        <td rowspan="2" class="bordering2" > 
-          <?php echo ++$count;?>
-        </td>
-         <td rowspan="2" class="bordering2" > 
-          <?php echo $departmentNamee;?>
-        </td>
-        <td class="bordering2">
-          Student
-        </td>
-        <td class="bordering2">
-           <?php 
-              echo $genderWithRank['student'];
-           ?>
-        </td>
-        <td rowspan="2" class="bordering2"  style="vertical-align: center;" ><?php 
-
-        if($genderWithRank['teacher']>0) {
-            echo 'One teacher to '.round($genderWithRank['student']/$genderWithRank['teacher']).' students '; 
-
-        } else {
-          echo 'No teacher is feeded into the system by given department';
-        }
-       
-
-        ?></td>
-    </tr>
-
-    <tr>
-       
-        <td class="bordering2">
-          Teacher
-        </td>
-        <td class="bordering2">
-           <?php 
-              echo $genderWithRank['teacher'];
-           ?>
-        </td>
-        
-    </tr>
- <?php 
-
- }
- ?>
-
- </table>
- <?php 
-}   
-?>
+	<div style="overflow-x:auto;">
+		<table cellpadding="0" cellspacing="0" class="table">
+			<thead>
+				<tr>
+					<th class="center" style="width: 5%;">#</th>
+					<th class="vcenter" style="width: 35%;">Department</th>
+					<th class="center" style="width: 10%;">Type</th>
+					<th class="center" style="width: 10%;">Number</th>
+					<th class="center">Ratio</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				$count = 0;
+				foreach ($distributionStatistics['getDistributionStatsTeacherToStudents'] as $departmentNamee => $genderWithRank) { ?>
+					<tr>
+						<td rowspan="2" class="center" style="vertical-align: top; text-align: center;"><?= ++$count; ?></td>
+						<td rowspan="2" class="vcenter" style="vertical-align: top; text-align: left;"><?= $departmentNamee; ?></td>
+						<td class="center">Student</td>
+						<td class="center"><?= (isset($genderWithRank['student']) && !empty($genderWithRank['student']) ? $genderWithRank['student'] : ''); ?></td>
+						<td rowspan="2" class="center" style="vertical-align: middle; text-align: center;">
+							<?php
+							if ($genderWithRank['teacher'] > 0 && $genderWithRank['student'] > 0) {
+								echo 'One Instructor to ' . (round($genderWithRank['student'] / $genderWithRank['teacher'])) . ' students ';
+							} else if ($genderWithRank['teacher'] == 0 && $genderWithRank['student'] == 0) {
+								echo 'No Instructor & Student is found';
+							} else if ($genderWithRank['student'] == 0) {
+								echo 'No Student is found';
+							} else {
+								echo 'No Instructor is found';
+							} ?>
+						</td>
+					</tr>
+					<tr>
+						<td class="center">Instructor</td>
+						<td class="center"><?= (isset($genderWithRank['teacher']) && !empty($genderWithRank['teacher']) ? $genderWithRank['teacher'] : ''); ?></td>
+					</tr>
+					<?php
+				} ?>
+			</tbody>
+		</table>
+	</div>
+	<br>
+	<?php
+} ?>

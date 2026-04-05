@@ -1,118 +1,214 @@
-<?php echo $this->Form->create('OnlineApplicant');?>
+<?php echo $this->Form->create('OnlineApplicant'); ?>
+
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-            
-<?php if (!isset($admitsearch)) { ?>
-<div class="smallheading"> Select online admit students to entry process for SMIS . Please dont forget to generate student number, and admit them for department to see them for curriculum attachment and section placement. </div>
-<table cellpadding="0" cellspacing="0"><tr> 
-	
-	<td> <?php 
-			echo $this->Form->input('OnlineApplicant.academicyear',array('id'=>'academicyear',
-            'label' => 'Academic Year','type'=>'select','options'=>$acyear_array_data,
-            'empty'=>"--Select Academic Year--",'selected'=>isset($defaultacademicyear)?$defaultacademicyear:'')); ?>
-	</td>
-    
-<td> <?php 
-			echo $this->Form->input('OnlineApplicant.program_id'); ?>
-	</td>
+    <div class="box-body">
+        <div class="row">
+            <div class="large-12 columns">
+
+                <?php if (!isset($admitsearch)) : ?>
+
+                    <div class="smallheading">
+                        Select online admit students to entry process for SIS.<br>
+                        Please don't forget to generate student number, and admit them for department to see them for curriculum attachment and section placement.
+                    </div>
+
+                    <table cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td>
+                                <?php
+                                echo $this->Form->input('OnlineApplicant.academicyear', [
+                                        'id'     => 'academicyear',
+                                        'label'  => 'Academic Year',
+                                        'type'   => 'select',
+                                        'options'=> $acyear_array_data,
+                                        'empty'  => '--Select Academic Year--',
+                                        'selected' => isset($defaultacademicyear) ? $defaultacademicyear : ''
+                                ]);
+                                ?>
+                            </td>
+                            <td>
+                                <?= $this->Form->input('campus_id', [
+
+                                        'empty' => '-- Select Campus --',
+                                        'id' => 'campus_id' ,  // ← This must be "campus_id"
+                                        'label' => 'Campus',
+                                        'class' => 'radius'
+                                ]); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Field of Study <br/>
+                                <select name="data[OnlineApplicant][department_id]" id="department_id" class="radius"
+                                        required <?= empty($this->request->data['OnlineApplicant']['department_id']) ? 'disabled' : '' ?>>
+                                    <?php if (!empty($this->request->data['OnlineApplicant']['department_id'])): ?>
+                                        <option value="<?= h($this->request->data['OnlineApplicant']['department_id']) ?>">
+                                            <?= h($departments[$this->request->data['OnlineApplicant']['department_id']]) ?>
+                                        </option>
+                                    <?php else: ?>
+                                        <option>-- Select Campus First --</option>
+                                    <?php endif; ?>
+                                </select>
+                            </td>
+                            <td><?php echo $this->Form->input('OnlineApplicant.program_id', ['label' => 'Study Type']); ?></td>
+
+                        </tr>
+                        <tr>
+                            <td><?php echo $this->Form->input('OnlineApplicant.program_type_id', ['label' => 'Enrollment Type']); ?></td>
+                            <td><?php echo $this->Form->input('OnlineApplicant.name'); ?></td>
+                        </tr>
+                        <tr>
+
+                            <td colspan="2"><?php echo $this->Form->input('OnlineApplicant.limit', ['type' => 'number']); ?></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <?php
+                                echo $this->Form->submit('Continue', [
+                                        'div'   => false,
+                                        'name'  => 'getonlineapplicant',
+                                        'class' => 'tiny radius button bg-blue'
+                                ]);
+                                ?>
+                            </td>
+                        </tr>
+                    </table>
+
+                <?php endif; ?>
+
+                <?php if (!empty($onlineApplicants)) : ?>
+
+                    <table>
+                        <tr>
+                            <th colspan="8" class="smallheading">
+                                <?php echo __('Select List of student you want to batch admit.'); ?>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th>No.</th>
+                            <th style="padding:0">
+                                Select / Unselect All<br>
+                                <?php echo $this->Form->checkbox('SelectAll', ['id' => 'select-all']); ?>
+                            </th>
+                            <th>Application Number</th>
+                            <th>Full Name</th>
+                            <th>Gender</th>
+                            <th>Entrance Result</th>
+                            <th>Department</th>
+                            <th>Academic Year</th>
+                        </tr>
+
+                        <?php
+                        $i = 0;
+                        $serial_number = 1;
+                        $notPaid = 0;
+                        $paid = 0;
+                        echo '<pre>';
+                        print_r($onlineApplicants);
+                        echo '</pre>';
+
+                        foreach ($onlineApplicants as $onlineApplicant):
+                            $class = ($i++ % 2 == 0) ? ' class="altrow"' : '';
 
 
-</tr>
-	<tr><td>
-	   <?php 
-	       if (!empty($college_level)) {
-			echo $this->Form->input('OnlineApplicant.college_id',array('label'=>'Select College','type'=>'select','empty'=>'---Select College --'));
-			 }
-			 if (!empty($department_level)) {
-			    echo $this->Form->input('OnlineApplicant.department_id',array('label'=>'Select Department','type'=>'select','empty'=>'---Select Department --'));
-			 }
-			
-			 ?>  
-	</td>
-        
-<td> <?php 
-			echo $this->Form->input('OnlineApplicant.program_type_id'); ?>
-	</td>
+
+                            if ($onlineApplicant['Invoice'][0]['status']=='Paid' ||$onlineApplicant['Invoice'][0]['status']=='Approved' ):
+                                $paid++;
+                                ?>
+                                <tr<?php echo $class; ?>>
+                                    <td><?php echo $serial_number++; ?></td>
+                                    <td>
+                                        <?php
+                                        echo $this->Form->checkbox('OnlineApplicant.approve.' . $onlineApplicant['OnlineApplicant']['id'], [
+                                                'class' => 'checkbox1'
+                                        ]);
+                                        ?>
+                                    </td>
+                                    <td><?php echo h($onlineApplicant['OnlineApplicant']['applicationnumber']); ?></td>
+                                    <td><?php echo h($onlineApplicant['OnlineApplicant']['full_name']); ?></td>
+                                    <td><?php echo h($onlineApplicant['OnlineApplicant']['gender']); ?></td>
+                                    <td><?php echo h($onlineApplicant['OnlineApplicant']['entrance_result']); ?></td>
+                                    <td><?php echo h($onlineApplicant['Department']['name']); ?></td>
+                                    <td><?php echo h($onlineApplicant['OnlineApplicant']['academic_year']); ?></td>
+                                </tr>
+                            <?php
+                            else:
+                                $notPaid++;
+                            endif;
+                        endforeach;
+                        ?>
+
+                        <?php if ($paid): ?>
+                            <tr>
+                                <td colspan="8">
+                                    <?php
+                                    echo $this->Form->submit('Process', [
+                                            'div'   => false,
+                                            'name'  => 'processSelected',
+                                            'class' => 'tiny radius button bg-blue'
+                                    ]);
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+
+                        <?php if ($notPaid): ?>
+                            <tr>
+                                <td colspan="8">
+                                    <h5>There are <?php echo $notPaid; ?> online applicants whose documents are checked and complete but payment not approved by finance yet!</h5>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </table>
+
+                <?php endif; ?>
+
+                <?php
+                echo '<pre>';
+                print_r($this->request->data);
+                echo '</pre>';
+                echo $this->Form->end(); ?>
+
+            </div><!-- large-12 -->
+        </div><!-- row -->
+    </div><!-- box-body -->
+</div><!-- box -->
 
 
-</tr>
-    <tr><td>
+<script>
 
-<?php 
-echo $this->Form->input('OnlineApplicant.name');
-?>
+    // ──────────────────────────────────────────────────────
+    // 1. AJAX: Load Departments based on Campus + Calendar Rules
+    // ──────────────────────────────────────────────────────
 
-</td>
-<td>
-<?php 
-echo $this->Form->input('OnlineApplicant.limit',array('type'=>'number'));
-?>
+    let selectedDepartment = <?= json_encode(!empty($this->request->data['OnlineApplicant']['department_id']) ?
+            $this->request->data['OnlineApplicant']['department_id']:'') ?>;
+    $('#campus_id').on('change', function() {
+        const campusId = $(this).val();
+        const $dept = $('#department_id');
 
-</td></tr>
-	<tr><td><?php echo $this->Form->Submit('Continue',array('div'=>false,'name'=>'getonlineapplicant',
-'class'=>'tiny radius button bg-blue')); ?> </td>	
-</tr></table>
-<?php } ?>
-<?php 
-    if (!empty($onlineApplicants)) {
-?>
-<table>
-   <tr><th colspan=11 class="smallheading"><?php echo  __('Select List of student you want to batch admit.');?></th></tr>
-	<tr>
-	        
-            <th><?php echo ('No.'); ?> </th>
-            <th style="padding:0">
-            <?php echo 'Select/ Unselect All <br/>'.$this->Form->checkbox("SelectAll", 
-            array('id' => 'select-all','checked'=>'')); ?> </th> 
-            <th><?php echo ('Full Name');?></th>
-			<th><?php echo ('Gender');?></th>
-			<th><?php echo ('Entrance Result');?></th>
-		
-			<th><?php echo ('Department');?></th>
-			<th><?php echo ('Academic Year');?></th>
-			
-	</tr>
-	<?php
-	$i = 0;
-	$serial_number=1;
-	
-	foreach ($onlineApplicants as $onlineApplicant):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-	?>
-	<tr<?php echo $class;?>>
-       
-        <td><?php echo $serial_number++;?></td>
-        <td><?php echo $this->Form->checkbox('OnlineApplicant.approve.' . $onlineApplicant['OnlineApplicant']['id'],array('class'=>'checkbox1')); ?>&nbsp;</td> 
-       
-        <td><?php echo $onlineApplicant['OnlineApplicant']['full_name']; ?>&nbsp;</td>
-		<td><?php echo $onlineApplicant['OnlineApplicant']['gender']; ?>&nbsp;</td>
-		<td><?php echo $onlineApplicant['OnlineApplicant']['entrance_result']; ?>&nbsp;</td>
-		
-		<td><?php echo $onlineApplicant['Department']['name']; ?>&nbsp;</td>
-		
-		<td><?php echo $onlineApplicant['OnlineApplicant']['academic_year']; ?>&nbsp;</td>
+        if (!campusId) {
+            $dept.html('<option>-- Select Campus First --</option>').prop('disabled', true);
+            return;
+        }
 
-		
-	</tr>
-	
-<?php 
+        $.post('/onlineApplicants/get_campus_department_combo', $('form').serialize(), function(html) {
+            $dept.html(html).prop('disabled', false);
 
-endforeach; 
-           
-echo '<tr><td colspan=8>'.$this->Form->Submit('Process',array('div'=>false,'name'=>'processSelected',
-'class'=>'tiny radius button bg-blue')).'</td></tr>';
-?>
-</table>
-<?php 
-    }
-echo $this->Form->end();
-?>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row --->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+            // Restore previously selected department if available
+            if (selectedDepartment && $dept.find('option[value="' + selectedDepartment + '"]').length) {
+                $dept.val(selectedDepartment);
+            }
+        }).fail(() => {
+            $dept.html('<option>Error loading departments</option>').prop('disabled', true);
+        });
+    });
+    // Optional: Auto-load departments if campus already selected (e.g., edit mode)
+    $(document).ready(function () {
+        if ($('#campus_id').val()) {
+            $('#campus_id').trigger('change');
+        }
+
+    });
+
+</script>

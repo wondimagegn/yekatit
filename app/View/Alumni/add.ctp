@@ -72,7 +72,7 @@ Your responses are voluntary and will be treated highly confidential. We assure 
 	       			<table>
 	       			<tr>
 	       			<td><?php echo $this->Form->input('Alumnus.region',array('label'=>'Region','value'=>$student['Region']['name'])); ?></td>
-	       			<td><?php echo $this->Form->input('Alumni.woreda',array('label'=>'Woreda',
+	       			<td><?php echo $this->Form->input('Alumnus.woreda',array('label'=>'Woreda',
 	       			'value'=>$student['Student']['woreda'])); ?></td>
 	       			
 	       			<td><?php echo $this->Form->input('Alumnus.kebele',array('label'=>'Kebele','value'=>$student['Student']['kebele'])); ?></td>

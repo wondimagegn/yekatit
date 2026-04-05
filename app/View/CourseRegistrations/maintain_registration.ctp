@@ -1,383 +1,551 @@
-<?php echo $this->Form->create('CourseRegistration');?>
-<script type='text/javascript'>
-function toggleViewFullId(id) {
-	if($('#'+id).css("display") == 'none') {
-		$('#'+id+'Img').attr("src", '/img/minus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Hide Filter');
-		}
-	else {
-		$('#'+id+'Img').attr("src", '/img/plus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Display Filter');
-		}
-	$('#'+id).toggle("slow");
-}
-
-</script>
-<script>
-function updateCourseListOnChangeofOtherField() {
-        
-	//AcademicYear Semester ProgramTypeId SectionId DepartmentId CollegeId ProgramId
-            //serialize form data
-			var formData='';
-			var department_id=$("#DepartmentId").val();
-			var college_id= $("#CollegeId").val();
-			var academic_year= $("#AcademicYear").val().replace("/", "-");
-			var program_id=$("#ProgramId").val();
-			var program_type_id=$("#ProgramTypeId").val();
-           
-            if(typeof department_id!="undefined" && typeof academic_year!="undefined" 
-&&  typeof program_id !="undefined" && 
-program_type_id !="undefined") {
-            
-            formData = department_id+'~'+academic_year+'~'+program_id+'~'+program_type_id+'~'+'d';
-   
-		    } else if(typeof college_id!="undefined" && typeof academic_year!="undefined" 
-&& typeof program_id !="undefined" && 
-program_type_id !="undefined") {
-                formData = college_id+'~'+academic_year+'~'+program_id+'~'+program_type_id+'~'+'c';
-		   } else {
-              return false;
-		    }
-          
-            $("#SectionId").attr('disabled', true);
-			$("#Search").attr('disabled',true);
-			//get form action
-            var formUrl = '/courseRegistrations/get_section_combo/'+formData;
-            $.ajax({
-                type: 'get',
-                url: formUrl,
-                data: formData,
-                success: function(data,textStatus,xhr){
-						
-				        $("#AcadamicYear").attr('disabled', false);
-						$("#Semester").attr('disabled', false);
-						$("#Program").attr('disabled',false);
-						$("#ProgramType").attr('disabled',false);
-					    $("#department_id").attr('disabled', false);
-						$("#college_id").attr('disabled', false);
-                        $("#SectionId").attr('disabled', false);
-						$("#SectionId").empty();
-					    $("#SectionId").append(data);
-                    
-					},
-                error: function(xhr,textStatus,error){
-                        //alert(textStatus);
-                }
-			});
-		       $("#Search").attr('disabled',false);
-                      
-
-						
-			return false;
-		
- }
-
-</script>
-
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-             
-<?php // if (!isset($hide_search)) { ?>
-<div class="smallheading">
-<?php 
-/*
-if(isset($latest_semester_academic_year) && !empty($latest_semester_academic_year)) {
-    echo "Course registration maintaince  for ".$latest_semester_academic_year['academic_year']." academic year ";
-}
-*/
-?>
-</div>
+    <div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Maintain Course Registration'); ?></span>
+		</div>
+	</div>
+    <div class="box-body">
+        <div class="row">
+            <div class="large-12 columns">
 
-<?php 
-   //if (!isset($turn_off_search)) {
-?>
-<p class="fs16">
-                    <strong> Important Note: </strong> 
-                    This tool will help you to register students 
-                    for selected academic year and semester. 
+                <?= $this->Form->create('CourseRegistration'); ?>
+
+                <div style="margin-top: -30px;">
+                    <hr>
+
+                    <div onclick="toggleViewFullId('ListPublishedCourse')">
+                        <?php
+                        if (!empty($turn_off_search) || empty($students) || empty($studentss)) {
+                            echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+                            <span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span>
+                            <?php
+                        } else {
+                            echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+                            <span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span>
+                            <?php
+                        } ?>
+                    </div>
+
+                    <div id="ListPublishedCourse" style="display:<?= (isset($hide_search) || !empty($students) || !empty($studentss) ? 'none' : 'display'); ?>">
                     
-                    
-</p>
-<div onclick="toggleViewFullId('ListPublishedCourse')"><?php 
-	if (!empty($turn_off_search)) {
-		echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span><?php
-		}
-	else {
-		echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span><?php
-		}
-?></div>
-<div id="ListPublishedCourse" style="display:<?php echo (isset($hide_search) ? 'none' : 'display'); ?>">
+                        <fieldset style="padding-bottom: 0px; padding-top: 15px;">
+                            <!-- <legend>&nbsp;&nbsp; Search Filters &nbsp;&nbsp;</legend> -->
+                            <div class="row">
+                                <div class="large-3 columns">
+                                    <?= $this->Form->input('Student.program_id', array('label' => 'Program: ', 'id' => 'ProgramId', 'style' => 'width: 90%;', 'required', 'onchange' => 'updateCourseListOnChangeofOtherField();updateDepartmentListOnProgramChange();')); ?>
+                                </div>
+                                <div class="large-3 columns">
+                                    <?= $this->Form->input('Student.program_type_id', array('label' => 'Program Type: ', 'id' => 'ProgramTypeId', 'style' => 'width: 90%;', 'required', 'onchange' => 'updateCourseListOnChangeofOtherField()')); ?>
+                                </div>
+                                <div class="large-2 columns">
+                                    <?= $this->Form->input('Student.academicyear', array('label' => 'Academic Year: ', 'type' => 'select', 'required', 'options' => $acyear_array_data, 'required', 'id' => 'AcademicYear', 'style' => 'width: 90%;', 'onchange' => 'updateCourseListOnChangeofOtherField()', 'default' => isset($this->request->data['Student']['academicyear']) ? $this->request->data['Student']['academicyear'] : (isset($defaultacademicyear) ? $defaultacademicyear : ''))); ?>
+                                </div>
+                                <div class="large-2 columns">
+                                    <?= $this->Form->input('Student.semester', array('label' => 'Semester: ', 'id' => 'Semester', 'style' => 'width: 90%;', 'onchange' => 'required', 'updateCourseListOnChangeofOtherField()', 'options' => Configure::read('semesters'))); ?>
+                                </div>
+                                <?php
+                                if (isset($departments) && !empty($departments)) { ?>
+                                    <div class="large-2 columns">
+                                        <?= $this->Form->input('Student.year_level_id', array('label' => 'Year Level: ', 'id' => 'YearLevelId', 'style' => 'width: 90%;', 'required', 'onchange' => 'updateCourseListOnChangeofOtherField()')); ?>
+                                    </div>
+                                    <?php
+                                } else { ?>
+                                    <div class="large-2 columns">
+                                        &nbsp;
+                                    </div>
+                                    <?php
+                                } ?>
+                            </div>
+                            <div class="row">
+                                <div class="large-6 columns">
+                                    <?php
+                                    if (isset($departments) && !empty($departments)) {
+                                        echo $this->Form->input('Student.department_id', array('label' => 'Department: ', 'id' => 'DepartmentId', 'style' => 'width: 95%;', 'required', 'onchange' => 'updateCourseListOnChangeofOtherField()'));
+                                    } else if (isset($colleges) && !empty($colleges)) {
+                                        echo $this->Form->input('Student.college_id', array('onchange' => 'updateCourseListOnChangeofOtherField()', 'id' => 'CollegeId', 'required', 'style' => 'width: 95%;', 'label' => 'College: '));
+                                    } ?>
+                                </div>
+                                <div class="large-6 columns">
+                                    <?= $this->Form->input('Student.section_id', array('label' => 'Section: ', 'id' => 'SectionId', 'style' => 'width: 98%;', 'options' => $sections, 'required', 'onchange' => "document.getElementById('studentNumber').value = '';")); ?>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="large-3 columns">
+                                    <?= $this->Form->input('Student.studentnumber', array('id' => 'studentNumber', 'style' => 'width: 95%;', 'label' => 'Student ID: ', 'div' => false, 'required'=> 'false', 'placeholder' => 'Type Optional Student ID here...', 'maxlength' => 25)); ?>
+                                </div>
+                            </div>
+                            <hr>
+                            <?= $this->Form->Submit('Search', array('div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'continue', 'id' => 'Search')); ?>
+                        </fieldset>
+                    </div>
+                </div>
 
-<table cellpadding="0" cellspacing="0"><tbody>
-	
-	<tr><td>
-	
-	
-	<?php 
-			echo $this->Form->input('Student.studentnumber',array('label'=>'Student Number')); 
-			
-			?>
-	</td><td>
-	
-	<?php 
-	        if (!empty($departments)) {
-	        echo $this->Form->input('Student.department_id',array('label'=>'Department','id'=>'DepartmentId',
-'onchange'=>'updateCourseListOnChangeofOtherField()')); 
-	        } else if (!empty($colleges)) {
-	              echo $this->Form->input('Student.college_id',array('label'=>'College'));    
-	              
-	        }
-	?>
-	
-	</td>
-	<tr>
-	<td>
-	  <?php 
-	     echo $this->Form->input('Student.semester',array('label'=>'Semester',
-	     'id'=>'Semester',
-'onchange'=>'updateCourseListOnChangeofOtherField()',
-	              'options'=>array('I'=>'I','II'=>'II',
-            'III'=>'III')));
-	  ?>
-	</td>
-	<td>
-	    <?php 
-	       echo $this->Form->input('Student.academicyear',array(
-            'label' => 'Academic Year','type'=>'select','options'=>$acyear_array_data,
-                'id'=>'AcademicYear',
-'onchange'=>'updateCourseListOnChangeofOtherField()',
-                'selected'=>isset($this->request->data['Student']['academicyear'])?$this->request->data['Student']['academicyear']:
-                (isset($defaultacademicyear) ? $defaultacademicyear:'' )
-            
-            )
-            
-            );
-            ?>
-	</td>
-	</tr>
-	</tr>
-		<tr><td>
-	
-	
-	<?php 
-			echo $this->Form->input('Student.program_id',array('label'=>'Program',
-			'id'=>'ProgramId',
-'onchange'=>'updateCourseListOnChangeofOtherField()')); 
-			
-			?>
-	</td><td><?php 
-	       
-	        
-	        echo $this->Form->input('Student.program_type_id',array('label'=>'Program Type','id'=>'ProgramTypeId',
-'onchange'=>'updateCourseListOnChangeofOtherField()')); 
-	        
-	
-	?></td></tr>
+                <div id="showStudentList">
 
-  <tr>
-	  <td>
-		<?php 
-				echo $this->Form->input('Student.year_level_id',array('label'=>'Year Level'));
-				?>
-		</td>
-		<td>
-			<?php 
-			echo $this->Form->input('Student.section_id',
-array('id'=>'SectionId'));
-			?>
-		</td>
-     </tr>
+                    <?php
+                    if (empty($this->data['Student']['studentnumber']) && isset($students) && !empty($students)) { ?>
+                        <hr>
+                        <div class="smallheading">
+                            <h6 class="fs15 text-gray">Maintain course registration for <span id="DeptYrAcySem"></span></h6>
+                            <hr>
+                        </div>
+                        <?php
+                    } 
 
+                    if (isset($section_published_courses_for_display) && !empty($section_published_courses_for_display) && empty($this->data['Student']['studentnumber']) && isset($students) && !empty($students)) {
+                        //debug($section_published_courses_for_display); ?>
+                        <a class="tiny radius button secondary" id="showHidePublishedCoursesButton" onclick="togglePublishedCourses()">Hide Published Courses</a>
+                        <div id="publishedCourseDetails" style="display: display;">
+                            <?= $this->element('section_published_courses_for_display'); ?>
+                            <hr>
+                        </div>
+                        <?php
+                    }
 
-	<tr><td colspan=2><?php echo $this->Form->Submit('Continue',array('div'=>false,'class'=>'tiny radius button bg-blue','name'=>'continue')); ?> </td>	
-</tr>
-</tbody>
-</table>
-</div>
-	
-<?php
-if(isset($published_courses) && !empty($published_courses)){
-echo $this->element('student_basic');
-echo $this->element('registration/student_register');
-} else {
-if(isset($students) && !empty($students)) {
-      $st_count=0;
-	  foreach($students as $desdetail=>$stuList) {
-		 $sectionDetail=explode('~',$desdetail);
-     
-      	echo "<div class='fs16'> Program:".$sectionDetail[0]."</div>";
-        echo "<div class='fs16'> Program Type: ".$sectionDetail[1]."</div>";
- 		echo "<div class='fs16'> Year Level: ".$sectionDetail[2]."</div>";
-        echo "<div class='fs16'> Section : ".$sectionDetail[3]."</div>";
-		echo "<table cellpadding=0 cellspacing=0>";
+                    if (isset($published_courses) && !empty($published_courses)) {
+                        echo '<hr>';
+                        echo $this->element('student_basic');
+                        echo $this->element('registration/student_register');
+                    } else {
+                        if (isset($students) && !empty($students)) {
+                            //debug($students);
 
-?>
-  <tr>
-            <th style="width:10%">
-<?php echo $this->Form->input('select_all', array('type' => 'checkbox', 'id' => 'select-all', 'div' => false, 'label' => false)); ?>Select All</th>
-			<th><?php echo ('No.');?></th>
-			<th><?php echo ('Student Number');?></th>
-			
-			<th><?php echo ('Full Name');?></th>
-			<th><?php echo ('Department');?></th>
-			<th><?php echo ('Program');?></th>
-			<th><?php echo ('Program Type');?></th>
-		
-			
-			<th class="button-success"><?php // __('Actions');?>
-			  	<?php 
-			/*
-			echo $this->Html->link(__('Register All'), 
-			array('action' => 'maintain_registration',0,$sectionDetail[4])); 
-		
-			*/
-			?>
-			</th>
-	</tr>
-    <?php
-	$i = 0;
-	$count=1;
-	foreach ($stuList as $student):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-		
-	?>
-	<tr<?php echo $class;?>>
-		<td>
-		<?php 
-		echo $this->Form->input('CourseRegistration.'.$count.'.ggp',array('type' => 'checkbox','class'=>'checkbox1', 'label' => false,'id' => 'StudentSelection'.$count));
-		echo $this->Form->hidden('CourseRegistration.'.$count.'.student_id',array('value' =>$student['Student']['id'] ,'class'=>'checkbox1', 'label' => false));
-		
-		?>
-		</td>
-		<td><?php echo $count++; ?>&nbsp;</td>
-		<td><?php echo $student['Student']['studentnumber']; ?>&nbsp;</td>
-		<td><?php echo $student['Student']['full_name']; ?>&nbsp;</td>
-		
-		<td>
-			<?php echo $this->Html->link($student['Department']['name'], array('action' => 'view', $student['Department']['id'])); ?>
-		</td> 
-		<td>
-			<?php echo $this->Html->link($student['Program']['name'], array('action' => 'view', $student['Program']['id'])); ?>
-		</td> 
-		
-		<td>
-			<?php echo $this->Html->link($student['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $student['ProgramType']['id'])); ?>
-		</td>
-	
-		<td class="actions">
-			<?php 
-			echo $this->Html->link(__('Register'), array('action' => 'maintain_registration', $student['Student']['id'])); 
-			
-			?>
-			
-		</td>
-	</tr>
-<?php endforeach; ?>
-	</table>
-  <?php echo $this->Form->Submit('Register Selected Students',array('div'=>false,'class'=>'tiny radius button bg-blue', 'name'=>'registerSelected_'.$st_count++)); ?>
-  
-<?php 
-	echo $this->Form->input('register_count', array('type' => 'hidden', 'value' => ($st_count-1)));		
-   }
- }
-}
- 
-if(isset($studentss) && !empty($studentss)) {
-    foreach ($studentss as $pk => $pv) {
-         if (!empty($pk)) {
-            echo "<div class='smallheading'> Program:".$pk."</div>";
-             foreach ($pv as $ptk=>$ptv) {                 
-                         if (!empty($ptk)) {
-                                 echo "<div class='fs16'> Program Type: ".$ptk."</div>";
-                               
-                              foreach ($ptv as $yk=>$yv) {
-                                  if (!empty($yv)) {
-                                     if ($yk == 0) {
-                                     echo "<div class='fs16'> Year Level: Freshman</div>";
-                                     } else {
-                                       echo "<div class='fs16'> Year Level: ".$yearLevels[$yk]."</div>";
-                                     }
-                                     
-                                     foreach ($yv as $section_name=>$section_value) {
-                                      echo "<div class='fs16'> Section : ".$sections[$section_name]."</div>";
-                                      echo "<table cellpadding=0 cellspacing=0>";
-                                      ?>
-	<tr>
-			<th><?php echo ('No.');?></th>
-			<th><?php echo ('Student Number');?></th>
-			
-			<th><?php echo ('Full Name');?></th>
-			<th><?php echo ('Department');?></th>
-			<th><?php echo ('Program');?></th>
-			<th><?php echo ('Program Type');?></th>
-		
-			
-			<th class="button-success"><?php // __('Actions');?>
-			  	<?php 
-			/*
-			echo $this->Html->link(__('Register All'), 
-			array('action' => 'maintain_registration',0,$section_name)); 
-		*/
-			
-			?>
-			</th>
-	</tr>
-	<?php
-	$i = 0;
-	$count=1;
-	foreach ($section_value as $student):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-		
-	?>
-	<tr<?php echo $class;?>>
-		<td><?php echo $count++; ?>&nbsp;</td>
-		<td><?php echo $student['Student']['studentnumber']; ?>&nbsp;</td>
-		<td><?php echo $student['Student']['full_name']; ?>&nbsp;</td>
-		
-		<td>
-			<?php echo $this->Html->link($student['Department']['name'], array('action' => 'view', $student['Department']['id'])); ?>
-		</td> 
-		<td>
-			<?php echo $this->Html->link($student['Program']['name'], array('action' => 'view', $student['Program']['id'])); ?>
-		</td> 
-		
-		<td>
-			<?php echo $this->Html->link($student['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $student['ProgramType']['id'])); ?>
-		</td>
-	
-		<td class="actions">
-			<?php 
-			echo $this->Html->link(__('Register'), array('action' => 'maintain_registration', $student['Student']['id'])); 
-			
-			?>
-			
-		</td>
-	</tr>
-<?php endforeach; ?>
-	</table>
-  <?php                                     
-                                    }
+                            $massRegistrationDisabled = false;
+                            $sectionHavePublishedCourse = 0;
+                            $showRegistrerLinkForEachStudent = 0;
+                            $isRegistrarRoleUser = 0;
+
+                            if (isset($section_published_courses_for_display) && !empty($section_published_courses_for_display)) {
+                                $sectionHavePublishedCourse = 1;
+                            } else if (isset($section_published_courses_for_display) && empty($section_published_courses_for_display)) {
+                                $massRegistrationDisabled = true;
+                            }
+
+                            if (ALLOW_MASS_REGISTRATION_SYSTEM_WIDE == 0) {
+                                $massRegistrationDisabled = true;
+                                // check and allow registrar admin if the system setting allows it and and if there is a published course for the section
+                                if (isset($is_user_registrar_admin) && $is_user_registrar_admin == 1  && ALLOW_MASS_REGISTRATION_FOR_REGISTRAR_ADMIN == 1 && $sectionHavePublishedCourse) {
+                                    $massRegistrationDisabled = false;
                                 }
                             }
-                      }//check program type
-             } // end program type
-        } // check program is not empty
-  } // end of outer loop
-}
-?>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row -->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+
+                            if (isset($user_role_id) && $user_role_id == ROLE_REGISTRAR) {
+                                $isRegistrarRoleUser = 1;
+                            } else if (isset($user_role_id) && $user_role_id != ROLE_REGISTRAR) {
+                                $massRegistrationDisabled = true;
+                            }
+
+                            if ($massRegistrationDisabled && $isRegistrarRoleUser && $sectionHavePublishedCourse) {
+                                $showRegistrerLinkForEachStudent = 1;
+                            }
+
+                            $st_count = 0;
+                            foreach ($students as $desdetail => $stuList) {
+                                $sectionDetail = explode('~', $desdetail);
+                                //debug($stuList[0]['Student']['program_id']);
+                                ?>
+
+                                <h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+				                <br>
+
+                                <div style="overflow-x:auto;">
+                                    <table cellpadding=0 cellspacing=0 class="table">
+                                        <thead>
+                                            <tr>
+                                                <td colspan=9 style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+                                                    <span style="font-size:16px;font-weight:bold; margin-top: 25px;"> Section: <?= $sectionDetail[3]; ?></span>
+                                                    <br>
+                                                    <span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+                                                        <?= (isset($sectionDetail[0]) && !empty($sectionDetail[0]) ? $sectionDetail[0] : $program_name); ?> &nbsp;|&nbsp; <?= (isset($sectionDetail[1]) && !empty($sectionDetail[1]) ? $sectionDetail[1] : $program_type_name); ?> &nbsp;|&nbsp;
+                                                        <?= (isset($department_name) && !empty($department_name['Department']['name']) ? $department_name['Department']['name'] :( isset($college_name) && !empty($college_name['College']['name']) ? $college_name['College']['name'] . (isset($stuList[0]['Student']['program_id']) && $stuList[0]['Student']['program_id'] == PROGRAM_REMEDIAL ? ' - Remedial Program' : ' - Pre/Freshman') : '')) ; ?><br>
+                                                        <?= (isset($stuList[0]['Student']['program_id']) && $stuList[0]['Student']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : (isset($sectionDetail[2])  ?  $sectionDetail[2] : (isset($year_level_id) && !empty($year_level_id) ? $year_level_id : 'Pre/1st'))); ?> &nbsp;|&nbsp; <?= (isset($academic_year) && !empty($academic_year) ? $academic_year : $defaultacademicyear); ?> &nbsp;|&nbsp; <?= ($semester == 'I' ? '1st' :($semester == 'II' ? '2nd' :($semester == 'III' ? '3rd': $semester))); ?> semester
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="center" style="width: 5%;"><div style="margin-left: 30%;"><?= $this->Form->input('select_all', array('type' => 'checkbox', 'id' => 'select-all', 'div' => false, 'label' => false, 'disabled' => $massRegistrationDisabled)); ?></div></th>
+                                                <th class="center" style="width: 3%;">#</th>
+                                                <th class="vcenter">Full Name</th>
+                                                <th class="center">Sex</th>
+                                                <th class="center">Student ID</th>
+                                                <th class="center">Department</th>
+                                                <th class="center">Program</th>
+                                                <th class="center">Program Type</th>
+                                                <th class="center"> 
+                                                    <?php // __('Actions'); ?>
+                                                    <?php //echo $this->Html->link(__('Register All'), array('action' => 'maintain_registration',0,$sectionDetail[4])); ?>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            $count = 1;
+                                            foreach ($stuList as $student) { ?>
+                                                <tr>
+                                                    <td class="center">
+                                                        <div style="margin-left: 30%;"><?= $this->Form->input('CourseRegistration.' . $count . '.ggp', array('type' => 'checkbox', 'class' => 'checkbox1', 'label' => false, 'disabled' => $massRegistrationDisabled, 'id' => 'StudentSelection' . $count)); ?></div>
+                                                        <?= $this->Form->hidden('CourseRegistration.' . $count . '.student_id', array('value' => $student['Student']['id'], 'class' => 'checkbox1', 'label' => false)); ?>
+                                                    </td>
+                                                    <td class="center"><?= $count++; ?></td>
+                                                    <td class="vcenter"><?= $this->Html->link($student['Student']['full_name'], '#', array('class' => 'jsview', 'data-animation' => "fade", 'data-reveal-id' => 'myModal', 'data-reveal-ajax' => "/students/get_modal_box/" . $student['Student']['id'])); ?></td>
+                                                    <td class="center"><?= (strcasecmp(trim($student['Student']['gender']), 'male') == 0 ? 'M' :(strcasecmp(trim($student['Student']['gender']), 'female') == 0 ? 'F' : $student['Student']['gender'])); ?></td>
+                                                    <td class="center"><?= $student['Student']['studentnumber']; ?></td>
+                                                    <td class="center"><?= (isset($student['Department']['name']) ? $student['Department']['name'] :($student['Program']['id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : 'Pre/Freshman')); ?></td>
+                                                    <td class="center"><?= $student['Program']['name']; ?></td>
+                                                    <td class="center"><?= $student['ProgramType']['name']; ?></td>
+                                                    <td class="center"><?php // echo ($showRegistrerLinkForEachStudent == 1 ? $this->Html->link(__('Register'), array('action' => 'maintain_registration', $student['Student']['id'])) : ''); ?></td>
+                                                </tr>
+                                                <?php 
+                                            } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <hr>
+                                <?= $this->Form->Submit('Register Selected Students', array('div' => false, 'class' => 'tiny radius button bg-blue', 'id' => 'registerSelected', 'disabled' => $massRegistrationDisabled, 'name' => 'registerSelected_' . $st_count++)); ?>
+                                <?= $this->Form->input('register_count', array('type' => 'hidden', 'value' => ($st_count - 1))); ?>
+                                <?php
+                            }
+                        }
+                    } ?>
+                </div>
+
+                <div id="showStudentList2">
+                    <?php
+                    if (isset($studentss) && !empty($studentss)) {
+                        foreach ($studentss as $pk => $pv) {
+                            if (!empty($pk)) {
+                                echo "<div class='smallheading'> Program:" . $pk . "</div>";
+                                foreach ($pv as $ptk => $ptv) {
+                                    if (!empty($ptk)) {
+                                        echo "<div class='fs16'> Program Type: " . $ptk . "</div>";
+                                        foreach ($ptv as $yk => $yv) {
+                                            if (!empty($yv)) {
+                                                if ($yk == 0) {
+                                                    echo "<div class='fs16'> Year Level: Freshman</div>";
+                                                } else {
+                                                    echo "<div class='fs16'> Year Level: " . $yearLevels[$yk] . "</div>";
+                                                }
+
+                                                foreach ($yv as $section_name => $section_value) { ?>
+                                                    <div class='fs16'> Section : <?= $sections[$section_name]; ?></div>
+                                                    <div style="overflow-x:auto;">
+                                                        <table cellpadding=0 cellspacing=0 class="table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <td colspan=8 style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+                                                                        <span style="font-size:16px;font-weight:bold; margin-top: 25px;"> Section: <?= $sectionDetail[3]; ?></span>
+                                                                        <br>
+                                                                        <span class="text-gray" style="padding-top: 13px; font-size: 13px; font-weight: bold"> 
+                                                                            <?= (isset($pk) && !empty($pk) ? $pk : $program_name); ?> &nbsp;|&nbsp; <?= (isset($ptk) && !empty($ptk) ? $ptk : $program_type_name); ?> &nbsp;|&nbsp;
+                                                                            <?= (isset($department_name) && !empty($department_name['Department']['name']) ? $department_name['Department']['name'] : (isset($college_name) && !empty($college_name['College']['name']) ? $college_name['College']['name'] . ' - Pre/Freshman' : '')) ; ?><br>
+                                                                            <?= (isset($yearLevels[$yk]) && !empty($yearLevels[$yk]) ? $yearLevels[$yk] : 'Pre/1st'); ?> &nbsp;|&nbsp; <?= isset($sectionDetail[2]) && !empty($sectionDetail[2]) ? $sectionDetail[2] : (isset($academic_year) && !empty($academic_year) ? $academic_year : $defaultacademicyear); ?> &nbsp;|&nbsp; <?= ($semester == 'I' ? '1st' :($semester == 'II' ? '2nd' :($semester == 'III' ? '3rd': $semester))); ?> semester
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <th class="center">#</th>
+                                                                    <th class="vcenter"><?= ('Full Name'); ?></th>
+                                                                    <th class="center" ><?= ('Student ID'); ?></th>
+                                                                    <th class="center"><?= ('Sex'); ?></th>
+                                                                    <th class="center" ><?= ('Department'); ?></th>
+                                                                    <th class="center" ><?= ('Program'); ?></th>
+                                                                    <th class="center" ><?= ('Program Type'); ?></th>
+                                                                    <th class="center"><?php // __('Actions'); ?></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php
+                                                                $count = 1;
+                                                                foreach ($section_value as $student) { ?>
+                                                                    <tr>
+                                                                        <td class="center"><?= $count++; ?></td>
+                                                                        <td class="vcenter"><?= $this->Html->link($student['Student']['full_name'], '#', array('class' => 'jsview', 'data-animation' => "fade", 'data-reveal-id' => 'myModal', 'data-reveal-ajax' => "/students/get_modal_box/" .$student['Student']['id'])); ?></td>
+                                                                        <td class="center"><?= $student['Student']['studentnumber']; ?></td>
+                                                                        <td class="center"><?= (strcasecmp(trim($student['Student']['gender']), 'male') == 0 ? 'M' :(strcasecmp(trim($student['Student']['gender']), 'female') == 0 ? 'F' : $student['Student']['gender'])); ?></td>
+                                                                        <td class="center"><?= (isset($student['Department']['name']) ? $student['Department']['name'] : ($student['Program']['id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : 'Pre/Freshman')); ?></td>
+                                                                        <td class="center"><?= $student['Program']['name']; ?></td>
+                                                                        <td class="center"><?= $student['ProgramType']['name']; ?></td>
+                                                                        <td class="center"><?= $this->Html->link(__('Register'), array('action' => 'maintain_registration', $student['Student']['id'])); ?></td>
+                                                                    </tr>
+                                                                    <?php 
+                                                                } ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <hr>
+                                                    <?php
+                                                }
+                                            }
+                                        }
+                                    } 
+                                } 
+                            }
+                        } 
+                    } ?>
+                </div>
+                <?= $this->Form->end(); ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type='text/javascript'>
+
+    function toggleViewFullId(id) {
+        if ($('#' + id).css("display") == 'none') {
+            $('#' + id + 'Img').attr("src", '/img/minus2.gif');
+            $('#' + id + 'Txt').empty();
+            $('#' + id + 'Txt').append(' Hide Filter');
+        } else {
+            $('#' + id + 'Img').attr("src", '/img/plus2.gif');
+            $('#' + id + 'Txt').empty();
+            $('#' + id + 'Txt').append(' Display Filter');
+        }
+        $('#' + id).toggle("slow");
+    }
+    
+    var semester = $("#Semester option:selected").text();
+    var semster_text = '';
+
+    if (semester == 'I') {
+        semster_text = '1st';
+    } else if (semester == 'II') {
+        semster_text = '2nd';
+    }  if (semester == 'III') {
+        semster_text = '3rd';
+    }
+
+    <?php
+    if (isset($departments)) { ?>
+        semster_text + ' semester of ' + $("#AcademicYear option:selected").text() + ' academic year for ' + $('#DeptYrAcySem').html($("#YearLevelId option:selected").text() + ' year ' + $("#ProgramId option:selected").text() + ', ' + $("#ProgramTypeId option:selected").text() + ' students in ' + $("#DepartmentId option:selected").text());
+        <?php
+    } else { ?>
+        semster_text + ' semester of ' + $("#AcademicYear option:selected").text() + ' academic year for ' + $('#DeptYrAcySem').html($("#YearLevelId option:selected").text() + ' year ' + $("#ProgramId option:selected").text() + ', ' + $("#ProgramTypeId option:selected").text() + ' freshman students in ' + $("#CollegeId option:selected").text());
+        <?php
+    } ?>
+
+    function updateCourseListOnChangeofOtherField() {
+
+        semester = $("#Semester option:selected").text();
+
+        if (semester == 'I') {
+            semster_text = '1st';
+        } else if (semester == 'II') {
+            semster_text = '2nd';
+        }  if (semester == 'III') {
+            semster_text = '3rd';
+        }
+        
+        <?php 
+        if (isset($departments)) { ?>
+           semster_text + ' semester of ' + $("#AcademicYear option:selected").text() + ' academic year for ' + $('#DeptYrAcySem').html($("#YearLevelId option:selected").text() + ' year ' + $("#ProgramId option:selected").text() + ', ' + $("#ProgramTypeId option:selected").text() + ' students in ' + $("#DepartmentId option:selected").text());
+            <?php
+        } else { ?>
+            semster_text + ' semester of ' + $("#AcademicYear option:selected").text() + ' academic year for ' + $('#DeptYrAcySem').html($("#YearLevelId option:selected").text() + ' year ' + $("#ProgramId option:selected").text() + ', ' + $("#ProgramTypeId option:selected").text() + ' freshman students in ' + $("#CollegeId option:selected").text());
+            <?php
+        } ?>
+
+        //serialize form data
+
+        $("#studentNumber").val('');
+
+        var formData = '';
+        var department_id = $("#DepartmentId").val();
+        var college_id = $("#CollegeId").val();
+        var academic_year = $("#AcademicYear").val().replace("/", "-");
+        var program_id = $("#ProgramId").val();
+        var program_type_id = $("#ProgramTypeId").val();
+        var ylName = $("#YearLevelId option:selected").text();
+
+        //alert(ylName);
+
+        if (typeof department_id != "undefined" && typeof academic_year != "undefined" &&  typeof program_id != "undefined" &&  typeof program_type_id != "undefined" &&  typeof ylName != "undefined") {
+            formData = department_id + '~' + academic_year + '~' + program_id + '~' + program_type_id + '~' + 'd' + '~' + ylName;
+        } else if (typeof college_id !=  "undefined" && typeof academic_year != "undefined" &&  typeof program_id != "undefined" && typeof program_type_id != "undefined" &&  typeof ylName != "undefined") {
+            formData = college_id + '~' + academic_year + '~' + program_id + '~' + program_type_id + '~' + 'c' + '~' + ylName;
+        } else {
+            return false;
+        }
+
+        $("#SectionId").attr('disabled', true);
+        $("#Search").attr('disabled', true);
+        //get form action
+        var formUrl = '/courseRegistrations/get_section_combo/' + formData;
+        $.ajax({
+            type: 'get',
+            url: formUrl,
+            data: formData,
+            success: function(data,textStatus, xhr) {
+                $("#AcadamicYear").attr('disabled', false);
+                $("#Semester").attr('disabled', false);
+                $("#ProgramId").attr('disabled', false);
+                $("#ProgramTypeId").attr('disabled', false);
+                $("#DepartmentId").attr('disabled', false);
+                $("#CollegeId").attr('disabled', false);
+                $("#SectionId").attr('disabled', false);
+                $("#SectionId").empty();
+                $("#SectionId").append(data);
+            },
+            error: function(xhr, textStatus, error) {
+                //alert(textStatus);
+            }
+        });
+
+        $("#Search").attr('disabled', false);
+        return false;
+    }
+
+    function updateDepartmentListOnProgramChange() {
+
+        $("#studentNumber").val('');
+
+        var formData = '';
+        var programID = $("#ProgramId").val();
+
+        if (typeof programID != "undefined") {
+            formData = programID;
+        } else {
+            return false;
+        }
+
+        $("#ProgramId").attr('disabled', true);
+        $("#DepartmentId").attr('disabled', true);
+        $("#SectionId").attr('disabled', true);
+        $("#Search").attr('disabled', true);
+        //get form action
+        var formUrl = '/programs/get_departments_combo/' + formData;
+        $.ajax({
+            type: 'get',
+            url: formUrl,
+            data: formData,
+            success: function(data,textStatus, xhr) {
+                $("#AcadamicYear").attr('disabled', false);
+                $("#Semester").attr('disabled', false);
+                $("#ProgramId").attr('disabled', false);
+                $("#ProgramTypeId").attr('disabled', false);
+                $("#DepartmentId").attr('disabled', false);
+                $("#CollegeId").attr('disabled', false);
+                $("#SectionId").attr('disabled', false);
+                $("#DepartmentId").empty();
+                $("#DepartmentId").append(data);
+            },
+            error: function(xhr, textStatus, error) {
+                //alert(textStatus);
+            }
+        });
+
+        $("#Search").attr('disabled', false);
+        return false;
+    }
+
+    $('#registerSelected').click(function() {
+
+        var isValid = true;
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        var checkedOne = Array.prototype.slice.call(checkboxes).some(x => x.checked);
+
+        if (!checkedOne) {
+            alert('At least one student must be selected to maintain registration.');
+            validationMessageNonSelected.innerHTML = 'At least one student must be selected to maintain registration.';
+            isValid = false;
+            return false;
+        }
+
+        if (form_being_submitted) {
+			alert('Course Registration in progress, please wait a moment or refresh your page...');
+			$('#registerSelected').attr('disabled', true);
+            isValid = false;
+			return false;
+		}
+
+		if (!form_being_submitted && isValid) {
+			$('#registerSelected').val('Registering...');
+			form_being_submitted = true;
+            isValid = true
+			return true;
+		} else {
+			return false;
+		}
+    });
+
+    $('#AcademicYear, #Semester, #ProgramId, #ProgramTypeId, #DepartmentId, #CollegeId, #YearLevelId, #SectionId, #studentNumber').on('change keyup', function () {
+       $('input[type="checkbox"][name^="data[CourseRegistration]"]').each(function() {
+            const checkbox = $(this);
+            const match = checkbox.attr('name').match(/data\[CourseRegistration\]\[(\d+)\]\[ggp\]/);
+            if (match) {
+                checkbox.prop('checked', false);
+            }
+        });
+
+        if ($('#select-all').length) {
+			$("#select-all").prop('checked', false);
+		}
+
+        $("#showStudentList").hide();
+        $("#showStudentList2").hide();
+
+    });
+
+
+    $('#Search').click(function(event) {
+
+        var studentIdNumber = $("#studentNumber").val();
+        var selectedSection = $("#SectionId").val();
+
+        if (studentIdNumber != '') {
+            // Disable the required property for all required fields
+            $('#CourseRegistrationMaintainRegistrationForm [required]').each(function() {
+                $(this).removeAttr('required');
+            });
+
+            $('input[name*="data[CourseRegistration]"], select[name*="data[CourseRegistration]"]').each(function() {
+				$(this).val(''); // Set their values to empty
+			});
+
+            $('#Search').val('Searching...');
+
+        } else if (selectedSection != '' && studentIdNumber == '') {
+
+            $('input[name*="data[CourseRegistration]"], select[name*="data[CourseRegistration]"]').each(function() {
+				$(this).val(''); // Set their values to empty
+                $(this).removeAttr('required');
+			});
+
+            $('#Search').val('Searching...');
+        } 
+
+        
+        $("#showStudentList").hide();
+        $("#showStudentList2").hide();
+
+		if ($('#select-all').length) {
+			$("#select-all").prop('checked', false);
+		}
+
+		$('input[type="checkbox"][name^="data[CourseRegistration]"]').each(function() {
+            const namePatternSelected = /data\[CourseRegistration\]\[\d+\]\[ggp\]/;
+            if (namePatternSelected.test($(this).attr('name')) && $(this).is(':checked')) {
+                $(this).prop('checked', false);
+            }
+        });
+    
+
+        if ($("#registerSelected").length) {
+			$('#registerSelected').attr('disabled', true);
+		}
+    });
+
+    function togglePublishedCourses() {
+        const detailsDiv = document.getElementById('publishedCourseDetails');
+        const toggleButton = document.getElementById('showHidePublishedCoursesButton');
+
+        const isHidden = detailsDiv.style.display === 'none';
+        detailsDiv.style.display = isHidden ? 'block' : 'none';
+        toggleButton.textContent = isHidden ? 'Hide Published Courses' : 'Show Published Courses';
+    }
+
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
+</script>

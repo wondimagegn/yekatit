@@ -1,403 +1,692 @@
-<?php echo $this->Html->script('amharictyping'); ?>
+<?= $this->Html->script('amharictyping'); ?>
+<?php
+if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
+	<div class="box">
+		<div class="box-header bg-transparent">
+			<div class="box-title" style="margin-top: 10px;"><i class="fontello-vcard" style="font-size: larger; font-weight: bold;"></i>
+				<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= 'Student Basic Profile: ' . $studentDetail['Student']['full_name'] . '  (' .  $studentDetail['Student']['studentnumber'] . ')'; ?></span>
+			</div>
+		</div>
+		<div class="box-body">
+			<div class="row">
+				<div class="large-12 columns">
+					<div style="margin-top: -40px;"><hr><br></div>
+					
+					<?php $this->assign('title_details', (!empty($this->request->params['controller']) ? ' ' . Inflector::humanize(Inflector::underscore($this->request->params['controller'])) . (!empty($this->request->params['action']) && $this->request->params['action'] != 'index' ? ' | ' . ucwords(str_replace('_', ' ', $this->request->params['action'])) : '') : '') . (isset($studentDetail['Student']['id']) ? ' - '. $studentDetail['Student']['full_name'] . ' ('. $studentDetail['Student']['studentnumber'] .')' : '')); ?>
+					
+					<?php
+					if (!empty($studentDetail['Attachment'][0]['basename'])) { ?>
+						<?= $this->Form->create('Student', array(/* 'data-abide',  */ 'onSubmit' => 'return checkForm(this);', 'novalidate' => true)); ?>
+						<?php
+					} else { ?>
+						<?= $this->Form->create('Student', array(/* 'data-abide', */ 'onSubmit' => 'return checkForm(this);', 'type' => 'file', 'novalidate' => true)); ?>
+						<?php
+					} ?>
+
+					<ul class="tabs" data-tab>
+						<li class="tab-title active"><a href="#basic_data">Basic Student Information</a></li>
+						<li class="tab-title"><a href="#add_address">Address & Contact</a></li>
+						<li class="tab-title"><a href="#education_background">Educational Background</a></li>
+					</ul>
+
+					<div class="tabs-content edumix-tab-horz">
+						<div class="content active" id="basic_data" style="padding-left: 0px; padding-right: 0px;">
+							<div class="row">
+								<div class="large-12 columns">
+									<hr style="margin-top: -10px;">
+									<?php
+									echo $this->Form->hidden('id', array('value' => $studentDetail['Student']['id']));
+									//echo $this->Form->hidden('program_id', array('value' => $studentDetail['Student']['program_id']));
+									//echo $this->Form->hidden('program_type_id', array('value' => $studentDetail['Student']['program_type_id']));
+
+									if (isset($studentDetail['Contact'][0]['id'])) {
+										echo $this->Form->hidden('Contact.0.id', array('value' => $studentDetail['Contact'][0]['id']));
+									}
+									
+									echo $this->Form->hidden('Contact.0.student_id', array('value' => $studentDetail['Student']['id']));
+
+									$errors = $this->Form->validationErrors;
+									
+									if (count($errors['Student']) > 0 && isset($this->data['Student'])) {
+										$flatErrors = Set::flatten($errors['Student']); ?>
+										<div class="errorSummary">
+											<ul>
+												<?php
+												foreach ($flatErrors as $key => $value) { ?>
+													<li class="rejected"><?= ($value); ?></li>
+													<?php
+												} ?>
+											</ul>
+										</div>
+										<?php
+									} ?>
+								</div>
+							</div>
+
+							<div class="row">
+								<div class="large-6 columns">
+									<table cellspacing="0" cellpading="0" class="table">
+										<tbody>
+											<tr>
+												<td><strong> Demographic Information</strong></td>
+											</tr>
+											<tr>
+												<td style="background-color: white;">
+													<div class="large-12 columns">
+														<?= $this->Form->input('first_name', array('readOnly' => true, 'label' => 'First Name (English): ')); ?>
+														<?= $this->Form->hidden('first_name', array('value' => (!empty($studentDetail['Student']['first_name']) ? $studentDetail['Student']['first_name'] : (isset($studentDetail['AcceptedStudent']) && !empty($studentDetail['AcceptedStudent']['first_name']) ? $studentDetail['AcceptedStudent']['first_name'] : NULL)))); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('middle_name', array('label' => 'Middle Name (English): ', 'readOnly' => true)); ?>
+														<?= $this->Form->hidden('middle_name', array('value' => (!empty($studentDetail['Student']['middle_name']) ? $studentDetail['Student']['middle_name'] : (isset($studentDetail['AcceptedStudent']) && !empty($studentDetail['AcceptedStudent']['middle_name']) ? $studentDetail['AcceptedStudent']['middle_name'] : NULL)))); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('last_name', array('label' => 'Last Name (English): ', 'readOnly' => true)); ?>
+														<?= $this->Form->hidden('last_name', array('value' => (!empty($studentDetail['Student']['last_name']) ? $studentDetail['Student']['last_name'] : (isset($studentDetail['AcceptedStudent']) && !empty($studentDetail['AcceptedStudent']['last_name']) ? $studentDetail['AcceptedStudent']['last_name'] : NULL)))); ?>
+													</div>
+													<div class="large-12 columns">
+														<label> First Name (Amharic):
+															<?php
+															if (empty($studentDetail['Student']['amharic_first_name'])) { ?>
+																<?= $this->Form->input('amharic_first_name', array('label' => false, array('id' => 'AmharicText', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?php
+															} else { ?>
+																<?= $this->Form->input('amharic_first_name', array('label' => false, array('readOnly' => true, 'id' => 'AmharicText', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?= $this->Form->hidden('amharic_first_name', array('value' => (!empty($this->data['Student']['amharic_first_name']) ? $this->data['Student']['amharic_first_name'] : $studentDetail['Student']['amharic_first_name']))); ?>
+																<?php
+															} ?>
+														</label>
+													</div>
+													<div class="large-12 columns">
+														<label> Middle Name (Amharic):
+															<?php
+															if (empty($studentDetail['Student']['amharic_middle_name'])) { ?>
+																<?= $this->Form->input('amharic_middle_name', array('label' => false, array('id' => 'AmharicTextMiddleName', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?php
+															} else { ?>
+																<?= $this->Form->input('amharic_middle_name', array('label' => false, array('readOnly' => true, 'id' => 'AmharicTextMiddleName', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?= $this->Form->hidden('amharic_middle_name', array('value' => (!empty($this->data['Student']['amharic_middle_name']) ? $this->data['Student']['amharic_middle_name'] : $studentDetail['Student']['amharic_middle_name']))); ?>
+																<?php
+															} ?>
+														</label>
+													</div>
+													<div class="large-12 columns">
+														<label> Last Name (Amharic):
+															<?php
+															if (empty($studentDetail['Student']['amharic_last_name'])) { ?>
+																<?= $this->Form->input('amharic_last_name', array('label' => false, array('id' => 'AmharicTextLastName', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?php
+															} else { ?>
+																<?= $this->Form->input('amharic_last_name', array('label' => false, array('readOnly' => true, 'id' => 'AmharicTextLastName', 'onkeypress' => "return AmharicPhoneticKeyPress(event,this);", 'disabled' => 'disabled'))); ?>
+																<?= $this->Form->hidden('amharic_last_name', array('value' => (!empty($this->data['Student']['amharic_last_name']) ? $this->data['Student']['amharic_last_name'] : $studentDetail['Student']['amharic_last_name']))); ?>
+																<?php
+															} ?>
+														</label>
+													</div>
+
+													<?php
+													if (isset($studentDetail['Student']['fayda_alias_number']) && !empty($studentDetail['Student']['fayda_identification_number'])) { ?>
+														<div class="large-12 columns">
+															<hr>
+															<?= $this->Form->input('fayda_alias_number', array('id' => 'faydaFin', 'readOnly', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda ID (FAN): &nbsp;<span class="rejected">*</span>', 'style' => 'width:100%;')); ?>
+															<?= $this->Form->hidden('fayda_alias_number', array('value' => (!empty($studentDetail['Student']['fayda_alias_number']) ? $studentDetail['Student']['fayda_alias_number'] : (!empty($this->data['Student']['fayda_alias_number'] ? $this->data['Student']['fayda_alias_number'] : ''))))); ?>
+															<br>
+															<hr>
+														</div>
+														<?php
+													} 
+													if (isset($studentDetail['Student']['fayda_identification_number']) && !empty($studentDetail['Student']['fayda_identification_number'])) { ?>
+														<div class="large-12 columns">
+															<hr>
+															<?= $this->Form->input('fayda_identification_number', array('id' => 'faydaFin', 'readOnly', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda ID (FIN): &nbsp;<span class="rejected">*</span>', 'style' => 'width:100%;')); ?>
+															<?= $this->Form->hidden('fayda_identification_number', array('value' => (!empty($studentDetail['Student']['fayda_identification_number']) ? $studentDetail['Student']['fayda_identification_number'] : (!empty($this->data['Student']['fayda_identification_number'] ? $this->data['Student']['fayda_identification_number'] : ''))))); ?>
+															<br>
+															<hr>
+														</div>
+														<?php
+													} 
+													?>
+
+
+													<div class="large-12 columns">
+														<label>Estimated Graduation Date: (G.C)
+															<?= $this->Form->input('estimated_grad_date', array('minYear' => date('Y'), 'maxYear' => date('Y') + Configure::read('Calendar.expectedGraduationInFuture'), 'orderYear' => 'desc', 'label' => false, 'style' => 'width: 25%;', 'disabled' => 'disabled')); ?>
+														</label>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('gender', array('label' => 'Sex: ', 'type' => 'select', 'style' => 'width:30%;', 'disabled' => 'disabled', 'div' => false,  'options' => array('female' => 'Female', 'male' => 'Male'))); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('lanaguage', array('label' => 'Primary Lanaguage: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('email', array('type' => 'email', 'id' => 'email', 'required', 'label' => 'Email: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('email_alternative', array('type' => 'email', 'id' => 'alternativeEmail', 'label' => 'Alternative Email: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('phone_home', array('type' => 'tel', 'id'=>'phoneoffice', 'label' => 'Phone (Home): ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('phone_mobile', array('type' => 'tel', 'id'=>'etPhone', 'required', 'label' => 'Phone (Mobile): ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('birthdate', array('label' => 'Birth Date:', 'minYear' => date('Y') - Configure::read('Calendar.birthdayInPast'), 'maxYear' => (date('Y') - 17), 'orderYear' => 'desc', 'style' => 'width: 25%;', 'disabled' => 'disabled')); ?>
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<div class="large-6 columns">
+									<table cellpadding="0" cellspacing="0" class="table">
+										<tbody>
+											<tr><td colspan=2><strong>Profile Picture</strong></td></tr>
+											<?php
+											
+											$atLeastOneImage = true;
+
+											if (!empty($studentDetail['Attachment'][0]['basename'])) {
+												//echo '<tr><td colspan=2><strong>Attachment</strong></td></tr>'; ?>
+												<?php
+												if ($this->Media->file($studentDetail['Attachment'][0]['dirname'] . DS . $studentDetail['Attachment'][0]['basename'])) { ?>
+													<tr>
+														<td valign="top">
+														<?= $this->Media->embed($this->Media->file($studentDetail['Attachment'][0]['dirname'] . DS . $studentDetail['Attachment'][0]['basename']), array('width' => '144', 'class' => 'profile-picture')); ?>
+														</td>
+													</tr>
+													<?php
+												} else { ?>
+													<tr>
+														<td valign="top">
+															<span class="rejected">Could't load profile Picture, Directory/File inaccessasible</span> <br><br>
+															<img src="/img/noimage.jpg" width="144" class="profile-picture">
+														</td>
+													</tr>
+													<?php
+												}
+											} else { ?>
+												<tr><td valign="top"><img src="/img/noimage.jpg" width="144" class="profile-picture"></td></tr>
+												<?php
+											} ?>
+
+											<tr><td colspan=2><strong>Access Information</strong></td></tr>
+											<tr><td style="padding-left:30px;">Username: <?= (!empty($studentDetail['User']['username']) ?  $studentDetail['User']['username'] : ''); ?></td></tr>
+											<tr><td style="padding-left:30px;">Last Login: <?= (($studentDetail['User']['last_login'] == '' ||  $studentDetail['User']['last_login'] == '0000-00-00 00:00:00' || is_null($studentDetail['User']['last_login'])) ? '<span class="rejected">Never loggedin</span>' : $this->Time->timeAgoInWords($studentDetail['User']['last_login'], array('format' => 'M j, Y', 'end' => '1 year', 'accuracy' => array('month' => 'month')))); ?></td></tr>
+											<tr><td style="padding-left:30px;">Last Password Change: <?= (($studentDetail['User']['last_password_change_date'] == '' ||  $studentDetail['User']['last_password_change_date'] == '0000-00-00 00:00:00' || is_null($studentDetail['User']['last_password_change_date'])) ? '<span class="rejected">Never Changed</span>' : $this->Time->timeAgoInWords($studentDetail['User']['last_password_change_date'], array('format' => 'M j, Y', 'end' => '1 year', 'accuracy' => array('month' => 'month')))); ?></td></tr>
+											<tr><td style="padding-left:30px;">Failed Logins: <?= (isset($studentDetail['User']['failed_login']) && $studentDetail['User']['failed_login'] != 0  ?  $studentDetail['User']['failed_login'] : '---'); ?></td></tr>
+											<tr><td style="padding-left:30px;">Ecardnumber: <?= (isset($studentDetail['Student']['ecardnumber']) && !empty($studentDetail['Student']['ecardnumber']) ? $studentDetail['Student']['ecardnumber'] : '---'); ?></td></tr>
+											<?php
+											$preEngineeringColleges = Configure::read('preengineering_college_ids');
+
+											if ($studentDetail['Student']['program_id'] == PROGRAM_REMEDIAL) {
+												$stream = 'Remedial Program';
+											} else if (isset($studentDetail['College']['stream']) && $studentDetail['College']['stream'] == STREAM_NATURAL && in_array($studentDetail['Student']['college_id'], $preEngineeringColleges)) {
+												$stream = 'Freshman - Pre Engineering';
+											} else if (isset($studentDetail['College']['stream']) && $studentDetail['College']['stream'] == STREAM_NATURAL) {
+												$stream = 'Freshman - Natural Stream';
+											} else if (isset($studentDetail['College']['stream']) && $studentDetail['College']['stream'] == STREAM_SOCIAL) {
+												$stream = 'Freshman - Social Stream';
+											} else {
+												$stream = '---';
+											} ?>
+															
+											<tr><td colspan=2><strong>Classification of Admission</strong></td></tr>
+											<tr><td style="padding-left:30px;">Program: <?= $programs[$studentDetail['Student']['program_id']]; ?></td></tr>
+											<tr><td style="padding-left:30px;">Program Type: <?= $programTypes[$studentDetail['Student']['program_type_id']]; ?></td></tr>
+											<tr><td style="padding-left:30px;"><?= (isset($studentDetail['College']['type']) && !empty($studentDetail['College']['type']) ? $studentDetail['College']['type'] : 'College') ?>: <?= $colleges[$studentDetail['Student']['college_id']]; ?></td></tr>
+											<tr><td style="padding-left:30px;"><?= (isset($studentDetail['Department']['type']) && !empty($studentDetail['Department']['type']) ? $studentDetail['Department']['type'] : 'Department') ?>: <?= (!empty($studentDetail['Student']['department_id']) && isset($studentDetail['Department']['name']) && !empty($studentDetail['Department']['name']) ? $studentDetail['Department']['name'] : (isset($departments) && !empty($departments[$studentDetail['Student']['department_id']]) ? $departments[$studentDetail['Student']['department_id']] : $stream )); ?></td></tr>
+											<tr><td style="padding-left:30px;">Admission Year: <?= (isset($studentDetail['Student']['academicyear']) ? $studentDetail['Student']['academicyear'] : '---'); ?></td></tr>
+											<tr><td style="padding-left:30px;">Admission Date: <?= $this->Time->format("M j, Y", $studentDetail['Student']['admissionyear'], NULL, NULL); ?></td></tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+
+						<div class="content" id="add_address" style="padding-left: 0px; padding-right: 0px;">
+							<div class="row">
+							<div class="large-12 columns">
+								<hr style="margin-top: -10px;">
+							</div>
+							<div class="large-6 columns">
+									<table cellspacing="0" cellpading="0" class="table">
+										<tbody>
+											<tr>
+												<td><strong>Your Home Address</strong></td>
+											</tr>
+											<tr>
+												<td style="background-color: white;">
+													<div class="large-12 columns">
+														<?= $this->Form->input('country_id', array('id' => 'country_id_2', 'label' => 'Country: ', 'empty' => false, 'style' => 'width:70%;', 'default' => COUNTRY_ID_OF_ETHIOPIA, 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('region_id', array('id' => 'region_id_2', 'label' => 'Region: ',  'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?php
+														if ($studentDetail['Student']['graduated'] == 1) { ?>
+															<?= $this->Form->input('zone_subcity', array('label' => 'Zone/Subcity: ', 'disabled' => 'disabled')); ?>
+															<?php
+														} else { ?>
+															<?= $this->Form->input('zone_id', array('id' => 'zone_id_2', 'label' => 'Zone: ', 'empty' => '[ Select Zone ]', 'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+															<?php
+														} ?>
+													</div>
+													<div class="large-12 columns">
+														<?php
+														if ($studentDetail['Student']['graduated'] == 1) { ?>
+															<?= $this->Form->input('woreda', array('label' => 'Woreda: ', 'disabled' => 'disabled')); ?>
+															<?php
+														} else { ?>
+															<?= $this->Form->input('woreda_id', array('id' => 'woreda_id_2', 'label' => 'Woreda: ', 'empty' => '[ Select Woreda ]', 'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+															<?php
+														} ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('city_id', array('label' => 'City: ', 'id' => 'city_id_2', 'style' => 'width:70%;', 'empty' => '[ Select City or Leave, if not listed ]', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('kebele', array('label' => 'Kebele: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('house_number', array('label' => 'House Number: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('address1', array('label' => 'Address: ', 'disabled' => 'disabled')); ?>
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+									<br><br>
+								</div>
+
+								<div class="large-6 columns">
+									<table cellspacing="0" cellpading="0" class="table">
+										<tbody>
+											<tr>
+												<td><strong>Your Primary Emergency Contact</strong></td>
+											</tr>
+											<tr>
+												<td style="background-color: white;">
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.first_name', array('label' => 'First Name: ', 'type' => 'text', 'required', 'div' => true, 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.middle_name', array('label' => 'Middle Name: ', 'type' => 'text', 'required', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.last_name', array('label' => 'Last Name: ', 'type' => 'text', 'required', 'disabled' => 'disabled' )); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.country_id', array('label' => 'Country: ', 'id' => 'country_id_1', 'default' => COUNTRY_ID_OF_ETHIOPIA, 'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.region_id', array('label' => 'Region: ', 'options' => $regions, 'id' => 'region_id_1', 'empty' => '[ Select Region ]', 'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.zone_id', array('label' => 'Zone: ', 'options' => $zones, 'id' => 'zone_id_1',  'empty' => '[ Select Zone ]', 'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.woreda_id', array('label' => 'Woreda: ', 'options' => $woredas, 'id' => 'woreda_id_1', 'empty' => '[ Select Woreda ]',  'style' => 'width:70%;', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.city_id', array('label' => 'City: ', 'options' => $cities, 'id' => 'city_id_1', 'style' => 'width:70%;', 'empty' => '[ Select City or Leave, if not listed ]', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.email', array('type' => 'email', 'label' => 'Email: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.alternative_email', array('type' => 'email', 'label' => 'Alternative Email: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.phone_home', array('type' => 'tel', 'id' => 'intPhone1', 'label' => 'Phone (Home): ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.phone_office', array('type' => 'tel', 'id' => 'intPhone2', 'label' => 'Phone (Office): ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.phone_mobile', array('type' => 'tel', 'id' => 'phonemobile', 'label' => 'Phone (Mobile): ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<?= $this->Form->input('Contact.0.address1', array('label' => 'Address: ', 'disabled' => 'disabled')); ?>
+													</div>
+													<div class="large-12 columns">
+														<hr>
+														<?= $this->Form->input('Contact.0.primary_contact', array('label' => 'Primary Contact?', 'checked' => 'checked', 'disabled' => 'disabled')); ?>
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+
+						<div class="content" id="education_background" style="padding-left: 0px; padding-right: 0px;">
+							<?php
+							$fields = array(
+								'school_level' => '1',
+								'name' => '2',
+								'national_exam_taken' => 3,
+								'town' => 4,
+								'zone' => 5,
+								'region_id' => 6
+							);
+
+							$all_fields = "";
+							$sep = "";
+
+							foreach ($fields as $key => $tag) {
+								$all_fields .= $sep . $key;
+								$sep = ",";
+							} ?>
+
+							<div class="row">
+								<div class="large-12 columns">
+									<hr style="margin-top: -10px;">
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="7" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;"><h6 class="fs18 text-black">Senior Secondary/Preparatory School Attended</h6></td>
+												</tr>
+											</thead>
+										</table>
+										<table id="high_school_education" cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<th style="width: 3%;" class="center">#</th>
+													<th style="width: 16%;" class="ccenter">School Level</th>
+													<th style="width: 21%;" class="vcenter">Name</th>
+													<th style="width: 15%;" class="center">National Exam Taken</th>
+													<th style="width: 15%;" class="center">Region</th>
+													<th style="width: 15%;" class="center">Zone</th>
+													<th style="width: 15%;" class="center">Town</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												if (!empty($this->data['HighSchoolEducationBackground'])) {
+													$count = 1;
+													foreach ($this->data['HighSchoolEducationBackground'] as $bk => $bv) {
+														if (!empty($bv['id'])) {
+															echo $this->Form->hidden('HighSchoolEducationBackground.' . $bk . '.id');
+														} ?>
+														<tr>
+															<td class="center"><?= $count; ?></td>
+															<td class="vcenter"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.school_level', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="vcenter"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.name', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.national_exam_taken', array('label' => false, 'style' => 'width:100%;', 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.region_id', array('options' => $regions, 'type' => 'select', 'empty' => '[ Select ]', 'label' => false, 'style' => 'width:90%;', 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.zone', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.town', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+														</tr>
+														<?php
+														$count++;
+													}
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<br>
+								</div>
+							</div>
+
+							<?php
+							$higher_fields = array(
+								'name' => '1',
+								'field_of_study' => '2',
+								'diploma_awarded' => '3',
+								'date_graduated' => '4',
+								'cgpa_at_graduation' => '5',
+								'city' => '6'
+							);
+
+							$higher_all_fields = "";
+							$sepp = "";
+
+							foreach ($higher_fields as $key => $tag) {
+								$higher_all_fields .= $sepp . $key;
+								$sepp = ",";
+							} ?>
+
+							<div class="row">
+								<div class="large-12 columns">
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="7" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;"><h6 class="fs18 text-black">Higher Education Attended</h6></td>
+												</tr>
+											</thead>
+										</table>
+										<table id="higher_education_background" cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<th style="width: 3%;" class="center">#</th>
+													<th style="width: 18%;" class="vcenter">Institution/College</th>
+													<th style="width: 15%;" class="center">Field of study</th>
+													<th style="width: 15%;" class="center">Diploma Awared</th>
+													<th style="width: 26%;" class="center">Date Graduated (G.C)</th>
+													<th style="width: 8%;" class="center">CGPA</th>
+													<th style="width: 15%;" class="center">City</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												if (!empty($this->data['HigherEducationBackground'])) {
+													$count = 1;
+													foreach ($this->data['HigherEducationBackground'] as $bk => $bv) {
+														echo $this->Form->hidden('HigherEducationBackground.' . $bk . '.id'); ?>
+														<tr>
+															<td class="center"><?= $count; ?></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.name', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.field_of_study', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.diploma_awarded', array('label' => false, 'disabled' => 'disabled')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.date_graduated', array('label' => false, 'minYear' => date('Y') - 30, 'maxYear' => (date('Y') - 1), /* 'orderYear' => 'desc',  */'style' => 'width: 30%;')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.cgpa_at_graduation', array('label' => false, 'disabled' => 'disabled', 'size' => 5, 'min' => '2.0', 'max' => '4.0', 'step' => 'any')); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.city', array('disabled' => 'disabled', 'label' => false, 'type' => 'text')); ?></div></td>
+														</tr>
+														<?php
+														$count++;
+													}
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<br>
+								</div>
+							</div>
+
+							<?php
+							$eheece_fields = array('subject' => '1', 'mark' => '2', 'exam_year' => '3');
+							$eheece_all_fields = "";
+							$sepeheece = "";
+
+							foreach ($eheece_fields as $key => $tag) {
+								$eheece_all_fields .= $sepeheece . $key;
+								$sepeheece = ",";
+							}
+
+							$eslce_fields = array('subject' => '1', 'grade' => '2', 'exam_year' => '3');
+							$eslce_all_fields = "";
+							$sepeslce = "";
+
+							foreach ($eslce_fields as $key => $tag) {
+								$eslce_all_fields .= $sepeslce . $key;
+								$sepeslce = ",";
+							}
+
+							$from = date('Y') - 30;
+							$to = date('Y') - 1;
+							$format = Configure::read('Calendar.yearFormat');
+							$yearoptions = array();
+
+							for ($j = $to ; $j >= $from; $j--) {
+								$yearoptions[$j] = $j;
+							} ?>
+
+							<div class="row">
+
+								<div class="large-6 columns">
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="4" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;"><h6 class="fs18 text-black">ESLCE Results (10th Grade)</h6></td>
+												</tr>
+											</thead>
+										</table>
+										<table id='eslce_result' cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<th style="width: 5%;" class="center">#</th>
+													<th style="width: 45%;" class="vcenter">Subject</th>
+													<th style="width: 20%;" class="center">Grade</th>
+													<th style="width: 30%;" class="center">Exam Year (G.C)</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												if (!empty($this->data['EslceResult'])) {
+													$count = 0;
+													foreach ($this->data['EslceResult'] as $bk => $bv) {
+														echo $this->Form->hidden('EslceResult.' . $bk . '.id'); ?>
+														<tr>
+															<td class="center">><?= ++$count; ?></td>
+															<td class="vcenter"><div style="margin-top: 10px;"><?= $this->Form->input('EslceResult.' . $bk . '.subject', array('name' => "data[EslceResult][$bk][subject]", 'value' => isset($this->data['EslceResult'][$bk]['subject']) ? $this->data['EslceResult'][$bk]['subject'] : '', 'disabled' => 'disabled', 'label' => false)); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EslceResult.' . $bk . '.grade', array('name' => "data[EslceResult][$bk][grade]", 'value' => isset($this->data['EslceResult'][$bk]['grade']) ? $this->data['EslceResult'][$bk]['grade'] : '', 'size' => 4, 'disabled' => 'disabled', 'label' => false)); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EslceResult.' . $bk . '.exam_year', array('value' => isset($this->data['EslceResult'][$bk]['exam_year']) ? $this->data['EslceResult'][$bk]['exam_year'] : '', 'disabled' => 'disabled', 'label' => false, 'style' => 'width:70%;', 'type' => 'select', 'options' => $yearoptions, 'selected' => !empty($this->data['EslceResult'][$bk]['exam_year']) ? $this->data['EslceResult'][$bk]['exam_year'] : '')); ?></div></td>
+														</tr>
+														<?php
+													}
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<br>
+								</div>
+
+								<div class="large-6 columns">
+									<div style="overflow-x:auto;">
+										<table cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<td colspan="4" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+														<h6 class="fs18 text-black">EHEECE Results (12th Grade)</h6>
+														<hr>
+														<?= $this->Form->input('EheeceResult.0.exam_year', array('disabled' => 'disabled', 'value' => (!empty($this->data['EheeceResult'][0]['exam_year']) ? $this->data['EheeceResult'][0]['exam_year'] : ''),  'label' => 'Exam Taken Date: (G.C) &nbsp;', 'style' => 'width:25%;')); ?>
+													</td>
+												</tr>
+											</thead>
+										</table>
+										<table id='eheece_result' cellpadding="0" cellspacing="0" class="table">
+											<thead>
+												<tr>
+													<th style="width: 5%;" class="center">#</th>
+													<th style="width: 45%;" class="vcenter">Subject</th>
+													<th style="width: 20%;" class="center">Mark</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php
+												if (!empty($this->data['EheeceResult'])) {
+													$count = 0;
+													foreach ($this->data['EheeceResult'] as $bk => $bv) {
+														echo $this->Form->hidden('EheeceResult.' . $bk . '.id'); ?>
+														<tr>
+															<td class="center"><?= ++$count; ?></td>
+															<td class="vcenter"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.' . $bk . '.subject', array('name' => "data[EheeceResult][$bk][subject]", 'value' => isset($this->data['EheeceResult'][$bk]['subject']) ? $this->data['EheeceResult'][$bk]['subject'] : '', 'disabled' => 'disabled', 'label' => false)); ?></div></td>
+															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.' . $bk . '.mark', array('name' => "data[EheeceResult][$bk][mark]", 'value' => isset($this->data['EheeceResult'][$bk]['mark']) ? $this->data['EheeceResult'][$bk]['mark'] : '', 'disabled' => 'disabled', 'label' => false, 'min' => '0', 'max' => '100', 'step' => 'any')); ?></div></td>
+														</tr>
+														<?php
+													}
+												} ?>
+											</tbody>
+										</table>
+									</div>
+									<br>
+								</div>
+								
+							</div>
+
+						</div>
+					</div>
+					
+					<?php // '<hr>'. $this->Form->end(array('label' => 'Update Student Detail', /* 'disabled', */ 'name' => 'updateStudentDetail', 'id' => 'SubmitID', 'class' => 'tiny radius button bg-blue')); ?>
+
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php
+} ?>
 
 <script type="text/javascript">
-var region = Array();
-//alert("<?PHP foreach ($regions as $k => $v) echo $v; ?>");
 
-<
-? PHP
+	function toggleSubmitButtonActive() {
+		if ($("#email").val != 0 && $("#email").val != '') {
+			$("#SubmitID").attr('disabled', false);
+		}
+	}
 
-foreach($regions as $region_id =>
-        $region_name) {
-        ?
-        >
-        region[
-                "<?php echo $region_id; ?>"] =
-            "<?php echo $region_name; ?>"; <
-        ? php
+	function isValidPhonenumber(value) {
+    	return (/^\d{7,}$/).test(value.replace(/[\s()+\-\.]|ext/gi, ''));
+	}
 
-    } ?
-    >
-    //alert(region);
-    function addRow(tableID, model,
-        no_of_fields, all_fields, other
-        ) {
+	function isValidEmail(value) {
+    	return (/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test(value.trim());
+	}
 
-        var elementArray = all_fields
-            .split(',');
+	function isAlpha(value) {
+    	return (/^[a-zA-Z]+$/).test(value.trim());
+	}
 
-        var table = document
-            .getElementById(tableID);
+	var form_being_submitted = false;
 
-        var rowCount = table.rows
-        .length;
-        var row = table.insertRow(
-            rowCount);
+	var checkForm = function(form) {
+		
+		if (form.email.value != '' && !isValidEmail(form.email.value)) { 
+			form.email.focus();
+			return false;
+		}
 
-        var cell0 = row.insertCell(0);
-        cell0.innerHTML = rowCount;
-        for (var i = 1; i <=
-            no_of_fields; i++) {
-            var cell = row.insertCell(
-            i);
-            if (elementArray[i - 1] ==
-                "region") {
+		//alert(isValidPhonenumber(form.Contact0PhoneMobile.value));
+		//alert(isValidEmail(form.email.value));
+		//alert(isAlpha(form.Contact0FirstName.value));
+		//alert(email.test(form.email.value));
 
-                var element = document
-                    .createElement(
-                        "select");
-                var string =
-                    '<option value="">--select region--- </option>';
-                for (var f = 1; f <
-                    region.length; f++
-                    ) {
-                    string +=
-                        '<option value="' +
-                        f + '"> ' +
-                        region[f] +
-                        '</option>';
-                }
-                element.innerHTML =
-                    string;
+		if (form.etPhone.value != '' && form.etPhone.value.length != 13) { 
+			form.etPhone.focus();
+			return false;
+		}
 
-            } else if (elementArray[i -
-                    1] == "exam_year") {
-                var element = document
-                    .createElement(
-                        "select");
-                var d = new Date();
-                var full_year = d
-                    .getFullYear();
-                var string =
-                    '<option value="">--select year--- </option>';
+		if (form.Contact0PhoneMobile.value != '' && form.Contact0PhoneMobile.value.length != 13) { 
+			form.Contact0PhoneMobile.value.focus();
+			return false;
+		}
 
-                for (var j = full_year -
-                        1; j >
-                    other; j--) {
+		if (isValidPhonenumber(form.Contact0PhoneMobile.value) == false) {
+			form.Contact0PhoneMobile.value.focus();
+			return false;
+		}
 
-                    string +=
-                        '<option value="' +
-                        j + '"> ' + j +
-                        '</option>';
-                }
+		if (form_being_submitted) {
+			alert("Updating Student Profile, please wait a moment...");
+			form.SubmitID.disabled = true;
+			return false;
+		}
 
-                element.innerHTML =
-                    string;
+		form.SubmitID.value = 'Updating Student Profile...';
+		form_being_submitted = true;
+		return true; 
+	};
 
-            } else if (elementArray[i -
-                    1] == 'grade') {
-                var element = document
-                    .createElement(
-                        "input");
-                element.type = "text";
-                element.size = "4";
-            } else if (elementArray[i -
-                    1] == 'mark') {
-                var element = document
-                    .createElement(
-                        "input");
-                element.type = "text";
-                element.size = "5";
-            } else {
-                var element = document
-                    .createElement(
-                        "input");
-                element.type = "text";
-                element.size = "13";
-            }
-
-
-            element.name = "data[" +
-                model + "][" +
-                rowCount + "][" +
-                elementArray[i - 1] +
-                "]";
-            cell.appendChild(element);
-        }
-
-    }
-
-function deleteRow(tableID) {
-
-    try {
-        var table = document
-            .getElementById(tableID);
-        var rowCount = table.rows
-        .length;
-        if (rowCount != 2) {
-            table.deleteRow(rowCount -
-                1);
-        } else {
-
-            //alert('No more rows to delete');
-        }
-
-    } catch (e) {
-        alert(e);
-    }
-
-}
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
 </script>
-<div class="row">
-    <div class="large-12 columns">
-        <!-- tabs -->
-        <ul class="tabs" data-tab>
-            <li
-                class="tab-title active">
-                <a
-                    href="#basicinformation">Basic
-                    Information</a>
-            </li>
-            <li class="tab-title"><a
-                    href="#addressBlock">Address</a>
-            </li>
-            <li class="tab-title"><a
-                    href="#edubackground">Education
-                    Background</a>
-            </li>
-
-        </ul>
-        <div
-            class="tabs-content edumix-tab-horz">
-            <div class="content active"
-                id="basicinformation">
-                <?php
-				echo $this->Form->hidden('id');
-				echo "<div class=\"AddTab\">\n";
-				echo '<table cellspacing="0" cellpading="0"><tbody>';
-				echo "<tr><td><table><tbody>";
-				echo '<tr><td colspan=2><strong>Demographic Information</strong></td></tr>';
-
-				echo '<tr><td>First Name:<strong>' . $student['Student']['first_name'] . '</strong></td></tr>';
-				echo '<tr><td>First Name in Amharic:<strong>' . $student['Student']['amharic_first_name'] . '</strong></td></tr>';
-				echo '<tr><td>Middle Name:<strong>' . $student['Student']['middle_name'] . '</strong></td></tr>';
-				echo '<tr><td>Middle Name in  Amharic:<strong>' . $student['Student']['amharic_middle_name'] . '</strong></td></tr>';
-				echo '<tr><td> Last Name:<strong>' . $student['Student']['last_name'] . '</strong></td></tr>';
-				echo '<tr><td> Last Name in Amharic:<strong>' . $student['Student']['amharic_last_name'] . '</strong></td></tr>';
-
-				echo '<tr><td> Gender:<strong>' . $student['Student']['gender'] . '</strong></td></tr>';
-				echo '<tr><td> Ethnicity:<strong>' . $student['Student']['ethnicity'] . '</strong></td></tr>';
-
-				echo '<tr><td> Student Number:<strong>' . $student['Student']['studentnumber'] . '</strong></td></tr>';
-
-
-				echo '<tr><td> Email:<strong>' . $student['Student']['email'] . '</strong></td></tr>';
-
-				echo '<tr><td> Mobile Phone:<strong>' . $student['Student']['email'] . '</strong></td></tr>';
-
-				echo '<tr><td> Birth Date:<strong>' . $this->Format->humanize_date($student['Student']['birthdate']) . '</strong></td></tr>';
-
-				echo "</tbody></table></td>";
-
-				// save account information in the user table
-				echo '<td><table><tbody>';
-
-
-				if (!empty($student['Attachment'])) {
-					echo '<tr><td colspan=2><strong>Attachment</strong></td></tr>';
-					foreach ($student['Attachment'] as $ak => $av) {
-						if (!empty($av['dirname']) && !empty($av['basename']) && strcasecmp($av['dirname'], 'img') == 0) {
-
-							// echo $this->Media->embed($this->Media->file($av['dirname'].DS.$av['basename']));
-							echo '<tr><td valign="top" align="right">' . $this->Media->embedAsObject($av['dirname'] . DS . $av['basename'], array('width' => 144, 'class' => 'profile-picture')) . "</td></tr>";
-						}
-					}
-				} else {
-					echo '<tr><td valign="top" align="right"><img src="/img/noimage.jpg" width="144" class="profile-picture"></td></tr>';
-				}
-				echo '<tr><td colspan=2><strong>Access Information</strong></td></tr>';
-
-				echo '<tr><td> Username:<strong>' . $student['User']['username'] . '</strong></td></tr>';
-				echo '<tr><td colspan=2><strong>Classification of Admission</strong></td></tr>';
-				echo "<tr><td> Program:<strong>" . $student['Program']['name'] . "</strong></td></tr>";
-				echo "<tr><td> Program Type:<strong>" . $student['ProgramType']['name'] . "</strong></td></tr>";
-				echo "<tr><td> Department/School:<strong>" . $student['College']['name'] . "</strong></td></tr>";
-				echo "<tr><td> Field of study:<strong>";
-				if (!empty($student['Department']['name'])) {
-					echo $student['Department']['name'];
-				} else {
-					echo '---';
-				}
-
-
-				echo "</strong></td></tr>";
-
-				echo '<tr><td> Admission Year:<strong>' . $this->Format->humanize_date($student['Student']['admissionyear']) . '</strong></td></tr>';
-				echo '</tbody></table></td>';
-
-				echo "</tr>";
-				echo '</tbody></table>';
-				echo "</div>"; // end add tab div
-
-
-				?>
-            </div>
-            <div class="content"
-                id="addressBlock">
-                <!-- address tab -->
-                <?php
-
-				echo "<div class=\"AddTab\">\n";
-				echo '<table cellspacing="0" cellpading="0"><tbody>';
-				echo "<tr><td><table><tbody>";
-				echo '<tr><td colspan=2><hr/></td></tr>';
-
-				echo '<tr><td colspan=2><strong>Address </strong></td></tr>';
-				echo '<tr><td colspan=2><hr/></td></tr>';
-				echo '<tr><td> Country:<strong>' . $student['Country']['name'] . '</strong></td></tr>';
-				echo '<tr><td> Region:<strong>' . $student['Region']['name'] . '</strong></td></tr>';
-				echo '<tr><td> City:<strong>' . $student['City']['name'] . '</strong></td></tr>';
-				if (isset($student['woreda']) && !empty($student['woreda'])) {
-					echo '<tr><td> Woreda:<strong>' . $student['woreda'] . '</strong></td></tr>';
-				}
-				if (isset($student['kebele']) && !empty($student['kebele'])) {
-					echo '<tr><td> Kebele:<strong>' . $student['kebele'] . '</strong></td></tr>';
-				}
-				if (isset($student['house_number']) && !empty($student['house_number'])) {
-					echo '<tr><td> House Number:<strong>' . $student['house_number'] . '</strong></td></tr>';
-				}
-				if (isset($student['address1']) && !empty($student['address1'])) {
-					echo '<tr><td> Address :<strong>' . $student['address1'] . '</strong></td></tr>';
-				}
-
-				echo "</tbody></table></td>";
-
-				// save account information in the user table
-				echo '<td>';
-				if (!empty($student['Contact'])) {
-					echo '<table><tbody>';
-
-					echo '<tr><td colspan=2><hr/></td></tr>';
-					echo '<tr><td colspan=2><strong>Primary Emergency Contact</strong></td></tr>';
-
-					foreach ($student['Contact'] as $k => $v) {
-
-						echo '<tr><td> Full Name:<strong>' . $v['full_name'] . '</strong></td></tr>';
-						echo '<tr><td> Country: <strong>' . $v['Country']['name'] . '</strong></td></tr>';
-						echo '<tr><td> City: <strong>' . $v['City']['name'] . '</strong></td></tr>';
-						echo '<tr><td> Region: <strong>' . $v['Region']['name'] . '</strong></td></tr>';
-						echo '<tr><td> E-mail:<strong>' . $v['email'] . '</strong></td></tr>';
-						echo '<tr><td> Primary Contact: <strong>' . ($v['primary_contact'] == 1 ? "Yes" : "No") . '</strong></td></tr>';
-						echo '<tr><td> Office Phone: <strong>' . $v['phone_office'] . '</strong></td></tr>';
-						echo '<tr><td> Home Phone: <strong>' . $v['phone_home'] . '</strong></td></tr>';
-						echo '<tr><td> Mobile Phone: <strong>' . $v['phone_mobile'] . '</strong></td></tr>';
-
-						echo '<tr><td> Address : <strong>' . $v['address1'] . '</strong></td></tr>';
-					}
-
-					echo '</tbody></table>';
-				}
-				echo '</td></tr>';
-
-				echo '</tbody></table>';
-
-				echo '</div>'; // End add tab div
-				?>
-            </div>
-
-            <div class="content active"
-                id="edubackground">
-                <?php
-
-
-				echo "<div class=\"AddTab\">\n";
-				// save account information in the user table
-
-				echo "<table><tbody>";
-				if (!empty($student['HighSchoolEducationBackground'])) {
-					echo '<tr><td> <div class="smallheading">Senior Secondary/Preparatory school attended </div> <table  id="high_school_education"><tbody>';
-
-					echo '<tr><th>No.</th><th>School Level</th><th>Name</th><th>National Exam Taken </th><th>Town</th><th>Zone</th><th>Region</th></tr>';
-
-					if (!empty($student['HighSchoolEducationBackground'])) {
-						$count = 1;
-						foreach ($student['HighSchoolEducationBackground'] as $bk => $bv) {
-
-							echo "<tr><td>" . $count . "</td><td>" . $bv['school_level'] . '</td>';
-							echo '<td>';
-							if ($bv['national_exam_taken'] == 1) {
-								echo 'yes';
-							}
-							echo '</td>';
-
-							echo '<td>' .
-								$bv['name'] . '</td><td>' . $bv['town'] . '</td><td>' . $bv['zone'] . '</td><td>' . $regions[$bv['region_id']] . '</td><td>' . '</td></tr>';
-							$count++;
-						}
-					}
-
-					echo "</tbody></table>";
-
-					echo '</td></tr>';
-				}
-				if (!empty($student['HigherEducationBackground'])) {
-					echo "<tr>";
-					echo "<td>";
-					echo '<div class="smallheading">Higher Education Attended</div><table id="higher_education_background"><tbody>';
-
-					echo '<tr><th>No.</th><th>Name of Institution/College</th><th>Field of study</th><th>Diploam Awared</th><th>Date graduated </th><th>CGPA at Graduation</th></tr>';
-
-					if (!empty($student['HigherEducationBackground'])) {
-						$count = 1;
-						foreach ($student['HigherEducationBackground'] as $bk => $bv) {
-
-							echo "<tr><td>" . $count . "</td><td>" . $bv['name'] . '</td><td>' . $bv['field_of_study'] .
-								'</td><td>' . $this->Format->humanize_date($bv['diploma_awarded']) . '</td><td>' . $this->Format->humanize_date($bv['date_graduate']) . '</td><td>' . $bv['cgpa_at_graduation'] . '</td></tr>';
-							$count++;
-						}
-					}
-					echo "</tbody>";
-					echo "</table>";
-					echo "</td>";
-					echo "</tr>";
-				}
-				if (!empty($student['EheeceResult'])) {
-					echo "<tr>";
-					echo "<td width='50%'><div class='smallheading'>EHEECE Results</div><table id='eheece_result'>";
-					echo "<table>";
-					echo '<tr><th>No.</th><th>Subject</th><th>Mark</th><th>Exam Year</th></tr>';
-					if (!empty($student['EheeceResult'])) {
-						$count = 0;
-
-						foreach ($student['EheeceResult'] as $bk => $bv) {
-
-							echo "<tr><td>" . ++$count . "</td>";
-
-							echo "<td>" . $bv['subject'] . "</td>";
-
-
-							echo "<td>" . $bv['mark'] . "</td><td>" . $bv['exam_year'] . "</td></tr>";
-						}
-					}
-					echo "</table>";
-					echo "</td>";
-					echo "</tr>";
-				}
-				if (!empty($student['EslceResult'])) {
-					echo "<tr>";
-					echo "<td width='50%'><div class='smallheading'>ESLCE Results</div><table id='eheece_result'>";
-					echo "<table>";
-					echo '<tr><th>No.</th><th>Subject</th><th>Grade</th><th>Exam Year</th></tr>';
-					if (!empty($student['EslceResult'])) {
-						$count = 0;
-
-						foreach ($student['EslceResult'] as $bk => $bv) {
-
-							echo "<tr><td>" . ++$count . "</td>";
-
-							echo "<td>" . $bv['subject'] . "</td>";
-
-
-							echo "<td>" . $bv['grade'] . "</td><td>" . $bv['exam_year'] . "</td></tr>";
-						}
-					}
-					echo "</table>";
-					echo "</td>";
-					echo "</tr>";
-				}
-				echo "</table>";
-				?>
-            </div>
-        </div>
-    </div>
-</div>

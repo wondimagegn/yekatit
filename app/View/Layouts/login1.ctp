@@ -3,7 +3,7 @@
 <head>
 	<?php echo $html->charset(); ?>
 	<title>
-		<?php __('SIS Sign In'); ?>
+		<?php __('SMIS Sign In'); ?>
 		<?php //echo $title_for_layout; ?>
 	</title>
 	<?php echo $scripts_for_layout; ?>
@@ -17,7 +17,7 @@
 <body>
 		<div class="container_16">
 			<div class="container_16">
-			<?php //echo $this->Html->image('AMU-SMIS-Banner.jpg', array('id' => 'AMU-SMIS-Banner')); ?>
+			<?php echo $this->Html->image('AMU-SMIS-Banner.jpg', array('id' => 'AMU-SMIS-Banner')); ?>
 			</div>
 			<div class="clear"></div>
 				<div class="prefix_3 suffix_4" style="padding-top:30px">
@@ -43,15 +43,11 @@
 			<?php echo '<p style="text-align:center; font-size:12px">'.__('This is a restricted network. Use of this network, its equipment, and resources is monitored at all times and requires explicit permission from the system administrator. If you do not have this permission in writing, you are violating the regulations of this network and can and will be prosecuted to the fullest extent of law. By continuing into this system, you are acknowledging that you are aware of and agree to these terms.', true).'</p>'; ?>
 			<?php echo '<p class="info-box info-message" style=""><span></span>Notice: This software is under development and 
 			you may face bugs, see incomplete features and the already running features may get changed.
-			Please report any bugs you face to <a href="mailto:bugs@mereb.com.et" style="color:#ebad05">bugs@itandts.com</a></p>'; ?>
+			Please report any bugs you face to <a href="mailto:bugs@itandts.com" style="color:#ebad05">bugs@itandts.com</a></p>'; ?>
 			</div>
 			<div class="grid_16" id="site_info">
 				 <div class="footerbox">
-				   <p style="margin:0px; padding:0px"><strong>&copy; <?php echo (date("Y")); ?> Y12HMC Hospital Medical College <br /></strong>
-
-<!--
-Designed and Developed By Mereb Technologies <a href="http://www.merebtechnologies.com" style="color:#ebad05">MerebTechnologies.com</a> 
- -->
+				   <p style="margin:0px; padding:0px"><strong>&copy; <?php echo (date("Y")); ?> Arba Minch University<br /></strong>
 </p> 
 				 </div>
 			</div>

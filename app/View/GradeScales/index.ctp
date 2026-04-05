@@ -1,83 +1,64 @@
-<?php ?>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-              
-<div class="gradeScales index">
-	<h2><?php echo __('Grade Scales');?></h2>
-   
-	<table cellpadding="0" cellspacing="0">
-	<tr>
-			<th>S.N<u>o</u></th>
-			<th><?php echo $this->Paginator->sort('name');?></th>
-			<th><?php echo $this->Paginator->sort('grade_type_id');?></th>
-		
-			<th><?php echo $this->Paginator->sort('program_id');?></th>
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Grade Scales'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<table cellpadding="0" cellspacing="0" class="responsive table-borderless fs13">
+					<thead>
+						<tr>
+							<td>#</td>
+							<td><?= $this->Paginator->sort('name'); ?></td>
+							<td><?= $this->Paginator->sort('grade_type_id'); ?></td>
+							<td><?= $this->Paginator->sort('program_id'); ?></td>
+							<td style="text-align: center;"><?= $this->Paginator->sort('active'); ?></td>
+							<td><?= $this->Paginator->sort('created','Date Created'); ?></td>
+							<td><?= $this->Paginator->sort('modified', 'Date Modified'); ?></td>
+							<td style="text-align:center"><?= __('Actions'); ?></td>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						$start = $this->Paginator->counter('%start%');
+						foreach ($gradeScales as $gradeScale) { ?>
+							<tr>
+								<td><?= $start++; ?></td>
+								<td><?= $gradeScale['GradeScale']['name']; ?></td>
+								<td>
+									<?= $this->Html->link($gradeScale['GradeScaleDetail'][0]['Grade']['GradeType']['type'], array('controller' => 'grade_types', 'action' => 'view', $gradeScale['GradeScaleDetail'][0]['Grade']['GradeType']['id'])); ?>
+								</td>
+								<td>
+									<?= $this->Html->link($gradeScale['Program']['name'], array('controller' => 'programs', 'action' => 'view', $gradeScale['Program']['id'])); ?>
+								</td>
+								<td style="text-align: center;"><?= (($gradeScale['GradeScale']['active'] == 1) ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?> </td>
+								<td><?= $this->Time->format("M j, Y g:i A", $gradeScale['GradeScale']['created'], NULL, NULL); ?></td>
+								<td><?= $this->Time->format("M j, Y g:i A", $gradeScale['GradeScale']['modified'], NULL, NULL); ?></td>
+								<td style="text-align:center">
+									<?= $this->Html->link(__(''), array('action' => 'view', $gradeScale['GradeScale']['id']), array('class' => 'fontello-eye', 'title' => 'View')); ?> 
+									<?php
+									if ($this->Session->read('Auth.User')['is_admin'] == 1) { ?>
+										&nbsp;
+										<?= $this->Html->link(__(''), array('action' => 'edit', $gradeScale['GradeScale']['id']), array('class' => 'fontello-pencil', 'title' => 'Edit')); ?> &nbsp;
+										<?= $this->Html->link(__(''), array('action' => 'delete', $gradeScale['GradeScale']['id']), array('class' => 'fontello-trash', 'title' => 'Delete'), sprintf(__('Are you sure you want to delete %s?'), $gradeScale['GradeScale']['name'])); ?>
+										<?php
+									} ?>
+								</td>
+							</tr>
+							<?php
+						} ?>
+					</tbody>
+				</table>
 
-    		<!---	<th><?php //echo $this->Paginator->sort('own');?></th> --->
-			<th><?php echo $this->Paginator->sort('active');?></th>
-			<th><?php echo $this->Paginator->sort('created');?></th>
-			<th><?php echo $this->Paginator->sort('modified');?></th>
-			<th class="actions"><?php echo __('Actions');?></th>
-	</tr>
-	<?php
-	$i = 0;
-	$start = $this->Paginator->counter('%start%');
-	
-	foreach ($gradeScales as $gradeScale):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-	?>
-	<tr<?php echo $class;?>>
-		<td><?php echo $start++; ?>&nbsp;</td>
-		<td><?php echo $gradeScale['GradeScale']['name']; ?>&nbsp;</td>
-		<td>
-			<?php echo $this->Html->link($gradeScale['GradeScaleDetail'][0]['Grade']['GradeType']['type'], array('controller' => 'grade_types', 'action' => 'view',$gradeScale['GradeScaleDetail'][0]['Grade']['GradeType']['id'])); ?>
-		</td>
-		
-		<td>
-			<?php echo $this->Html->link($gradeScale['Program']['name'], array('controller' => 'programs', 'action' => 'view', $gradeScale['Program']['id'])); ?>
-		</td>
-		<!--- <td><?php //echo (($gradeScale['GradeScale']['own']==1) ? 'Yes' : 'No'); ?>&nbsp;
-		
-		</td>
-		--->
-		<td><?php 
-		    echo (($gradeScale['GradeScale']['active']==1) ? 'Yes' : 'No'); 
-		
-		?>&nbsp;
-		
-		</td>
-		<td><?php echo $gradeScale['GradeScale']['created']; ?>&nbsp;</td>
-		<td><?php echo $gradeScale['GradeScale']['modified']; ?>&nbsp;</td>
-		<td class="actions">
-			<?php echo $this->Html->link(__('View'), array('action' => 'view', $gradeScale['GradeScale']['id'])); ?>
-			<?php echo $this->Html->link(__('Edit'), array('action' => 'edit', $gradeScale['GradeScale']['id'])); ?>
-			<?php echo $this->Html->link(__('Delete'), array('action' => 'delete', 
-			$gradeScale['GradeScale']['id']), null, sprintf(__('Are you sure you want to delete # %s?'), 
-			$gradeScale['GradeScale']['id'])); ?>
-		</td>
-	</tr>
-<?php endforeach; ?>
-	</table>
-	<p>
-	<?php
-	echo $this->Paginator->counter(array(
-	'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
-	));
-	?>	</p>
+				<p> <?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%'))); ?> </p>
 
-	<div class="paging">
-		<?php echo $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class'=>'disabled'));?>
-	 | 	<?php echo $this->Paginator->numbers();?>
- |
-		<?php echo $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled'));?>
+				<div class="paging">
+					<?= $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class' => 'disabled')); ?> | <?= $this->Paginator->numbers(); ?> | <?= $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled')); ?>
+				</div>
+
+			</div>
+		</div>
 	</div>
 </div>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row --->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->

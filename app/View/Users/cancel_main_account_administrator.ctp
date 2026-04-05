@@ -1,41 +1,70 @@
-<?php ?>
-<script type="text/javascript">
-function getUsersBasedOnRole(obj) {
-	$("#RoleID").attr('disabled', true);
-	$("#UserID").attr('disabled', true);
-	$("#SubmitID").attr('disabled', true);
-	window.location.replace("/users/cancel_main_account_administrator/"+obj.value);
-}
-</script>
-<div class="box">    
-     <div class="box-body">
-       <div class="row">
-	  <?php echo $this->Form->create('User');?>
-	  <div class="large-12 columns">
-              <h5 class="box-title">
-                Main Account Administrator Cancellation
-              </h5>
-              <p class="fs12">This tool will enable you to cancel main account administrator so that you can assign another administrator. Note that:</p>
-<ol class="fs12">
-<li>For security reason, any privilage which was assigned to the administrator by its username will be removed and reassignment of privilage is expected to be done again, if necessary.</li>
-<li>If to-be-cancelled-account role is Department and the user is instructor, please do not forget to change his user-type from Department to Instructor so that he can get basic privilage like submiting grade, taking attendance and etc.</li>
-<li>If you didn't get administrator name for the office or role you want, it is because there is no assigned administrator. Please use the administrator assignment tool to assign staff as office administrator. </li>
-</ol>
+<div class="box">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-user-delete-outline" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Cancel Main Account Administrator'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<div style="margin-top: -30px;"><hr></div>
 
-<table class="fs12">
-	<tr>
-		<td style="width:10%">Role:</td>
-		<td style="width:90%"><?php echo $this->Form->input('role_id', array('label' => false, 'style' => 'width:400px', 'onchange' => 'getUsersBasedOnRole(this)', 'id' => 'RoleID', 'type' => 'select', 'default' => $role_id, 'options' => $roles)); ?></td>
-	</tr>
-	<tr>
-		<td>User:</td>
-		<td><?php echo $this->Form->input('user_id', array('label' => false, 'style' => 'width:400px', 'id' => 'UserID', 'options' => $users)); ?></td>
-	</tr>
-    <tr><td colspan="2"><?php echo $this->Form->Submit('Cancel Main Account Administrator', array('id' => 'SubmitID',
-'class'=>'tiny radius button bg-blue'));?></td></tr>
-</table>
-           </div>
-           <?php echo $this->Form->end(); ?>
-        </div>
-     </div>
+				<?= $this->Form->create('User'); ?>
+
+				<blockquote>
+					<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+					<p style="text-align: justify;">
+						<span class="fs14 text-black">This tool will enable you to cancel main account administrator of a given office so that you can assign another administrator.</span>
+						<ol class="fs14" >
+							<li> For security reason, any privilage which was assigned to the administrator by its username will be removed and reassignment of privilage is expected to be done again, if necessary. </li>
+							<li> If the account to be cancelled is of Department role and the user is instructor, please don't forget to change the user role from Department to Instructor so that the user can get basic privilages like submiting grade, taking attendance etc. </li>
+							<li> If you didn't get administrator name for the office or role you want, that is because there is no assigned administrator for the selected unit. Please use the administrator assignment tool to assign staff as office administrator. </li>
+						</ol>
+					</p>
+				</blockquote>
+				<hr>
+
+				<fieldset style="padding-top: 30px; padding-bottom: 5px;">
+					<div class="row">
+						<div class="large-6 columns">
+							<?= $this->Form->input('role_id', array('label' => 'Role <small></small>', 'style' => 'width:70%;', 'onchange' => 'getUsersBasedOnRole(this)', 'id' => 'RoleID', 'type' => 'select', 'default' => $role_id, 'options' => $roles, 'required')); ?>
+						</div>
+					</div>
+					<div class="row">
+						<div class="large-6 columns" style="margin-top: 15px;">
+							<?= $this->Form->input('user_id', array('label' => 'User <small></small>', 'style' => 'width:70%;', 'id' => 'UserID', 'onchange' => 'toggleSubmitButtonActive()', 'options' => $users, 'required')); ?>
+						</div>
+					</div>
+					<hr>
+					<?= $this->Form->Submit('Cancel Administrator', array('id' => 'SubmitID', 'disabled', 'class' => 'tiny radius button bg-blue')); ?>
+				</fieldset>
+				
+				<?= $this->Form->end(); ?>
+			</div>
+		</div>
+	</div>
 </div>
+
+<script type="text/javascript">
+
+	function getUsersBasedOnRole(obj) {
+		$("#RoleID").attr('disabled', true);
+		$("#UserID").attr('disabled', true);
+		$("#SubmitID").attr('disabled', true);
+		window.location.replace("/users/cancel_main_account_administrator/" + obj.value);
+	}
+
+	$(function() {
+		$("#UserID").customselect();
+	});
+
+	function toggleSubmitButtonActive() {
+		if ($("#UserID").val != 0 || $("#UserID").val != '') {
+			$("#SubmitID").attr('disabled', false);
+		}
+	}
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
+</script>

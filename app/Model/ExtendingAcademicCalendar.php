@@ -1,24 +1,7 @@
 <?php
 App::uses('AppModel', 'Model');
-/**
- * ExtendingAcademicCalendar Model
- *
- * @property AcademicCalendar $AcademicCalendar
- * @property YearLevel $YearLevel
- * @property Department $Department
- * @property Program $Program
- * @property ProgramType $ProgramType
- */
-class ExtendingAcademicCalendar extends AppModel {
-
-
-	// The Associations below have been created with all possible keys, those that are not needed can be removed
-
-/**
- * belongsTo associations
- *
- * @var array
- */
+class ExtendingAcademicCalendar extends AppModel
+{
 	public $belongsTo = array(
 		'AcademicCalendar' => array(
 			'className' => 'AcademicCalendar',
@@ -56,30 +39,27 @@ class ExtendingAcademicCalendar extends AppModel {
 			'order' => ''
 		)
 	);
-	public function getExtendedDays($academic_calendar_id,
-	
-	$yearLevel,$department_id,$program_id,
-	$program_type_id,$activity=""){
-	    debug("ACID=".$academic_calendar_id.'YearLevel=='.$yearLevel.'Department=='.$department_id.'Program=='.$program_id.'ProgramType=='.$program_type_id.'Actvity=='.$activity);
-	    $days=$this->find('first',
-	    array('conditions'=>array(
-	    'ExtendingAcademicCalendar.academic_calendar_id'=>$academic_calendar_id,
-	    'ExtendingAcademicCalendar.year_level_id'=>$yearLevel,
-	     'ExtendingAcademicCalendar.department_id'=>$department_id,
-	     'ExtendingAcademicCalendar.program_id'=>$program_id,
-	     'ExtendingAcademicCalendar.program_type_id'=>$program_type_id,
-	     'ExtendingAcademicCalendar.activity_type'=>$activity,
-	    
-	    ),
-	    'order'=>array('ExtendingAcademicCalendar.created DESC'),
-	    'recursive'=>-1
-	    ));
-	    if(isset($days) 
-	    && !empty($days)){
-	    	return $days['ExtendingAcademicCalendar']['days'];
-	    }
-	    
-	    return 0;
-	
+
+	public function getExtendedDays($academic_calendar_id, $yearLevel, $department_id, $program_id, $program_type_id, $activity = "")
+	{
+		//debug("ACID=".$academic_calendar_id.'YearLevel=='.$yearLevel.'Department=='.$department_id.'Program=='.$program_id.'ProgramType=='.$program_type_id.'Actvity=='.$activity);
+		$days = $this->find('first', array(
+			'conditions' => array(
+				'ExtendingAcademicCalendar.academic_calendar_id' => $academic_calendar_id,
+				'ExtendingAcademicCalendar.year_level_id' => $yearLevel,
+				'ExtendingAcademicCalendar.department_id' => $department_id,
+				'ExtendingAcademicCalendar.program_id' => $program_id,
+				'ExtendingAcademicCalendar.program_type_id' => $program_type_id,
+				'ExtendingAcademicCalendar.activity_type' => $activity,
+			),
+			'order' => array('ExtendingAcademicCalendar.created DESC'),
+			'recursive' => -1
+		));
+
+		if (isset($days) && !empty($days)) {
+			return $days['ExtendingAcademicCalendar']['days'];
+		}
+
+		return 0;
 	}
 }

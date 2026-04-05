@@ -1,160 +1,185 @@
 <?php ?>
 <script>
-function toggleView(obj) {
-	if($('#c'+obj.id).css("display") == 'none')
-		$('#i'+obj.id).attr("src", '/img/minus2.gif');
-	else
-		$('#i'+obj.id).attr("src", '/img/plus2.gif');
-	$('#c'+obj.id).toggle("slow");
-}
+	function toggleView(obj) {
+		if ($('#c' + obj.id).css("display") == 'none')
+			$('#i' + obj.id).attr("src", '/img/minus2.gif');
+		else
+			$('#i' + obj.id).attr("src", '/img/plus2.gif');
+		$('#c' + obj.id).toggle("slow");
+	}
 </script>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('List Result Entry Exam Assignments'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<div class="makeupExams index">
+					<?= $this->Form->create('ResultEntryAssignment'); ?>
+					
+					<?php
+					$semesters = Configure::read('semesters');
+					$semesters = array('0' => '[ Any Semster ]') + $semesters; ?>
 
-<div class="makeupExams index">
-<?php echo $this->Form->create('ResultEntryAssignment');?>
-<div class="smallheading"><?php echo __('View result entry exam assignment .');?></div>
-<table cellspacing="0" cellpadding="0" class="fs14">
-	<tr>
-		<td style="width:15%">Acadamic Year:</td>
-		<td style="width:25%"><?php echo $this->Form->input('acadamic_year', array('id' => 'AcadamicYear', 'label' => false, 'class' => 'fs14', 'type' => 'select', 'options' => $acyear_array_data, 'default' => $defaultacademicyear)); ?></td>
-		<td style="width:15%">Semester:</td>
-		<td style="width:55%"><?php echo $this->Form->input('semester', array('id' => 'Semester', 'class' => 'fs14', 'type' => 'select', 'label' => false, 'options' => array('0' => 'Any Semster', 'I' => 'I', 'II' => 'II', 'III' => 'III'))); ?></td>
-	</tr>
-	<tr>
-		<td>Program:</td>
-		<td><?php echo $this->Form->input('program_id', array('id' => 'Program', 'class' => 'fs14', 'label' => false, 'type' => 'select', 'options' => $programs)); ?></td>
-		<td>Program Type:</td>
-		<td><?php echo $this->Form->input('program_type_id', array('id' => 'ProgramType', 'class' => 'fs14', 'label' => false, 'type' => 'select', 'options' => $program_types)); ?></td>
-	</tr>
-	<tr>
-		<td>Department:</td>
-		<td><?php echo $this->Form->input('department_id', array('id' => 'Department', 'class' => 'fs14', 'label' => false, 'type' => 'select','style'=>'width:250px', 'options' => $departments)); ?></td>
-		<td>&nbsp;</td>
-		<td>&nbsp;</td>
-		
-	</tr>
-	<tr>
-		<td colspan="4">
-		<?php 
-		echo $this->Form->submit(__('View Result Entry Assignmet'), array( 'div' => false,'class'=>'tiny radius button bg-blue')); 
-		?>
+					<div style="margin-top: -30px;"><hr></div>
 
-		</td>
-	</tr>
-</table>
-<?php echo $this->Form->end(); ?>
-<?php
-if(isset($this->request->data)) {
-	if(count($makeup_exams) > 0) {
-	?>
-	<table>
-		<tr>
-			<th style="width:5%"></th>
-			<th style="width:17%">Student Name</th>
-			<th style="width:10%">Student ID</th>
-			<th style="width:32%">Exam Taken for</th>
-			<th style="width:13%">Grade</th>
-			<th style="width:8%">Action</th>
-		</tr>
-	<?php
-		$count = 1;
-		foreach($makeup_exams as $key => $makeup_exam) {
-		
-		       if(!isset($makeup_exam['student_id']) 
-		       && empty($makeup_exam['student_id'])){
-		       	continue;
-		       }
-			?>
-			<tr>
-				<td onclick="toggleView(this)" id="<?php echo $count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$count)); ?></td>
-				<td><?php echo $makeup_exam['student_name']; ?></td>
-				<td><?php echo $makeup_exam['student_id']; ?></td>
-				
-				<td><?php echo $makeup_exam['exam_for']; ?></td>
-				<td>
-				<?php 
-				if(!isset($makeup_exam['ExamGrade']['id'])){
-				echo '<span class="on-process">Not Submited</span>';
-				} else if($makeup_exam['ExamGrade']['department_approval']==1 && $makeup_exam['ExamGrade']['registrar_approval']==1){
-				
-				echo '<span class="accepted">'.$makeup_exam['ExamGrade']['grade'].'</span>';
-				} else if(is_null($makeup_exam['ExamGrade']['department_approval']) && is_null($makeup_exam['ExamGrade']['registrar_approval']) ){
-					echo '<span class="on-process">'.$makeup_exam['ExamGrade']['grade'].'</span>';
-				} else if($makeup_exam['ExamGrade']['department_approval']==1 && is_null($makeup_exam['ExamGrade']['registrar_approval'])){
-				echo '<span class="on-process">'.$makeup_exam['ExamGrade']['grade'].'</span>';
-				} 
-							 
-			?>
-							 
-				
-				</td>
-			
-				<td>
-				<?php
-					if(empty($makeup_exam['ExamGrade']))
-						
-						echo $this->Form->postLink(__('Delete'), array('action' => 'deleteAssignment', $makeup_exam['id']), array('confirm' => __('Are you sure you want to delete %s \'s  grade entry assignment?', $makeup_exam['student_name'])));
-					else
-						echo '---';
-				?>
-				</td>
-			</tr>
-			<tr id="c<?php echo $count; ?>" style="display:none">
-				<td>&nbsp;</td>
-				<td colspan="6">
-					<table>
-						<tr>
-							<td style="width:20%; font-weight:bold">Section Where Exam Taken:</td>
-							<td style="width:80%"><?php
-							echo ((isset($makeup_exam['section_exam_taken']) && !empty($makeup_exam['section_exam_taken']))? $makeup_exam['section_exam_taken'] : '---'); ?></td>
-						</tr>
-						<tr>
-							<td style="font-weight:bold">Taken Exam:</td>
-							<td><?php echo ((isset($makeup_exam['taken_exam']) && !empty($makeup_exam['taken_exam']))? $makeup_exam['taken_exam'] : '---'); ?></td>
-						</tr>
-						<tr>
-							<td style="font-weight:bold">Date the Student Assigned:</td>
-							<td><?php echo (isset($makeup_exam['created']) ? $this->Format->humanize_date($makeup_exam['created']) : '---'); ?></td>
-						</tr>
-						<tr>
-							<td style="font-weight:bold">Date Grade Submitted:</td>
-							<td><?php echo (isset($makeup_exam['ExamGrade']['created']) ? $this->Format->humanize_date($makeup_exam['ExamGrade']['created']) : '---'); ?></td>
-						</tr>
-						<tr>
-							<td style="font-weight:bold">Grade Status:</td>
-							<td <?php if($makeup_exam['ExamGrade']['department_approval']==1 && $makeup_exam['ExamGrade']['registrar_approval']==1){
-							 echo 'class="accepted"';} else if(is_null($makeup_exam['ExamGrade']['department_approval'])){
-							 echo 'class="on-process"';
-							 }  ?>><?php 
-			if($makeup_exam['ExamGrade']['department_approval']==1 && $makeup_exam['ExamGrade']['registrar_approval']==1){
-			  echo 'Accepted';
-			} else if(is_null($makeup_exam['ExamGrade']['department_approval'])){
-			   echo 'On Process';
-			} 
-							  ?>
-							
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-			<?php
-		$count++;
-		}
-	?>
-	</table>
-	<?php
-	}
-	else {
-		echo '<p class="fs14">There is no result entry assignment for the selected criteria.</p>';
-	}
-}
-?>
-</div>            
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row --->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+					<fieldset style="padding-bottom: 0px; padding-top: 15px;">
+						<!-- <legend>&nbsp;&nbsp; Search Filters &nbsp;&nbsp;</legend> -->
+						<div class="row">
+							<div class="large-3 columns">
+								<?= $this->Form->input('acadamic_year', array('label' => 'Acadamic Year: ', 'id' => 'AcadamicYear', 'style' => 'width: 90%;', 'class' => 'fs14', 'type' => 'select', 'options' => $acyear_array_data, 'required', 'default' => $defaultacademicyear)); ?>
+							</div>
+							<div class="large-3 columns">
+								<?= $this->Form->input('semester', array('label' => 'Semester: ','id' => 'Semester', 'class' => 'fs14', 'type' => 'select', 'style' => 'width: 90%;', 'required', 'options' => $semesters)); ?>
+							</div>
+							<div class="large-3 columns">
+								<?= $this->Form->input('program_id', array('label' => 'Program: ', 'id' => 'Program', 'class' => 'fs14', 'style' => 'width: 90%;', 'type' => 'select',  'required', 'options' => $programsss)); ?>
+							</div>
+							<div class="large-3 columns">
+								<?= $this->Form->input('program_type_id', array('label' => 'Program Type: ', 'id' => 'ProgramType', 'class' => 'fs14', 'style' => 'width: 90%;', 'type' => 'select',  'required', 'options' => $program_typesss)); ?>
+							</div>
+						</div>
+						<div class="row">
+							<div class="large-6 columns">
+							<?= $this->Form->input('department_id', array('label' => 'Department: ','id' => 'Department', 'class' => 'fs14', 'style' => 'width: 90%;', 'type' => 'select',  'required', 'options' => $departments)); ?>
+							</div>
+							<div class="large-6 columns">
+								&nbsp;
+							</div>
+						</div>
+						<hr>
+						<?= $this->Form->submit(__('List Result Entry Assignmets'), array('div' => false, 'id' =>'listResultEntryAssignmets', 'class' => 'tiny radius button bg-blue')); ?>
+						<?= $this->Form->end(); ?>
+					</fieldset>
+
+					<hr>
+
+					<?php
+					if (isset($this->request->data)) {
+						if (count($makeup_exams) > 0) { ?>
+							<div style="overflow-x:auto;">
+								<table cellpadding="0" cellspacing="0" class="fs14 table">
+									<thead>
+										<tr>
+											<th style="width:3%" class="center"></th>
+											<th style="width:3%" class="center">#</th>
+											<th style="width:23%" class="vcenter">Student Name</th>
+											<th style="width:12%" class="center">Student ID</th>
+											<th style="width:39%" class="center">Exam Taken for</th>
+											<th style="width:13%" class="center">Grade</th>
+											<th style="width:8%" class="center">&nbsp;</th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php
+										$count = 1;
+										foreach ($makeup_exams as $key => $makeup_exam) {
+
+											if (!isset($makeup_exam['student_id']) && empty($makeup_exam['student_id'])) {
+												continue;
+											} ?>
+											<tr>
+												<td class="center" onclick="toggleView(this)" id="<?= $count; ?>"><?= $this->Html->image('plus2.gif', array('id' => 'i' . $count)); ?></td>
+												<td class="center"><?= $count; ?></td>
+												<td class="vcenter"><?= $makeup_exam['student_name']; ?></td>
+												<td class="center"><?= $makeup_exam['student_id']; ?></td>
+												<td class="center"><?= $makeup_exam['exam_for']; ?></td>
+												<td class="center">
+													<?php
+													if (!isset($makeup_exam['ExamGrade']['id'])) {
+														echo '<span class="on-process">Not Submited</span>';
+													} else if ($makeup_exam['ExamGrade']['department_approval'] == 1 && $makeup_exam['ExamGrade']['registrar_approval'] == 1) {
+														echo '<span class="accepted">' . $makeup_exam['ExamGrade']['grade'] . '</span>';
+													} else if (!empty($makeup_exam['ExamGrade']) && (is_null($makeup_exam['ExamGrade']['department_approval']) || is_null($makeup_exam['ExamGrade']['registrar_approval']))) {
+														if (is_null($makeup_exam['ExamGrade']['department_approval'])) {
+															echo $makeup_exam['ExamGrade']['grade'] . '<br><span class="on-process">Waiting for Department Approval</span>';
+														} else {
+															echo $makeup_exam['ExamGrade']['grade'] . '<br><span class="on-process">Waiting for Registrar Approval</span>';
+														}
+													} ?>
+												</td>
+												<td class="center">
+													<?= (empty($makeup_exam['ExamGrade'])) ? $this->Form->postLink(__('Delete'), array('action' => 'deleteAssignment', $makeup_exam['id']), array('confirm' => __('Are you sure you want to delete %s \'s  grade entry assignment for the course %s ?', $makeup_exam['student_name'], $makeup_exam['exam_for']))) : '---'; ?>
+												</td>
+											</tr>
+											<tr id="c<?= $count; ?>" style="display:none">
+												<td style="background-color: white;">&nbsp;</td>
+												<td style="background-color: white;">&nbsp;</td>
+												<td colspan="6" style="background-color: white;">
+													<table cellpadding="0" cellspacing="0" class="fs14 table">
+														<tr>
+															<td style="width:25%; font-weight:bold; background-color: white;" class="vcenter">Section Where Exam Taken:</td>
+															<td style="width:75%; background-color: white;" class="vcenter"><?= ((isset($makeup_exam['section_exam_taken']) && !empty($makeup_exam['section_exam_taken'])) ? $makeup_exam['section_exam_taken'] : '---'); ?></td>
+														</tr>
+														<tr>
+															<td style="font-weight:bold; background-color: white;" class="vcenter">Taken Exam:</td>
+															<td style="background-color: white;" class="vcenter"><?= ((isset($makeup_exam['taken_exam']) && !empty($makeup_exam['taken_exam'])) ? $makeup_exam['taken_exam'] : '---'); ?></td>
+														</tr>
+														<tr>
+															<td style="font-weight:bold; background-color: white;" class="vcenter">Date the Student Assigned:</td>
+															<td style="background-color: white;" class="vcenter"><?= (isset($makeup_exam['created']) ? $this->Time->format("M j, Y h:i:s A", $makeup_exam['created'], NULL, NULL) : '---'); ?></td>
+														</tr>
+
+														<?php
+														if (!empty($makeup_exam['assigned_instructor'])) { ?>
+															<tr>
+																<td style="font-weight:bold; background-color: white;" class="vcenter">Assigned Instructor:</td>
+																<td style="background-color: white;" class="vcenter"><?= $makeup_exam['assigned_instructor']; ?></td>
+															</tr>
+															<tr>
+																<td style="font-weight:bold; background-color: white;" class="vcenter">Assigned Instructor Contact:</td>
+																<td style="background-color: white;" class="vcenter"><?= $makeup_exam['assigned_instructor_contact']; ?></td>
+															</tr>
+															<?php
+														} ?>
+														<tr>
+															<td style="font-weight:bold; background-color: white;" class="vcenter">Exam Result(/100): </td>
+															<td style="background-color: white;" class="vcenter"><?= (!empty($makeup_exam['result']) ?  $makeup_exam['result'] : '---'); ?></td>
+														</tr>
+														<tr>
+															<td style="font-weight:bold; background-color: white;" class="vcenter">Date Grade Submitted:</td>
+															<td style="background-color: white;" class="vcenter"><?= (isset($makeup_exam['ExamGrade']['created']) ? $this->Time->format("M j, Y h:i:s A", $makeup_exam['ExamGrade']['created'], NULL, NULL) : '---'); ?></td>
+														</tr>
+														<tr>
+															<td style="font-weight:bold; background-color: white;" class="vcenter">Grade Submission Status:</td>
+															<td style="background-color: white;" class="vcenter">
+																<?php
+
+																if (!empty($makeup_exam['ExamGrade']['grade'])) {
+																	echo '<b>'. $makeup_exam['ExamGrade']['grade'] . '</b> &nbsp;  &nbsp;';
+																}
+
+																if (!empty($makeup_exam['ExamGrade']) && $makeup_exam['ExamGrade']['department_approval'] == 1 && $makeup_exam['ExamGrade']['registrar_approval'] == 1) {
+																	echo ' - <span class="accepted">Accepted</span>';
+																} else if (!empty($makeup_exam['ExamGrade']) && (is_null($makeup_exam['ExamGrade']['department_approval']) || is_null($makeup_exam['ExamGrade']['registrar_approval']))) {
+																	if (is_null($makeup_exam['ExamGrade']['department_approval'])) {
+																		echo ' - <span class="on-process">Waiting for Department Approval</span>';
+																	} else {
+																		echo $makeup_exam['ExamGrade']['grade'] . ' - <span class="on-process">Waiting for Registrar Approval</span>';
+																	}
+																} else {
+																	echo '<span class="on=process">Waiting for Grade Submission</span>';
+																} ?>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+											<?php
+											$count++;
+										} ?>
+									</tbody>
+								</table>
+							</div>
+							<br>
+							<?php
+						}
+					} ?>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

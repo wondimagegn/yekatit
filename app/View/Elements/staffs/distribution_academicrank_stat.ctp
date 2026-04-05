@@ -1,116 +1,51 @@
-<?php ?>
-<style>
-.bordering {
-border-left:1px #cccccc solid;
-border-right:1px #cccccc solid;
-}
-.bordering2 {
-border-left:1px #000000 solid;
-border-right:1px #000000 solid;
-border-top:1px #000000 solid;
-border-bottom:1px #000000 solid;
-}
-.courses_table tr td, .courses_table tr th {
-padding:1px
-}
-</style>
-
-<?php 
-
-if (isset($distributionStatistics['distributionStatsTeachersByAcademicRank']) && !empty($distributionStatistics['distributionStatsTeachersByAcademicRank'])) {
-  ?>
- <h5><?php echo $headerLabel;?></h5>
-  <?php 
-
-  echo $this->element('staffs/graph');
-  ?>
- <table style="width:100%">
-                   
-                <tr>
-                    <td class="bordering2"> S.N<u>o</u> </td> 
-                    <td class="bordering2"> Department </td> 
-                   
-                    <td class="bordering2"> Gender </td> 
-                    <td class="bordering2" colspan="<?php echo count($positions);?>">Position</td> 
-                </tr>     
-                <tr>
-                      <td class="bordering2"> &nbsp;</td> 
-                      <td class="bordering2"> &nbsp; </td> 
-                      <td class="bordering2"> &nbsp; </td> 
-                     
-                      <?php 
-                     
-                      foreach ($positions as $sk => $svalue) {
-                       
-                        ?>
-                   <td class="bordering2"> 
-                   <?php echo $svalue; ?> </td> 
-                        <?php 
-                       
-                      }
-
-                  ?>
-                </tr>  
-<?php  
-$count=0;  
-foreach($distributionStatistics['distributionStatsTeachersByAcademicRank'] as $departmentNamee=>$genderWithRank) {
- ?>
-     <tr>
-        <td class="bordering2" > 
-          <?php echo ++$count;?>
-        </td>
-         <td class="bordering2" > 
-          <?php echo $departmentNamee;?>
-        </td>
-        <td class="bordering2">
-        Male
-        </td>
-         
-        <?php 
-
-        foreach ($genderWithRank['male'] as $sk => $svalue) {
-
-        ?>
-        <td class="bordering2"> 
-        <?php echo $svalue; ?> </td> 
-        <?php 
-
-        }
-
-        ?>
-    </tr>
-
-    <tr>
-        <td class="bordering2" > 
-         &nbsp;
-        </td>
-         <td class="bordering2" > 
-         &nbsp;
-        </td>
-        <td class="bordering2">
-        Female
-        </td>
-         
-        <?php 
-
-        foreach ($genderWithRank['female'] as $sk => $svalue) {
-
-        ?>
-        <td class="bordering2"> 
-        <?php echo $svalue; ?> </td> 
-        <?php 
-
-        }
-
-        ?>
-    </tr>
-
- <?php 
-
- }
- ?>
-
- </table>
- <?php 
-}   
-?>
+<?php
+if (isset($distributionStatistics['distributionStatsTeachersByAcademicRank']) && !empty($distributionStatistics['distributionStatsTeachersByAcademicRank']) && isset($positions) && !empty($positions)) { ?>
+	<?= $this->element('staffs/graph'); ?>
+	<hr>
+	<div style="overflow-x:auto;">
+		<table cellpadding="0" cellspacing="0" class="table">
+			<thead>
+				<tr>
+					<th rowspan="2"  class="center" style="width: 3%; text-align: center; vertical-align: bottom;">#</th>
+					<th rowspan="2" class="vcenter" style="width: 30%; text-align: left; vertical-align: bottom;">Department</th>
+					<th rowspan="2" class="vcenter" style="width: 7%; text-align: left; vertical-align: bottom; border-right:2px #000000 solid;">Sex</th>
+					<th class="center" colspan="<?= count($positions); ?>" style="border-right:2px #000000 solid;">Position</th>
+				</tr>
+				<tr>
+					<?php
+					foreach ($positions as $sk => $svalue) { ?>
+						<th class="center" style="border-right:2px #000000 solid;"><?= $svalue; ?></th>
+						<?php
+					}  ?>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				$count = 0;
+				foreach ($distributionStatistics['distributionStatsTeachersByAcademicRank'] as $departmentNamee => $genderWithRank) { ?>
+					<tr>
+						<td rowspan=2 class="center" style="text-align: center; vertical-align: top;"><?= ++$count; ?></td>
+						<td rowspan=2 class="vcenter" style="text-align: left; vertical-align: top;"><?= $departmentNamee; ?></td>
+						<td class="vcenter" style="border-right:2px #000000 solid;">Male</td>
+						<?php
+						foreach ($genderWithRank['male'] as $sk => $svalue) { ?>
+							<td class="center" style="border-right:2px #000000 solid;"><?= (!empty($svalue) ? $svalue : ''); ?></td>
+							<?php
+						} ?>
+					</tr>
+					<tr>
+						<td class="vcenter" style="border-right:2px #000000 solid;">Female</td>
+						<?php
+						foreach ($genderWithRank['female'] as $sk => $svalue) { ?>
+							<td class="center" style="border-right:2px #000000 solid;"><?= (!empty($svalue) ? $svalue : ''); ?></td>
+							<?php
+						} ?>
+					</tr>
+					<?php
+				} ?>
+			</tbody>
+		</table>
+	</div>
+	<br>
+	<?php
+} ?>

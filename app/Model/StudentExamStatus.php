@@ -4594,13 +4594,13 @@ class StudentExamStatus extends AppModel
 		if (isset($department_id) && !empty($department_id)) {
 			$college_ids = explode('~', $department_id);
 			if (count($college_ids) > 1) {
-				$departments = $this->Student->Department->find('all', array('conditions' => array('Department.college_id' => $college_ids[1]), 'contain' => array('College', 'YearLevel')));
+				$departments = $this->Student->Department->find('all', array('conditions' => array('Department.college_id' => $college_ids[1], 'Department.active' => 1), 'contain' => array('College', 'YearLevel')));
 				$college_id[$college_ids[1]] = $college_ids[1];
 			} else {
-				$departments = $this->Student->Department->find('all', array('conditions' => array('Department.id' => $department_id), 'contain' => array('College', 'YearLevel')));
+				$departments = $this->Student->Department->find('all', array('conditions' => array('Department.id' => $department_id, 'Department.active' => 1), 'contain' => array('College', 'YearLevel')));
 			}
 		} else {
-			$departments = $this->Student->Department->find('all', array( 'contain' => array('College', 'YearLevel')));
+			$departments = $this->Student->Department->find('all', array('conditions' => array('Department.active' => 1), 'contain' => array('College', 'YearLevel')));
 		}
 
 		if (!empty($acadamic_year)) {
@@ -6645,14 +6645,13 @@ class StudentExamStatus extends AppModel
 		$options['contain'] = array(
 			'Student' => array(
 				'Department' => array('id', 'name'), 
-				'College' => array('id', 'name', 'shortname'), 
+				'College' => array('id', 'name', 'shortname', 'stream'), 
 				'Program' => array('id', 'name'),
 				'ProgramType' => array('id', 'name'),
 				'Curriculum'=> array('id', 'name', 'type_credit', 'english_degree_nomenclature', 'minimum_credit_points', 'specialization_english_degree_nomenclature')
 			),
 			'AcademicStatus' => array('id', 'name')
 		);
-		debug($by);
 
 		$options['conditions']['StudentExamStatus.student_id'] = $topLists;
 		$options['order'] = array("StudentExamStatus.$by DESC");
@@ -8835,7 +8834,7 @@ class StudentExamStatus extends AppModel
 		return $taken;
 	}
 
-	public function getStudentListForOffice($acadamic_year = null, $semester = null, $program_id = 0, $program_type_id = 0, $department_id = null, $sex = 'all', $year_level_id = null, $region_id = null, $freshman = 0, $exclude_graduated = '') 
+	public function getStudentListForOffice($acadamic_year = null, $semester = null, $program_id = 0, $program_type_id = 0, $department_id = null, $sex = 'all', $year_level_id = null, $region_id = null, $freshman = 0, $exclude_graduated = '', $exclude_students_from_otp_table = 0) 
 	{
 		if (empty($acadamic_year) && empty($semester)) {
 			return array();
@@ -9003,6 +9002,13 @@ class StudentExamStatus extends AppModel
 									));
 
 									if ($checkRegistered) {
+
+										if ($exclude_students_from_otp_table) {
+											// if the student have existing otp record with Office365 service skip including in the list
+											if ($this->__check_otp_record_exists($dr['s']['id'], 'Office365')) {
+												continue;
+											}
+										}
 
 										$secName = ClassRegistry::init('Section')->find('first', array(
 											'conditions' => array('Section.id' => $secstulist[$dr['s']['id']]),
@@ -10798,5 +10804,29 @@ class StudentExamStatus extends AppModel
 
 		//return "";
 		return "Invalid mobile phone number (". $orginal_number . ")";
+	}
+
+	private function __check_otp_record_exists($student_id = null, $service = 'Office365') 
+	{
+
+		if (empty($student_id)) {
+			return false;
+		}
+
+		$isRecordExists = $this->Student->Otp->find('count', array(
+			'conditions' => array(
+				'Otp.student_id' => $student_id,
+				'Otp.service' => $service,
+				'Otp.active' => 1
+			),
+			'contain' => array(),
+		));
+
+		if (!empty($isRecordExists)) {
+			return true;
+		}
+
+		return false;
+		
 	}
 }

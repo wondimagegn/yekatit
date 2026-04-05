@@ -1,411 +1,423 @@
-<script>
-function toggleViewFullId(id) {
-    if ($('#' + id).css("display") ==
-        'none') {
-        $('#' + id + 'Img').attr("src",
-            '/img/minus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Hide Field');
-    } else {
-        $('#' + id + 'Img').attr("src",
-            '/img/plus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Adjust Fields');
-    }
-    $('#' + id).toggle("slow");
-}
-</script>
-<?php
-//echo $this->Form->Create('Student',array('action'=>'search'));
-
-$this->request->data['Display'] = $this->Session->read('display_field_student');
-
-echo $this->Form->Create('Student', array('action' => 'search'));
-?>
 <div class="box">
-    <div
-        class="box-header bg-transparent">
-        <h2 class="box-title">
-            <?php echo __('View Students'); ?>
-        </h2>
-    </div>
-    <div class="box-body">
-        <div class="row">
-            <div
-                class="large-12 columns">
-                <div class="row">
-                    <div
-                        class="large-6 columns">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"><?= __('List Admitted Students'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
 
-                        <?php
-						if (ROLE_STUDENT != $role_id) {
-							echo $this->Form->input('Search.academicyear', array('empty' => ' ', 'options' => $acYearMinuSeparated, 'label' => 'Admission Year'));
+				<?php
+				if ($this->Session->check('display_field_student')) {
+					$this->request->data['Display'] = $this->Session->read('display_field_student');
+				} ?>
+				
+				<?= $this->Form->Create('Student', array('action' => 'search')); ?>
 
+				<?php
+				if ($role_id != ROLE_STUDENT) { ?>
+					<div style="margin-top: -30px;">
+						<hr>
 
-							if (isset($colleges) && !empty($colleges)) {
-								echo $this->Form->input('Search.college_id', array('empty' => ' '));
-							}
+						<?php
+						if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) { ?>
+							<div style="margin-top: -5px;">
+								<blockquote>
+									<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+									<span style="text-align:justify;" class="fs14 text-gray">The student list you will get here depends on your <b style="text-decoration: underline;"><i>assigned College or Department, assigned Program and Program Types, and with your search conditions</i></b>. You can contact the registrar to adjust permissions assigned to you if you miss your students here.</span>
+								</blockquote>
+							</div>
+							<?php
+						} ?>
 
-							if (isset($departments) && !empty($departments)) {
-								echo $this->Form->input('Search.department_id', array(
-									'empty' => ' ',
-									'style' => 'width:250px'
-								));
-							}
+						<hr>
 
-							echo $this->Form->input('Search.name', array('label' => 'Name'));
-							echo $this->Form->input('Search.limit', array('label' => 'Limit'));
-						}
+						<div onclick="toggleViewFullId('ListPublishedCourse')">
+							<?php
+							if (!empty($turn_off_search)) {
+								echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span>
+								<?php
+							} else {
+								echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span>
+								<?php
+							} ?>
+						</div>
 
-						?>
+						<div id="ListPublishedCourse" style="display:<?= (!empty($turn_off_search) ? 'none' : 'display'); ?>">
+							<fieldset style="padding-bottom: 0px;padding-top: 15px;">
+								<div class="row">
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.academicyear', array('label' => 'Admission Year: ', 'style' => 'width:90%;', 'empty' => 'All Admission Year', 'options' => $acyear_array_data, 'default' => (isset($selected_academic_year) ? $selected_academic_year : ''))); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.program_id', array('label' => 'Program: ', 'style' => 'width:90%;', 'empty' => 'All Programs', 'options' => $programs)); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.program_type_id', array('label' => 'Program Type: ', 'style' => 'width:90%;', 'empty' => 'All Program Types', 'options' => $programTypes)); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.gender', array('label' => 'Sex', 'style' => 'width:90%;', 'type' => 'select', 'empty' => 'All', 'options' => array('female' => 'Female', 'male' => 'Male'))); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-6 columns">
+										<?php
+										if (isset($colleges) && !empty($colleges)) {
+											if (!empty($departments)) {
+												echo $this->Form->input('Search.college_id', array('label' => 'College: ', 'style' => 'width:90%', 'empty' => '[ Select College ]', 'onchange' => 'getDepartment(1)', 'id' => 'college_id'));
+											} else {
+												echo $this->Form->input('Search.college_id', array('label' => 'College: ', 'style' => 'width:95%;', 'empty' => 'All Assigned Colleges'));
+											}
+										} else if (isset($departments) && !empty($departments)) {
+											echo $this->Form->input('Search.department_id', array('label' => 'Department: ', 'style' => 'width:90%;', 'empty' => 'All Assigned Departments'));
+										} ?>
+									</div>
+									<div class="large-2 columns">
+										<?= $this->Form->input('Search.status', array('label' => 'Status: ', 'empty' => 'All',  'options' => array('0' => 'Not Graduated', '1' => 'Graduated'), 'default' => 0, 'type' => 'select', 'style' => 'width:90%;')); ?>
+									</div>
+									<div class="large-2 columns">
+										<?= $this->Form->input('Search.name', array('label' => 'Student Name or ID:', 'placeholder' => 'Name or ID ..', 'default' => $name, 'style' => 'width:90%;')); ?>
+									</div>
+									<div class="large-2 columns">
+										<?= $this->Form->input('Search.limit', array('id' => 'limit ', 'value' => (isset($this->data['Search']['limit']) && !empty($this->data['Search']['limit']) ? $this->data['Search']['limit'] : $limit), 'type' => 'number', 'min' => '0',  'max' => '5000', 'step' => '100',  'label' => 'Limit: ', 'style' => 'width:90%;')); ?>
 
-                    </div>
-                    <div
-                        class="large-6 columns">
-                        <?php
-						if (ROLE_STUDENT != $role_id) {
-							echo $this->Form->input('Search.program_id');
-							echo $this->Form->input('Search.program_type_id');
+										<?= (isset($this->data['Search']['page']) ? $this->Form->hidden('page', array('value' => $this->data['Search']['page'])) : ''); ?>
+										<?= (isset($this->data['Search']['sort']) ? $this->Form->hidden('sort', array('value' => $this->data['Search']['sort'])) : ''); ?>
+										<?= (isset($this->data['Search']['direction']) ? $this->Form->hidden('direction', array('value' => $this->data['Search']['direction'])) : ''); ?>
+									</div>
+								</div>
 
-							// echo $this->Form->input('Search.gender');
+								<?php
+								if (isset($departments) && !empty($departments) && $this->Session->read('Auth.User')['role_id'] != ROLE_STUDENT && $this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR && $this->Session->read('Auth.User')['role_id'] != ROLE_ALUMNI && $this->Session->read('Auth.User')['role_id'] != ROLE_COLLEGE && $this->Session->read('Auth.User')['role_id'] != ROLE_DEPARTMENT) { ?>
+									<div class="row">
+										<div class="large-6 columns">
+											<?= $this->Form->input('Search.department_id', array('id' => 'department_id_1', 'label' => 'Department: ', 'style' => 'width:90%;', 'empty' => '[ Select Department ]')); ?>
+										</div>
+										<div class="large-6 columns">
+										</div>
+									</div>
+									<?php
+								} ?>
+							
+								<hr>
+								<div class="large-12 columns">
+									<div onclick="toggleViewFullId('ListStudents')">
+										<?php
+										if (!empty($students)) {
+											echo $this->Html->image('plus2.gif', array('id' => 'ListStudentsImg')); ?>
+											<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListStudentsTxt"> Adjust Fields</span>
+											<?php
+										} else {
+											echo $this->Html->image('minus2.gif', array('id' => 'ListStudentsImg')); ?>
+											<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListStudentsTxt"> Hide Fields</span>
+											<?php
+										} ?>
+									</div>
+								</div>
+								<div class="large-12 columns" id="ListStudents" style="display:<?= (!empty($students) ? 'none' : 'display'); ?>">
+									<div class="row">
+										<div class="large-12 columns">
+											&nbsp;
+										</div>
+									</div>
+									<div class="row">
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.full_name', array('label' => 'Full Name', 'type' => 'checkbox', 'checked' => true)); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.full_am_name', array('label' => 'Amharic Name', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.gender', array('label' => 'Sex', 'type' => 'checkbox', 'checked' => true)); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.studentnumber', array('label' => 'Student ID', 'type' => 'checkbox', 'checked' => true)); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.program_id', array('label' => 'Program', 'type' => 'checkbox', 'checked' => true)); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.program_type_id', array('label' => 'Program Type', 'type' => 'checkbox', 'checked' => true)); ?>
+										</div>
+									</div>
+									<div class="row">
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.college_id', array('label' => 'College', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.department_id', array('label' => 'Department', 'type' => 'checkbox', 'checked' => (isset($this->data['Display']['department_id']) && !empty($this->data['Display']['department_id']) ? true : false))); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.academicyear', array('label' => 'Admission Year', 'type' => 'checkbox', 'checked' => (isset($this->data['Display']['academicyear']) && !empty($this->data['Display']['academicyear']) ? true : false))); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.admissionyear', array('label' => 'Date Admitted', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.curriculum_id', array('label' => 'Specilization', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.birthdate', array('label' => 'Birthdate', 'type' => 'checkbox')); ?>
+										</div>
+									</div>
+									<div class="row">
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.region_id', array('label' => 'Region', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.zone_id', array('label' => 'Zone', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.woreda_id', array('label' => 'Woreda', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.city_id', array('label' => 'City', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.email', array('label' => 'Email', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.phone_mobile', array('label' => 'Phone', 'type' => 'checkbox')); ?>
+										</div>
+									</div>
+									<div class="row">
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.is_disable', array('label' => 'Disabled', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.student_national_id', array('label' => 'National ID', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.fayda_identification_number', array('label' => 'Fayda FIN', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.fayda_alias_number', array('label' => 'Fayda FAN', 'type' => 'checkbox')); ?>
+										</div>
+										<div class="large-2 columns">
+											<?= $this->Form->input('Display.graduated', array('label' => 'Graduated', 'type' => 'checkbox')); ?>
+										</div>
+									</div>
+									<div class="row">
+										<div class="large-12 columns">
+											&nbsp;
+										</div>
+									</div>
+								</div>
+								<br>
+								<hr>
+								<?= $this->Form->Submit('Search', array('class' => 'tiny radius button bg-blue', 'div' => false)); ?>
+							</fieldset>
+						</div>
+						<hr>
+					</div>
+					<?php
+				} ?>
+			</div>
+		</div>
+	</div>
 
-							echo $this->Form->input('Search.gender', array(
-								'label' => 'Gender', 'type' => 'select', 'empty' => 'All',
-								'options' => array('female' => 'Female', 'male' => 'Male')
-							));
-						}
-						?>
-                    </div>
-                    <?php
-					if (ROLE_STUDENT != $role_id) { ?>
-                    <div
-                        class="large-12 columns">
-
-                        <div
-                            onclick="toggleViewFullId('ListStudents')"><?php
-																			if (!empty($students)) {
-																				echo $this->Html->image('plus2.gif', array('id' => 'ListStudentsImg'));
-																			?><span style="font-size:10px; vertical-align:top; font-weight:bold"
-                                id="ListStudentsTxt">Adjust
-                                Fields</span><?php
-																													} else {
-																														echo $this->Html->image('minus2.gif', array('id' => 'ListStudentsImg'));
-																														?><span
-                                style="font-size:10px; vertical-align:top; font-weight:bold"
-                                id="ListStudentsTxt">Hide
-                                Fields</span><?php
-																													}
-																													?></div>
-                    </div>
-
-                    <div class="large-12 columns"
-                        id="ListStudents"
-                        style="display:<?php echo (!empty($students) ? 'none' : 'display'); ?>">
-                        <div
-                            class="row">
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.full_name', array(
-										'label' => 'Fullname', 'type' => 'checkbox',
-										'checked' => true
-									)); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.full_am_name', array('label' => 'Fullname Amharic', 'type' => 'checkbox')); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.gender', array('label' => 'Gender', 'type' => 'checkbox')); ?>
-                            </div>
-
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.studentnumber', array(
-										'label' => 'Studentnumber', 'type' => 'checkbox',
-										'checked' => true
-									)); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.admissionyear', array('label' => 'Admission Year', 'type' => 'checkbox')); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.program_id
-', array('label' => 'Study Level', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.program_type_id
-', array('label' => 'Admission Type', 'type' => 'checkbox')); ?>
-                            </div>
-                        </div>
-                        <div
-                            class="row">
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.college_id', array('label' => 'Department', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.curriculum_id', array('label' => 'Specilization', 'type' => 'checkbox')); ?>
-                            </div>
-
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.birthdate', array('label' => 'Birthdate', 'type' => 'checkbox')); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.is_disable', array('label' => 'Disabled', 'type' => 'checkbox')); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.city_id
-', array('label' => 'City', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.region_id
-', array('label' => 'Region', 'type' => 'checkbox')); ?>
-                            </div>
-                        </div>
-                        <div
-                            class="row">
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.zone_subcity', array('label' => 'Zone/Subcity', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.woreda', array('label' => 'Woreda', 'type' => 'checkbox')); ?>
-                            </div>
-
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.email', array('label' => 'Email', 'type' => 'checkbox')); ?>
-                            </div>
-
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.phone_mobile', array('label' => 'Phone', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.gpa', array('label' => 'Entrance GPA', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.university_attended', array('label' => 'University Attended', 'type' => 'checkbox')); ?>
-                            </div>
-                            <div
-                                class="large-2 columns">
-                                <?php echo $this->Form->input('Display.attended_stream', array('label' => 'Stream Attended', 'type' => 'checkbox')); ?>
-                            </div>
-
-
-                        </div>
-
-                    </div>
-                    <?php } ?>
-
-                    <div
-                        class="large-12 columns">
-                        <?php
-						if (ROLE_STUDENT != $role_id) {
-							echo $this->Form->Submit('Search', array('class' => 'tiny radius button bg-blue', 'div' => false));
-						}
-						?>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="box-body">
-        <div class="dataTables_wrapper">
-            <?php
-
+	<div class="box-body">
+		<div class="dataTables_wrapper">
+			<?php
 			if (!empty($students)) {
 
-			?>
-            <?php
-				echo $this->Html->link(
-					$this->Html->image(
-						"/img/pdf_icon.gif",
-						array("alt" => "Print To Pdf")
-					),
-					array('action' => 'print_record'),
-					array('escape' => false)
-				) . "Print";
-				?>
-            <table
-                id="studentTableIndex"
-                class="display responsive"
-                style="width:100%"
-                cellpadding="0"
-                cellspacing="0">
-                <tr>
-                    <?php
-						echo '<th>S.N<u>o</u></th>';
-						if (isset($this->request->data['Display']) && !empty($this->request->data['Display']) && $this->Session->read('display_field_student')) {
+				$studentRole = $role_id == ROLE_STUDENT ? true : false;
+				$registrarRoleOrChiledRole = $role_id == ROLE_REGISTRAR || $role_id == ROLE_ALUMNI || $this->Session->read('Auth.User')['Role']['parent_id'] == ROLE_REGISTRAR ? true : false;
+				$registrarAdmin = $role_id == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1 ? true : false;
+				$alumniRole = $role_id == ROLE_ALUMNI ? true : false;
+				$usePaginatorHeadings = count($students) > 1 && !$studentRole ? true : false; 
+				$allowEditingGraduatedStudentProfile = ALLOW_EDITING_GRADUATED_STUDENTS_FOR_NON_ADMIN_REGISTRAR_ACCOUNTS == 1 && $registrarRoleOrChiledRole || $registrarAdmin || $alumniRole ? true : false; ?>
 
-							foreach ($this->request->data['Display'] as $dk => $dv) {
-								if ($dv == 1) {
-									echo '<th>' . $this->Paginator->sort($dk) . '</th>';
-								}
-							}
-						} else {
-						?>
+				<!-- <hr>
+					<?php //echo $this->Html->link($this->Html->image("/img/pdf_icon.gif", array("alt" => "Print To Pdf")) . ' Export to PDF', array('action' => 'print_record', 'label' => 'Export PDF'), array('escape' => false)); ?>
+				<hr> -->
 
-                    <th><?php echo $this->Paginator->sort('full_name'); ?>
-                    </th>
-
-                    <th><?php echo $this->Paginator->sort('gender'); ?>
-                    </th>
-                    <th><?php echo $this->Paginator->sort('studentnumber'); ?>
-                    </th>
-
-                    <th><?php echo $this->Paginator->sort('admissionyear'); ?>
-                    </th>
-
-                    <th><?php echo $this->Paginator->sort('Program'); ?>
-                    </th>
-                    <th><?php echo $this->Paginator->sort('Program Type'); ?>
-                    </th>
-
-                    <th><?php echo $this->Paginator->sort('Department/School'); ?>
-                    </th>
-                    <th><?php echo $this->Paginator->sort('department_id', 'Field of study'); ?>
-                    </th>
-
-                    <?php } ?>
-                    <th class="actions">
-                        <?php __('Actions'); ?>
-                    </th>
-                </tr>
-                <?php
-					$i = 0;
-					$start = $this->Paginator->counter('%start%');
-					foreach ($students as $student) :
-						$class = null;
-						if ($i++ % 2 == 0) {
-							$class = ' class="altrow"';
-						}
-					?>
-                <tr<?php echo $class; ?>>
-                    <td><?php echo $start++; ?>&nbsp;
-                    </td>
-                    <?php
-							if (isset($this->request->data['Display']) && !empty($this->request->data['Display']) && !empty($this->Session->read('display_field_student'))) {
-								foreach ($this->request->data['Display'] as $dk => $dv) {
-									if ($dv == 1) {
-
-
-										if ($dk == 'program_type_id') {
-											echo '<td>' . $student['ProgramType']['name'] . '</td>';
-										} else if ($dk == 'program_id') {
-											echo '<td>' . $student['Program']['name'] . '</td>';
-										} else if ($dk == 'college_id') {
-											echo '<td>' . $student['College']['name'] . '</td>';
-										} else if ($dk == 'department_id') {
-											echo '<td>' . $student['Department']['name'] . '</td>';
-										} else if ($dk == 'curriculum_id') {
-											echo '<td>' . $student['Curriculum']['english_degree_nomenclature'] . '</td>';
-										} else {
-											echo '<td>' . $student['Student'][$dk] . '</td>';
+				<div style="overflow-x:auto;">
+					<!-- <table id="studentTableIndex" class="display responsive" style="width:100%" cellpadding="0" cellspacing="0"> -->
+					<table id="studentTableIndex" cellpadding="0" cellspacing="0" class="table">
+						<thead>
+							<tr>
+								<?php
+								echo '<td class="center">#</td>';
+								if (isset($this->request->data['Display']) && !empty($this->request->data['Display']) && $this->Session->read('display_field_student')) {
+									foreach ($this->request->data['Display'] as $dk => $dv) {
+										if ($dv == 1) {
+											echo $dk == 'full_name' ? '<td class="vcenter">' : '<td class="center">';
+											if ($dk == 'gender') {
+												echo $this->Paginator->sort($dk, 'Sex') . '</td>';
+											} else if ($dk == 'department_id') {
+												echo $this->Paginator->sort($dk, 'Department') . '</td>';
+											} else if ($dk == 'academicyear') {
+												echo $this->Paginator->sort($dk, 'Admission Year'). '</td>';
+											} else if ($dk == 'studentnumber') {
+												echo $this->Paginator->sort($dk, 'Student ID'). '</td>';
+											} else if ($dk == 'student_national_id') {
+												echo $this->Paginator->sort($dk, 'National ID'). '</td>';
+											} else if ($dk == 'admissionyear') {
+												echo $this->Paginator->sort($dk, 'Date Admitted'). '</td>';
+											} else if ($dk == 'fayda_identification_number') {
+												echo $this->Paginator->sort($dk, 'Fayda FIN'). '</td>';
+											} else if ($dk == 'fayda_alias_number') {
+												echo $this->Paginator->sort($dk, 'Fayda FAN'). '</td>';
+											} else {
+												echo $this->Paginator->sort($dk) . '</td>';
+											}
 										}
 									}
+								} else { ?>
+									<td class="vcenter"><?= ($usePaginatorHeadings ? $this->Paginator->sort('full_name') : 'Full name'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('gender', 'Sex') : 'Sex'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('studentnumber', 'Student ID') : 'Student ID'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('academicyear', 'Admission Year') : 'Admission Year'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('program_id', 'Program') : 'Program'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('program_type_id', 'Program Type') : 'Program Type'); ?></td>
+									<td class="center"><?= ($usePaginatorHeadings ? $this->Paginator->sort('department_id', 'Department') : 'Department'); ?></td>
+									<?php
 								}
-							} else {
-							?>
-                    <td><?php echo $student['Student']['full_name']; ?>&nbsp;
-                    </td>
+								
+								if (!$studentRole) { ?>
+									<td class="center">Actions</td>
+									<?php
+								} ?>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
 
-                    <td><?php echo $student['Student']['gender']; ?>&nbsp;
-                    </td>
-                    <td><?php echo $student['Student']['studentnumber']; ?>&nbsp;
-                    </td>
-                    <td><?php echo $this->Format->short_date($student['Student']['admissionyear']); ?>&nbsp;
-                    </td>
-                    <td><?php echo $student['Program']['name']; ?>&nbsp;
-                    </td>
-                    <td><?php echo $student['ProgramType']['name']; ?>&nbsp;
-                    </td>
-                    <td><?php echo $student['College']['name']; ?>&nbsp;
-                    </td>
+							$start = $this->Paginator->counter('%start%');
 
-                    <td><?php echo $student['Department']['name']; ?>&nbsp;
-                    </td>
+							foreach ($students as $student) { ?>
+								<tr>
+									<td class="center">
+										<?= $start++; ?>
+									</td>
+									<?php
+									if (isset($this->request->data['Display']) && !empty($this->request->data['Display']) && !empty($this->Session->read('display_field_student'))) {
+										foreach ($this->request->data['Display'] as $dk => $dv) {
+											if ($dv == 1) {
+												if ($dk == 'full_name') {
+													echo '<td class="vcenter">' . $student['Student']['full_name'] . '</td>';
+												} else if ($dk == 'program_type_id') {
+													echo '<td class="center">' . $student['ProgramType']['name'] . '</td>';
+												} else if ($dk == 'gender') {
+													echo '<td class="center">' . (strcasecmp(trim($student['Student']['gender']), 'male') == 0 ? 'M' : (strcasecmp(trim($student['Student']['gender']), 'female') == 0 ? 'F' : $student['Student']['gender'])) . '</td>';
+												} else if ($dk == 'program_id') {
+													echo '<td class="center">' . $student['Program']['name'] . '</td>';
+												} else if ($dk == 'college_id') {
+													echo '<td class="center">' . $student['College']['name'] . '</td>';
+												} else if ($dk == 'department_id') {
+													echo '<td class="center">' . (!empty($student['Department']['name']) ? $student['Department']['name'] : ($student['Student']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial Program': 'Pre/Freshman')) . '</td>';
+												} else if ($dk == 'region_id') {
+													echo '<td class="center">' . $student['Region']['name'] . '</td>';
+												} else if ($dk == 'zone_id') {
+													echo '<td class="center">' . $student['Zone']['name'] . '</td>';
+												} else if ($dk == 'woreda_id') {
+													echo '<td class="center">' . $student['Woreda']['name'] . '</td>';
+												} else if ($dk == 'city_id') {
+													echo '<td class="center">' . $student['City']['name'] . '</td>';
+												} else if ($dk == 'specialization_id') {
+													echo '<td class="center">' . $student['Specialization']['name'] . '</td>';
+												} else if ($dk == 'birthdate') {
+													echo '<td class="center">' . (isset($student['Student']['birthdate']) && !empty($student['Student']['birthdate']) ? $this->Time->format("M j, Y", $student['Student']['birthdate'], NULL, NULL) : ''). '</td>';
+												} else if ($dk == 'curriculum_id') {
+													echo '<td class="center">' . $student['Curriculum']['english_degree_nomenclature'] . '</td>';
+												} else if ($dk == 'admissionyear') {
+													echo '<td class="center">' . (isset($student['Student']['admissionyear']) && !empty($student['Student']['admissionyear']) ? $this->Time->format("M j, Y", $student['Student']['admissionyear'], NULL, NULL) : '').  '</td>';
+												} else if ($dk == 'graduated') {
+													echo '<td class="center">' . (isset($student['Student']['graduated']) && !empty($student['Student']['graduated']) ? 'Yes' : 'No').  '</td>';
+												} else {
+													echo '<td class="center">' . $student['Student'][$dk] . '</td>';
+												}
+											}
+										}
+									} else { ?>
+										<td class="vcenter"><?= $student['Student']['full_name']; ?></td>
+										<td class="center"><?= (strcasecmp(trim($student['Student']['gender']), 'male') == 0 ? 'M' : (strcasecmp(trim($student['Student']['gender']), 'female') == 0 ? 'F' : $student['Student']['gender'])); ?></td>
+										<td class="center"><?= $student['Student']['studentnumber']; ?></td>
+										<td class="center"><?= $student['Student']['academicyear']; ?></td>
+										<td class="center"><?= $student['Program']['name']; ?></td>
+										<td class="center"><?= $student['ProgramType']['name']; ?></td>
+										<td class="center"><?= (!empty($student['Department']['name']) ? $student['Department']['name'] : ($student['Student']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : 'Pre/Freshman')); ?></td>
+										<?php
+									}
+									
+									if (!$studentRole) { ?>
+										<td class="center">
+											<?= $this->Html->link('', '#', array('class' => 'jsview fontello-eye', 'title' => 'View', 'data-animation' => "fade", 'data-reveal-id' => 'myModal', 'data-reveal-ajax' => "/students/get_modal_box/" . $student['Student']['id'])); ?> &nbsp;
+											<?= ($registrarRoleOrChiledRole && (($student['Student']['graduated'] == 0 && !$alumniRole) || $registrarAdmin || ($student['Student']['graduated'] == 1 && ($allowEditingGraduatedStudentProfile || $alumniRole))) ? $this->Html->link(__(''), array('action' => 'edit', $student['Student']['id']), array('class' => 'fontello-pencil', 'title' => 'Edit Profile')) : ''); ?>
+										</td>
+										<?php
+									} ?>
+								</tr>
+								<?php
+							} ?>
+						</tbody>
+					</table>
+				</div>
+				<br>
 
-                    <?php } ?>
-
-                    <td class="actions">
-                        <?php
-								if ($role_id != ROLE_STUDENT) {
-									echo $this->Html->link(
-										'View',
-										'#',
-										array(
-											'class' => 'jsview', 'data-animation' => "fade",
-											'data-reveal-id' => 'myModal', 'data-reveal-ajax' => "/students/get_modal_box/" . $student['Student']['id']
-										)
-									);
-								}
-								?>
-                        <?php
-								if (
-									$role_id == ROLE_REGISTRAR || ROLE_REGISTRAR ==
-									$this->Session->read('Auth.User')['Role']['parent_id']
-								) {
-									echo $this->Html->link(__('Edit Profile', true), array('action' => 'edit', $student['Student']['id']));
-								}
-								?>
-
-                    </td>
-                    </tr>
-                    <?php
-
-					endforeach;
-
-						?>
-
-            </table>
-            <p>
-
-                <?php echo $this->Paginator->counter(array('format' => __('Page
-{:page} of {:pages}, showing {:current} records out of {:count}
-total, starting on record {:start}, ending on {:end}'))); ?>
-
-            </p>
-            <div
-                class="pagination-centered">
-                <ul class="pagination">
-                    <?php
-						echo $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable '));
-						echo $this->Paginator->numbers(array('separator' => '', 'tag' => 'li'));
-						echo $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow  unavailable'));
-						?>
-                </ul>
-            </div>
-            <?php
-			}
-			?>
-        </div>
-    </div>
+				<hr>
+				<div class="row">
+					<div class="large-5 columns">
+						<?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total'))); ?>
+					</div>
+					<div class="large-7 columns">
+						<div class="pagination-centered">
+							<ul class="pagination">
+								<?= $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?> <?= $this->Paginator->numbers(array('separator' => '', 'tag' => 'li')); ?> <?= $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<?php
+			} ?>
+		</div>
+	</div>
 </div>
-<?php
-echo $this->Form->end();
-?>
+<?= $this->Form->end(); ?>
+
+<script>
+	function toggleViewFullId(id) {
+		if ($('#' + id).css("display") == 'none') {
+			$('#' + id + 'Img').attr("src", '/img/minus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append(' Hide Fields');
+		} else {
+			$('#' + id + 'Img').attr("src", '/img/plus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append(' Adjust Fields');
+		}
+		$('#' + id).toggle("slow");
+	}
+
+	function getDepartment(id) {
+		
+		var formData = $("#college_id").val();
+		
+		$("#department_id_" + id).empty();
+		$("#department_id_" + id).attr('disabled', true);
+
+		if (!isNaN(formData) && formData != 0 && formData != '0' && formData != '') {
+			var formUrl = '/departments/get_department_combo/' + formData + '/0/0/1';
+			$.ajax({
+				type: 'get',
+				url: formUrl,
+				data: formData,
+				success: function(data, textStatus, xhr) {
+					$("#department_id_" + id).attr('disabled', false);
+					$("#department_id_" + id).empty();
+					$("#department_id_" + id).append(data);
+				},
+				error: function(xhr, textStatus, error) {
+					alert(textStatus);
+				}
+			});
+			return false;
+		} else {
+			$("#department_id_" + id).empty().append('<option value">[ Please Select College ]</option>');
+		}
+	}
+</script>

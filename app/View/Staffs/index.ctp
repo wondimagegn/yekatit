@@ -1,115 +1,222 @@
-<?php ?>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-            
-<?php 
-echo $this->Form->create('Staff');?>
-<p class="smallheading">View Staffs.</p>
-	<table cellspacing="0" cellpadding="0" class="fs14">
-		<tr>
-			<td style="width:12%">Staff Name:</td>
-			<td style="width:20%"><?php echo $this->Form->input('Search.name',
-			array('label'=>false)); ?></td>
-			<td style="width:12%">Department:</td>
-			<td style="width:20%"><?php echo $this->Form->input('Search.department_id', 
-			array('label' => false,'empty'=>' ', 'class' => 'fs14',
-			'options'=>$departments)); ?></td>
-			
-		</tr>
-		
-		<tr>
-		  	<td> Type:</td>
-			<td><?php 
-			
-			echo $this->Form->input('Search.active', array('type' => 'checkbox', 'label' => 'Active', 'div' => false, 'checked' => (!isset($this->request->data) || ($this->request->data['Search']['active'] == 1 ? 'checked' : false)))).'<br/>';
-			echo $this->Form->input('Search.deactive', array('type' => 'checkbox', 'label' => 'Deactive', 'div' => false, 'checked' => (!isset($this->request->data) || $this->request->data['Search']['deactive'] == 1 ? 'checked' : false)));
-			
-			?></td>		
-		</tr>
-			
-		<tr>
-		<td colspan='4'><?php echo $this->Form->submit(__('View Staffs'), array('name' => 'viewStaff','class'=>'tiny radius button bg-blue','div' => false)); ?></td>
-		</tr>
-</table>
+	<div class="box-header bg-transparent">
+        <div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+            <span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Staff List'); ?></span>
+        </div>
+    </div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<?= $this->Form->create('Staff', array('action' => 'search')); ?>
+				<div style="margin-top: -30px;">
+					<hr>
+					<fieldset style="padding-bottom: 5px; padding-top: 15px;">
+						<div class="row">
+							<div class="large-6 columns">
+								<?= $this->Form->input('search', array('id' => 'SearchName', 'label' => 'Search Filter: ', 'style' => 'width:90%;', 'placeholder' => 'Find by name, email, phone...', 'maxLength' => 50, 'default' => (isset($this->request->data['Staff']['search']) ? $this->request->data['Staff']['search'] : ''))); ?>
+							</div>
+							<?php
+							if (isset($departments) && !empty($departments)) { ?>
+								<div class="large-6 columns">
+									<?php
+									if ($role_id == ROLE_DEPARTMENT) { ?>
+										<?= $this->Form->input('department_id', array('label' => 'Department: ',  'style' => 'width:90%;', 'options' => $departments)); ?>
+										<?php
+									} else { ?>
+										<?= $this->Form->input('department_id', array('label' => 'Department: ',  'style' => 'width:90%;', 'empty' => '[ All Departments ]',  'options' => $departments)); ?>
+										<?php
+									} ?>
+								</div>
+								<?php
+							}  else { ?>
+								<div class="large-6 columns">
+									&nbsp;
+								</div>
+								<?php
+							} ?>
+						</div>
+						<div class="row">
+							<div class="large-3 columns">
+								<?= $this->Form->input('status', array('label' => 'Staff Status: ', 'style' => 'width:80%;', 'type' => 'select', /* 'empty' => '[ All Statuses ]', */ 'options' => array('1' => 'Active', '0' => 'Deactivated',), 'default' => '1')); ?>
+							</div>
+							<div class="large-3 columns">
+								<?= $this->Form->input('haveuser', array('label' => 'User Fiters: ', 'style' => 'width:80%;', 'type' => 'select', /* 'empty' => '[ With/without Account ]', */  'options' => array('1' => 'Have Account', '0' => 'Doesn\'t Have Account'), 'default' => '1')); ?>
+							</div>
+							<div class="large-3 columns">
+								<?= $this->Form->input('limit', array('id' => 'limit', 'type' => 'number', 'min' => '100',  'max' => '1000', 'value' => $limit, 'step' => '100', 'label' => 'Limit: ', 'style' => 'width:40%;')); ?>
+							</div>
+							<div class="large-3 columns">
+								&nbsp;
+							</div>
+						</div>
+						<hr>
+						<?= $this->Form->hidden('page', array('value' => $page)); ?>
+						<?= $this->Form->submit(__('Search'), array('id' => 'viewStaff', 'name' => 'viewStaff', 'class' => 'tiny radius button bg-blue', 'div' => false)); ?>
+						<?= $this->Form->end(); ?>
+					</fieldset>
+				</div>
 
-<div class="staffs index">
-	<h2><?php echo __('Staffs');?></h2>
-	<table cellpadding="0" cellspacing="0">
-	<tr>
-			<th>S.N<u>o</u></th>
-			
-			<th><?php echo $this->Paginator->sort('position');?></th>
-			<th><?php echo $this->Paginator->sort('staffid');?></th>
-			<th><?php echo $this->Paginator->sort('full_name');?></th>
-			<th><?php echo $this->Paginator->sort('college_id','Stream');?></th>
-			<th><?php echo $this->Paginator->sort('department_id');?></th>
-			
-			<th class="actions"><?php echo __('Actions');?></th>
-			
-	</tr>
-	<?php
-	$i = 0;
-	$start=$this->Paginator->counter('%start%');
-	foreach ($staffs as $staff):
-		$class = null;
-		if ($i++ % 2 == 0) {
-			$class = ' class="altrow"';
-		}
-	?>
-	<tr<?php echo $class;?>>
-		<td><?php echo $start++; ?>&nbsp;</td>
-		<td><?php echo $staff['Position']['position']; ?>&nbsp;</td>
 
-		<th><?php echo $staff['Staff']['staffid'];?>&nbsp;</td>
-		<td><?php echo $staff['Staff']['full_name']; ?>&nbsp;</td>
-		<td>
-			<?php echo $this->Html->link($staff['College']['name'], array('controller' => 'colleges', 'action' => 'view', $staff['College']['id'])); ?>
-		</td>
-		<td>
-			<?php echo $this->Html->link($staff['Department']['name'], array('controller' => 'departments', 'action' => 'view', $staff['Department']['id'])); ?>
-		</td>
-		<td class="actions">		
-		<?php if ($role_id == ROLE_SYSADMIN) { ?>
-		
-			<?php echo $this->Html->link(__('View'), array('action' => 'staff_profile', $staff['Staff']['id'])); ?>
-			<?php echo $this->Html->link(__('Edit'), array('action' => 'update_staff_profile', $staff['Staff']['id'])); ?>
-			
-               
-		<?php echo $this->Form->postLink(__('Delete'), array('action' => 'delete', $staff['Staff']['id']), array(), __('Are you sure you want to delete # %s?', $staff['Staff']['id'])); ?>
-		<?php } elseif($role_id == ROLE_COLLEGE || $role_id==ROLE_DEPARTMENT) { ?>
-		
-			<?php echo $this->Html->link(__('View'), array('action' => 'staff_profile', $staff['Staff']['id'])); ?>
-			<?php echo $this->Html->link(__('Edit'), array('action' => 'update_staff_profile', $staff['Staff']['id'])); ?>
-			
-		<?php } else { ?>
-                 <?php echo $this->Html->link(__('View'), array('action' => 'staff_profile', $staff['Staff']['id'])); ?>
-			<?php echo $this->Html->link(__('Update Profile'), array('action' => 'update_staff_profile', $staff['Staff']['id'])); ?>
+				<div id="searchAgain" class="fs14 text-gray" style="display: none;"></div>
 
-		<?php 
-			}
-		?>
+				<?php
+				//ClassRegistry::init('Staff')->deleteDoubleStaff(34);
 
-				</td>
-	</tr>
-<?php endforeach; ?>
-	</table>
-	<p>
-	<?php
-	echo $this->Paginator->counter(array(
-	'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
-	));
-	?>	</p>
+				if (isset($staffs) && !empty($staffs)) { ?>
+					<div class="staffs index" id="show_list_of_staffs">
+						<hr>
+						<div style="overflow-x:auto;">
+							<table id="studentTableIndex" cellpadding="0" cellspacing="0" class="table">
+								<thead>
+									<tr>
+										<td class="center">#</td>
+										<td class="vcenter"><?= $this->Paginator->sort('position', 'Position'); ?></td>
+										<td class="vcenter"><?= $this->Paginator->sort('full_name', 'Full name'); ?></td>
+										<td class="center"><?= $this->Paginator->sort('gender', 'Sex'); ?></td>
+										<td class="center"><?= $this->Paginator->sort('college_id', 'College'); ?></td>
+										<td class="center"><?= $this->Paginator->sort('department_id', 'Department'); ?></td>
+										<td class="center"><?= $this->Paginator->sort('active', 'Active'); ?></td>
+										<td class="center"><?= $this->Paginator->sort('created', 'Created'); ?></td>
+										<td class="center">&nbsp;</td>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$start = $this->Paginator->counter('%start%');
+									foreach ($staffs as $staff) { ?>
+										<tr>
+											<td class="center"><?= $start++; ?></td>
+											<td class="vcenter"><?= (isset($staff['Position']['position']) ? $staff['Position']['position'] : ''); ?></td>
+											<td class="vcenter"><?= $staff['Staff']['full_name']; ?></td>
+											<td class="center"><?= (strcasecmp(trim($staff['Staff']['gender']), 'male') == 0 ? 'M' : (strcasecmp(trim($staff['Staff']['gender']), 'female') == 0 ? 'F' : $staff['Staff']['gender'])); ?></td>
+											<td class="center"><?= (isset($staff['College']['shortname']) ? $staff['College']['shortname'] : (isset($staff['College']['name']) ? $staff['College']['name'] : '')); ?></td>
+											<td class="center"><?= (isset($staff['Department']['name']) ? $staff['Department']['name'] : ''); ?></td>
+											<td class="center"><?= ($staff['Staff']['active'] == 1 ? '<span style="color:green;">Yes</span>' : '<span style="color:red;">No</span>'); ?></td>
+											<td class="center"><?= /* $this->Time->niceShort($staff['Staff']['created']); */ $this->Time->format("M j, Y g:i A", $staff['Staff']['created'], NULL, NULL); ?></td>
+											<td class="center">
+												<?= $this->Html->link(__(''), array('action' => 'staff_profile', $staff['Staff']['id']), array('class' => 'fontello-eye', 'title' => 'View Staff Profile')); ?> &nbsp;
+												<?php 
+												if ($role_id == ROLE_SYSADMIN) { ?>
+													<?= $this->Html->link(__(''), array('action' => 'edit', $staff['Staff']['id']), array('class' => 'fontello-pencil', 'title' => 'Edit')); ?> &nbsp;
+													<?php //echo $this->Form->postLink(__('Delete'), array('action' => 'delete', $staff['Staff']['id']), array('confirm' => __('Are you sure you want to delete # %s?', $staff['Staff']['full_name']))); ?>
+													<?= $this->Html->link(__(''), array('action' => 'delete', $staff['Staff']['id']), array('class' => 'fontello-trash', 'title' => 'Delete Staff'), sprintf(__('Are you sure you want to delete %s (%s) from list of Staffs?'), $staff['Staff']['full_name'], $staff['Position']['position'] )); ?>
+													<?php 
+												} elseif ($role_id == ROLE_COLLEGE || $role_id == ROLE_DEPARTMENT) { ?>
+													<?php //echo $this->Html->link(__('View'), array('action' => 'staff_profile', $staff['Staff']['id'])); ?>
+													<?php 
+												} else { ?>
+													<?php // echo $this->Html->link(__('Update Profile'), array('action' => 'update_staff_profile', $staff['Staff']['id']));  ?>
+													<?php
+												} ?>
+											</td>
+										</tr>
+										<?php	
+									} ?>
+								</tbody>
+							</table>
+						</div>
+						<br>
 
-	<div class="paging">
-		<?php echo $this->Paginator->prev('<< ' . __('previous'), array(), null, array('class'=>'disabled'));?>
-	 | 	<?php echo $this->Paginator->numbers();?>
- |
-		<?php echo $this->Paginator->next(__('next') . ' >>', array(), null, array('class' => 'disabled'));?>
+						<hr>
+						<div class="row">
+							<div class="large-5 columns">
+								<?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total'))); ?>
+							</div>
+							<div class="large-7 columns">
+								<div class="pagination-centered">
+									<ul class="pagination">
+										<?= $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?> <?= $this->Paginator->numbers(array('separator' => '', 'tag' => 'li')); ?> <?= $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+					<?php
+				} ?>
+			</div>
+		</div>
 	</div>
 </div>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row -->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
+<script>
+
+    $(function () {
+
+        const $searchForm = $('#SearchName').closest('form');
+        const $showSearchResults = $('#show_list_of_staffs');
+        const $searchAgain = $('#searchAgain');
+        const $searchBtn = $('#viewStaff');
+        const $limit = $('#limit');
+
+        // Hide seaech results and show search prompt
+        function hideSearchResults(message = 'Click Search button again to get new search results based on your changed filters.') {
+            if ($showSearchResults.length) {
+                $showSearchResults.hide();
+                $searchAgain.text(message).show();
+            }
+        }
+
+        // Enforce min max limit on typing
+        if ($limit.length) {
+            $('#limit').on('input blur', function () {
+                const $input = $(this);
+                const val = parseFloat($input.val());
+                const min = parseFloat($input.attr('min'));
+                const max = parseFloat($input.attr('max'));
+
+                if (!isNaN(val)) {
+                    if (val < min) $input.val(min);
+                    else if (val > max) $input.val(max);
+                }
+            });
+        }
+
+        //  Validate limit input
+        function isValidLimit() {
+            if (!$limit.length) return true;
+
+            const max = parseFloat($limit.attr('max'));
+            const min = parseFloat($limit.attr('min')) || 0;
+            const val = $limit.val();
+
+            if (val === '') return true;
+
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= min && num <= max;
+        }
+
+        // Clean input
+        function cleanInput($input) {
+            const cleaned = $input.val().trim().replace(/\s+/g, '');
+            $input.val(cleaned);
+        }
+
+        // Submit form with feedback
+        function submitSearchForm(message = 'Looking for search results based on your current search filters...') {
+            $searchBtn.val('Searching...');
+            $searchAgain.text(message).show();
+            $searchForm.submit();
+        }
+
+        // Search button click
+        $searchBtn.on('click', function () {
+            $(this).val('Searching...');
+            if ($showSearchResults.length) $showSearchResults.hide();
+        });
+
+        // Clean name input and hide results
+        $('#SearchName').on('input blur keyup', function () {
+            cleanInput($(this));
+            hideSearchResults();
+        });
+
+        // Auto-submit or prompt to search again on search filter change
+        $('#StaffDepartmentId, #StaffStatus, #StaffHaveuser').on('change keyup', function () {
+            if (isValidLimit()) {
+                hideSearchResults('Looking for search results based on your current search filters...');
+                submitSearchForm();
+            } else {
+                hideSearchResults(); // just hide search and prompt to search again.
+            }
+        });
+    });
+</script>

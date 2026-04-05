@@ -1,4 +1,5 @@
 <?php
+// ==================== NOT BEING USED, USING FILE FROM ELEMENTS ====================
 App::import('Vendor','tcpdf/tcpdf');
 // create new PDF document
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);

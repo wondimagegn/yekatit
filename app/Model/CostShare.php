@@ -136,7 +136,7 @@ class CostShare extends AppModel {
 	public function getCostSharingGraduated($data){
 		debug($data);
 	   App::import('Component','AcademicYear');
-	   $AcademicYear= new AcademicYearComponent();
+	   $AcademicYear= new AcademicYearComponent(new ComponentCollection);
 	   $graduateDate= $AcademicYear->get_academicYearBegainingDate($data['Report']['graduated_academic_year']);
 	   $options=array();
 	   $options['contain']=array(
@@ -196,7 +196,7 @@ class CostShare extends AppModel {
 	public function getCostSharingNotGraduated($data){
 		debug($data);
 	   App::import('Component','AcademicYear');
-	   $AcademicYear= new AcademicYearComponent();
+	   $AcademicYear= new AcademicYearComponent(new ComponentCollection);
 	   $graduateDate= $AcademicYear->get_academicYearBegainingDate($data['Report']['graduated_academic_year']);
 	   $options=array();
 	   $options['contain']=array('CostShare','Department');

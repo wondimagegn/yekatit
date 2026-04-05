@@ -1,513 +1,338 @@
-<?php
-echo $this->Form->Create('AcceptedStudent', array('action' => 'search'));
-
-?>
 <div class="box">
-    <div class="box-body">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-th-list" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"><?= __('Accepted Students'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<?php
+				if ($this->Session->read('Auth.User')['role_id'] != ROLE_STUDENT) { ?>
+					<?= $this->Form->Create('AcceptedStudent', array('action'=> 'search')); ?>
+					<div style="margin-top: -30px;">
+						<hr>
+						<div onclick="toggleViewFullId('ListPublishedCourse')">
+							<?php
+							if (!empty($turn_off_search)) {
+								echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span>
+							<?php
+							} else {
+								echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span>
+							<?php
+							} ?>
+						</div>
 
-        <div class="row">
-            <div
-                class="large-12 columns">
-                <h5 class="box-title">
-                    <?php echo __('Accepted Student Search'); ?>
-                </h5>
-            </div>
-        </div>
-        <div class="row">
-            <p class='fs16'>
-                This tool will help you
-                to view the list of
-                admitted students
-            </p>
-            <div
-                onclick="toggleViewFullId('ListAdmittedStudent')"><?php
-																	if (!empty($acceptedStudents)) {
-																		echo $this->Html->image('plus2.gif', array('id' => 'ListAdmittedStudentImg'));
-																	?><span
-                    style="font-size:10px; vertical-align:top; font-weight:bold"
-                    id="ListAdmittedStudentTxt">Display
-                    Filter</span><?php
-																																} else {
-																																	echo $this->Html->image('minus2.gif', array('id' => 'ListAdmittedStudentImg'));
-																																	?><span
-                    style="font-size:10px; vertical-align:top; font-weight:bold"
-                    id="ListAdmittedStudentTxt">Hide
-                    Filter</span><?php
-																																}
-																																?>
-            </div>
+						<div id="ListPublishedCourse" style="display:<?= (!empty($turn_off_search) ? 'none' : 'display'); ?>">
+							<fieldset style="padding-bottom: 0px;padding-top: 5px;">
+								<legend>&nbsp;&nbsp; Search Filters &nbsp;&nbsp;</legend>
+								<div class="row">
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.academicyear', array('label' => 'Admission Year: ', 'style' => 'width:90%', 'empty' => 'All Admission Year', 'options' => $acyear_array_data, 'default' => (isset($selected_academic_year) ? $selected_academic_year : ''))); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.program_id', array('label' => 'Program: ', 'style' => 'width:90%', 'empty' => 'All Programs', 'options' => $programs)); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.program_type_id', array('label' => 'Program Type: ', 'style' => 'width:90%', 'empty' => 'All Program Types', 'options' => $programTypes)); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.admitted', array('label' => 'Status: ', 'style' => 'width:90%', 'options' => array('0' => 'All', '1' => 'Not Admitted', '2' => 'Admitted'), 'default' => '2')); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-6 columns">
+										<?php
+										if (isset($colleges) && !empty($colleges)) {
+											echo $this->Form->input('Search.college_id', array('label' => 'College: ', 'style' => 'width:90%', 'empty' => 'All Colleges'));
+										} else if (isset($departments) && !empty($departments)) {
+											echo $this->Form->input('Search.department_id', array('label' => 'Department: ', 'style' => 'width:90%', 'empty' => 'All Departments'));
+										} ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.name', array('label' => 'Student Name ID: ', 'placeholder' => 'Name or Student ID ..', 'default' => $name, 'style' => 'width:90%;')); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('Search.limit', array('id' => 'limit ', 'type' => 'number', 'min' => '1',  'max' => '5000', 'value' => (isset($this->data['Search']['limit']) ? $this->data['Search']['limit'] : $limit), 'step' => '1', 'label' => 'Limit: ', 'style' => 'width:40%;')); ?>
+										
+										<?= (isset($this->data['Search']['page']) ? $this->Form->hidden('page', array('value' => $this->data['Search']['page'])) : ''); ?>
+										<?= (isset($this->data['Search']['sort']) ? $this->Form->hidden('sort', array('value' => $this->data['Search']['sort'])) : ''); ?>
+										<?= (isset($this->data['Search']['direction']) ? $this->Form->hidden('direction', array('value' => $this->data['Search']['direction'])) : ''); ?>
 
-            <div id="ListAdmittedStudent"
-                style="display:<?php echo (!empty($acceptedStudents) ? 'none' : 'display'); ?>">
+									</div>
+								</div>
+								<?php
+								if (isset($departments) && !empty($departments) && $this->Session->read('Auth.User')['role_id'] != ROLE_STUDENT && $this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR &&  $this->Session->read('Auth.User')['role_id'] != ROLE_COLLEGE &&  $this->Session->read('Auth.User')['role_id'] != ROLE_DEPARTMENT) { ?>
+									<div class="row">
+										<div class="large-6 columns">
+											<?= $this->Form->input('Search.department_id', array('label' => 'Department: ', 'style' => 'width:90%', 'empty' => 'All Departments')); ?>
+										</div>
+										<div class="large-6 columns">
+										</div>
+									</div>
+									<?php
+								} ?>
+								<hr>
 
-                <table cellpadding="0"
-                    cellspacing="0">
-                    <?php
-					if (ROLE_STUDENT != $role_id) {
-					?>
-                    <tr>
+								<?= $this->Form->submit('Search', array('name' => 'search', 'id' => 'search', 'div' => false, 'class' => 'tiny radius button bg-blue')); ?>
+							</fieldset>
 
-                        <td
-                            style="width:15%">
-                            Admission
-                            Year:</td>
-                        <td
-                            style="width:35%">
-                            <?php
+							<?= $this->Form->end(); ?>
 
-								echo $this->Form->input('Search.academicyear', array('empty' => ' ', 'label' => false, 'options' => $acYearMinuSeparated));
+							<?php
+							if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) { ?>
+								<br> 
+								<hr>
+								<div style="margin-top: 5px;">
+									<blockquote>
+										<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+										<span style="text-align:justify;" class="fs16 text-gray">The student list you will get here depends on your <b style="text-decoration: underline;"><i>assigned College or Department, assigned Program and Program Types, and with your search conditions</i></b>. You can contact the registrar to adjust permissions assigned to you if you miss your students here.</span>
+									</blockquote>
+								</div>
+								<?php
+							} ?>
 
-								?>
-                        </td>
-                        <td
-                            style="width:13%">
-                            Admitted:
-                        </td>
-                        <td
-                            style="width:37%">
-                            <?php
-								echo $this->Form->input('Search.admitted', array('label' => '', 'options' => array('1' => 'No', '2' => 'Yes')));
-								?>
-                        </td>
-                    </tr>
-                    <tr>
-
-
-                        <td
-                            style="width:15%">
-                            Department:
-                        </td>
-                        <td
-                            style="width:35%">
-                            <?php
-								echo $this->Form->input('Search.college_id', array('id' => 'ajax_college_id', 'onchange' => 'getDepartments()', 'label' => ''));
-								?>
-                        </td>
-                        <td
-                            style="width:13%">
-                            Field of
-                            study:</td>
-                        <td
-                            style="width:37%">
-                            <?php
-					if($role_id==ROLE_DEPARTMENT){
-			echo $this->Form->input('Search.department_id', array( 'label' => false));
-
-					} else {
-
-
-								echo $this->Form->input('Search.department_id', array('id' => 'ajax_department_id', 'label' => false));
-				}
-
-								?>
-
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-
-                        <td
-                            style="width:15%">
-                            Program:
-                        </td>
-                        <td
-                            style="width:35%">
-                            <?php
-								echo $this->Form->input('Search.program_id', array('id' => 'ajax_college_id', 'label' => ''));
-
-
-								?>
-                        </td>
-                        <td
-                            style="width:13%">
-                            ProgramType:
-                        </td>
-                        <td
-                            style="width:37%">
-                            <?php
-
-
-								echo $this->Form->input('Search.program_type_id', array('id' => 'ajax_college_id', 'label' => ''));
-
-								?>
-
-                        </td>
-
-                    </tr>
-
-                    <tr>
-
-
-                        <td
-                            style="width:15%">
-                            Univesity
-                            Attended:
-                        </td>
-                        <td
-                            style="width:35%">
-                            <?php
-								echo $this->Form->input('Search.university_attended', array('id' => 'University Attended', 'label' => ''));
-
-
-								?>
-                        </td>
-                        <td
-                            style="width:13%">
-                            Stream
-                            Attended:
-                        </td>
-                        <td
-                            style="width:37%">
-                            <?php
-
-
-								echo $this->Form->input('Search.attended_stream', array('id' => 'attended_stream', 'label' => ''));
-
-								?>
-
-                        </td>
-
-                    </tr>
-                    <tr>
-                        <td colspan="5">
-
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td colspan="4">
-                            <?php
-								echo $this->Form->end(array('label' => __('Search'), 'class' => 'tiny radius button bg-blue'));
-								?>
-
-                        </td>
-
-                    </tr>
-
-
-                    <?php } ?>
-                </table>
-
-
-            </div>
-
-        </div>
-
-
-    </div>
+						</div>
+					</div>
+					<hr>
+					<?php
+				} ?>
+			<!-- </div>
+		</div>
+	</div>
 </div>
-<?php echo $this->Form->end(); ?>
+
+
 <div class="box">
-    <div class="box-body">
-        <div class="row">
-            <div
-                class="large-12 columns">
-                <?php
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns"> -->
+				<?php
+				$not_admitted_students_count = 0;
+
+				$studentRole = $this->Session->read('Auth.User')['role_id'] == ROLE_STUDENT ? true : false;
+				$registrarRoleOrChiledRole = $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR || $this->Session->read('Auth.User')['Role']['parent_id'] == ROLE_REGISTRAR ? true : false;
+				$registrarAdmin = $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1 ? true : false;
+				$collegeRole = $this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE ? true : false;
+				$departmentRole = $this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT ? true : false;
+				$allowEditingGraduatedStudentProfile = ALLOW_EDITING_GRADUATED_STUDENTS_FOR_NON_ADMIN_REGISTRAR_ACCOUNTS == 1 && $registrarRoleOrChiledRole || $registrarAdmin ? true : false;
+
+
 				if (!empty($acceptedStudents)) {
-				?>
-                <?php
+					if ($registrarRoleOrChiledRole) {
+						echo $this->Form->create('AcceptedStudent', array('action' => 'delete', 'id' => 'accepted-form', 'onSubmit' => 'return checkForm(this);'));
+					} ?>
+					
+					<h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+                    <br>
 
-					if (
-						$role_id == ROLE_REGISTRAR || ROLE_REGISTRAR ==
-						$this->Session->read('Auth.User')['Role']['parent_id']
-					) {
-
-						echo $this->Form->create('AcceptedStudent', array('action' => 'delete', 'id' => 'accepted-form'));
-					}
-
-					?>
-                <table
-                    class="responsive"
-                    cellpadding=0
-                    cellspacing=0
-                    border=0>
-                    <tbody>
-                        <tr>
-                            <?php
-								if (
-									$role_id == ROLE_REGISTRAR || $role_id ==
-									$this->Session->read('Auth.User')['Role']['parent_id']
-								) {
-								?>
-                            <th
-                                style="padding:0; width:5%">
-                                <?php echo 'Select/ Unselect All <br/>' . $this->Form->checkbox(null, array('id' => 'select-all', 'checked' => '')); ?>
-                            </th>
-                            <?php } ?>
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort('id', 'No.'); ?>
-                            </th>
-                            <th
-                                style="width:30%">
-                                <?php echo $this->Paginator->sort('full_name', 'Full Name'); ?>
-                            </th>
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort("sex", 'Sex'); ?>
-                            </th>
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort("studentnumber", "Student Number"); ?>
-                            </th>
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort('gpa', "GPA"); ?>
-                            </th>
-                            <th
-                                style="width:1%">
-                                <?php echo $this->Paginator->sort('college_id', 'Department'); ?>
-                            </th>
-                            <th
-                                style="width:11%">
-                                <?php echo $this->Paginator->sort('department_id', 'Field of study'); ?>
-                            </th>
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort('program_type_id', 'Program Type'); ?>
-                            </th>
-                            <th
-                                style="width:9%">
-                                <?php echo $this->Paginator->sort("attended_stream", "Stream Attended"); ?>
-                            </th>
-
-                            <th
-                                style="width:5%">
-                                <?php echo $this->Paginator->sort("university_attended", "University Attended"); ?>
-                            </th>
-                            <?php
-								if (
-									$role_id == ROLE_REGISTRAR || $role_id == ROLE_COLLEGE || $role_id ==
-									$this->Session->read('Auth.User')['Role']['parent_id']
-								) {
-								?>
-
-                            <th class="actions"
-                                style="text-align:center; width:10%">
-                                <?php echo __('Actions'); ?>
-                            </th>
-
-                            <?php } ?>
-                        </tr>
-                        <?php
-							$i = 0;
-
-							$start = $this->Paginator->counter('%start%');
-							foreach ($acceptedStudents as $acceptedStudent) :
-								$class = null;
-								if ($i++ % 2 == 0) {
-									$class = 'altrow ';
-								}
-							?>
-                        <?php
-
-								$red = null;
-								if (
-									isset($student_not_deleted) &&
-									in_array($acceptedStudent['AcceptedStudent']['id'], $student_not_deleted)
-								) {
-									$class .= 'redrow';
-								}
-
-
-								?>
-
-                        <tr
-                            class="<?php echo $class; ?>">
-                            <?php
-									if (
-										$role_id == ROLE_REGISTRAR || ROLE_REGISTRAR ==
-										$this->Session->read('Auth.User')['Role']['parent_id']
-									) {
-									?>
-                            <td><?php echo $this->Form->checkbox('AcceptedStudent.delete.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')); ?>&nbsp;
-                            </td>
-                            <?php } ?>
-
-                            <td><?php echo $start++; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['full_name']; ?>&nbsp;
-                            </td>
-                            <td><?php echo ucwords($acceptedStudent['AcceptedStudent']['sex']); ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['studentnumber']; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['gpa']; ?>&nbsp;
-                            </td>
-                            <td>
-                                <?php echo $this->Html->link($acceptedStudent['College']['shortname'], array('controller' => 'colleges', 'action' => 'view', $acceptedStudent['College']['id'])); ?>
-                            </td>
-                            <td>
-                                <?php echo $this->Html->link($acceptedStudent['Department']['name'], array('controller' => 'departments', 'action' => 'view', $acceptedStudent['Department']['id'])); ?>
-                            </td>
-                            <td>
-                                <?php echo $this->Html->link($acceptedStudent['ProgramType']['name'], array('controller' => 'program_types', 'action' => 'view', $acceptedStudent['ProgramType']['id'])); ?>
-                            </td>
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['university_attended']; ?>&nbsp;
-                            </td>
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['attended_stream']; ?>&nbsp;
-                            </td>
-                            <?php
-									if (($role_id == ROLE_REGISTRAR || ROLE_REGISTRAR ==
-										$this->Session->read('Auth.User')['Role']['parent_id']) || $role_id == ROLE_COLLEGE) {
-									?>
-                            <td
-                                class="actions">
-
-                                <?php
-											if ($role_id == ROLE_COLLEGE) {
-												echo $this->Html->link(__('Update Disability'), array('action' => 'edit', $acceptedStudent['AcceptedStudent']['id']));
-											} else {
-												echo $this->Html->link(__('Edit'), array('action' => 'edit', $acceptedStudent['AcceptedStudent']['id']));
-											}
-											?>
-
-                            </td>
-                            <?php } ?>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <table>
-                    <tbody>
-
-                        <tr>
-                            <td>
-                                <?php
-
-									if (
-										$role_id == ROLE_REGISTRAR || ROLE_REGISTRAR ==
-										$this->Session->read('Auth.User')['Role']['parent_id']
-									) {
-
-										echo $this->Form->Submit(
-											'Delete Selected',
-											array(
-												'class' => 'tiny radius button bg-blue', 'name' => 'DeleteSelected'
-											)
-										);
-
-										/*echo $this->Form->Submit('Reset IDs',
-array(
-'class'=>'tiny radius button bg-blue','name'=>'Reset ID'));
-*/
-										echo $this->Form->end();
+					<div style="overflow-x:auto;">
+						<table cellpadding="0" cellspacing="0" class="table">
+							<thead>
+								<tr>
+									<?php
+									if ($registrarAdmin) { ?>
+										<td class="center"><?= $this->Form->checkbox(null, array('id' => 'select-all', 'name' => 'select-all', 'checked' => '')); ?></td>
+										<?php
 									}
-									?>
+									if ($registrarRoleOrChiledRole || $collegeRole) { ?>
+										<td class="center">&nbsp;</td>
+										<?php
+									} ?>
+									<td class="center"><?= $this->Paginator->sort('id', '#'); ?></td>
+									<td style="width: 25%;" class="vcenter"><?= $this->Paginator->sort('full_name', 'Full Name'); ?></td>
+									<td class="center"><?= $this->Paginator->sort("sex", 'Sex'); ?></td>
+									<td class="center"><?= $this->Paginator->sort("studentnumber", "Student ID"); ?></td>
+									<td class="center"><?= $this->Paginator->sort('gpa', "GPA"); ?></td>
+                                    <td class="center"><?= $this->Paginator->sort('university_attended ', "University Attended"); ?></td>
+                                    <td class="center"><?= $this->Paginator->sort('attended_stream', "Attended Stream"); ?></td>
+									<?php
+									if (!$collegeRole && !$departmentRole) { ?>
+										<td class="center"><?= $this->Paginator->sort('college_id', 'Faculty/School'); ?></td>
+										<?php
+									}
+									if (!$departmentRole) { ?>
+										<td class="center"><?= $this->Paginator->sort('department_id', 'Department'); ?></td>
+										<?php
+									} ?>
+									<td class="center"><?= $this->Paginator->sort('program_id', 'Program'); ?></td>
+									<td class="center"><?= $this->Paginator->sort('program_type_id', 'Program Type'); ?></td>
+									<td class="center"><?= $this->Paginator->sort("placement_approved_by_department", "Department Approval"); ?></td>
+									<td class="center"><?= $this->Paginator->sort("placementtype", "Placement Type"); ?></td>
+								</tr>
+							</thead>
+							<tbody>
+								<?php
+								
+								$start = $this->Paginator->counter('%start%');
 
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p>
-                    <?php
+								foreach ($acceptedStudents as $acceptedStudent) {
+									$class = null;
+									$red = null;
 
-						// $this->Paginator->options(array('url' => $this->passedArgs));
+									if (isset($student_not_deleted) && in_array($acceptedStudent['AcceptedStudent']['id'], $student_not_deleted)) {
+										$class .= 'redrow';
+									} ?>
+
+									<tr class="<?= $class; ?>">
+										<?php
+										if ($registrarAdmin) { ?>
+											<td class="center">
+												<?php
+												if (isset($acceptedStudent['Student']['id']) && !empty($acceptedStudent['Student']['id']) && $acceptedStudent['Student']['id'] > 0) {
+													echo '**';
+												} else {
+													echo '<div style="margin-left: 15%;">' . $this->Form->checkbox('AcceptedStudent.delete.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')) . '</div>';
+													$not_admitted_students_count++;
+												} ?>
+											</td>
+											<?php
+										}
+										if ($registrarRoleOrChiledRole || $collegeRole) { ?>
+											<td class="center">
+												<?php
+												if ($collegeRole) {
+													if (isset($acceptedStudent['Student']['id']) && isset($acceptedStudent['Student']['graduated']) && $acceptedStudent['Student']['graduated'] == 1) {
+														echo '<span class="rejected">Graduated</span>';
+													} else if (isset($acceptedStudent['Student']['id'])) {
+														echo $this->Html->link(__('Update Disability'), array('action' => 'edit', $acceptedStudent['AcceptedStudent']['id']));
+													}
+												} else if ($registrarRoleOrChiledRole) {
+													if ($registrarAdmin) {
+														echo $this->Html->link(__('Edit'), array('action' => 'edit', $acceptedStudent['AcceptedStudent']['id']));
+													} else if (($allowEditingGraduatedStudentProfile && isset($acceptedStudent['Student']['id'])) || (isset($acceptedStudent['Student']['id']) && isset($acceptedStudent['Student']['graduated']) && $acceptedStudent['Student']['graduated'] == 0)) {
+														echo $this->Html->link(__('Edit'), array('action' => 'edit', $acceptedStudent['AcceptedStudent']['id']));
+													} else {
+														echo '<span class="rejected">Graduated</span>';
+													}
+												} ?>
+											</td>
+											<?php
+										} ?>
+										<td class="center"><?= $start++; ?></td>
+										<td class="vcenter"><?= $acceptedStudent['AcceptedStudent']['full_name']; ?></td>
+										<td class="center"><?= (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'male') == 0 ? 'M' : (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'female') == 0 ? 'F' : '')); ?></td>
+										<td class="center"><?= $acceptedStudent['AcceptedStudent']['studentnumber']; ?></td>
+
+                                        <td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['gpa']) ?
+                                                    $acceptedStudent['AcceptedStudent']['gpa'] : ''); ?></td>
+
+                                        <td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['university_attended']) ?
+                                                    $acceptedStudent['AcceptedStudent']['university_attended'] : ''); ?></td>
 
 
-						echo $this->Paginator->counter(array(
-							'format' => __('Page %page% of %pages%, showing %current% records out of %count% total, starting on record %start%, ending on %end%')
-						));
-
-						?> </p>
+                                        <td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['attended_stream']) ?
+                                                    $acceptedStudent['AcceptedStudent']['attended_stream'] : ''); ?></td>
 
 
-                <div
-                    class="pagination-centered">
-                    <ul
-                        class="pagination">
-                        <?php
-							echo $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable '));
-							echo $this->Paginator->numbers(array('separator' => '', 'tag' => 'li'));
-							echo $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow  unavailable'));
-							?>
-                    </ul>
-                </div>
 
-                <?php
-				}
-				?>
-            </div>
-        </div>
-    </div>
+                                        <?php
+										if (!$collegeRole && !$departmentRole) { ?>
+											<td class="center"><?= $acceptedStudent['College']['shortname']; ?></td>
+											<?php
+										}
+										if (!$departmentRole) { ?>
+											<td class="center"><?= (isset($acceptedStudent['Department']['name']) ? $acceptedStudent['Department']['name'] : ($acceptedStudent['ProgramType']['id'] == PROGRAM_UNDEGRADUATE ? 'Pre/Freshman' : ($acceptedStudent['AcceptedStudent']['program_id'] == PROGRAM_REMEDIAL || $acceptedStudent['Program']['id'] == PROGRAM_REMEDIAL ? 'Remedial Program' : ''))); ?></td>
+											<?php
+										} ?>
+										<td class="center"><?= (isset($acceptedStudent['Program']['shortname']) ? $acceptedStudent['Program']['shortname'] : $acceptedStudent['Program']['name']); ?></td>
+										<td class="center"><?= $acceptedStudent['ProgramType']['name']; ?></td>
+										<td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['Placement_Approved_By_Department']) && $acceptedStudent['AcceptedStudent']['Placement_Approved_By_Department'] == 1 ? '<span class="accepted">Yes</span>' : ''); ?></td>
+										<td class="center">
+											<?php
+											if (empty($acceptedStudent['AcceptedStudent']['placementtype']) && !empty($acceptedStudent['AcceptedStudent']['online_applicant_id'])) {
+												echo "Online Processed";
+											} else {
+												echo  ucwords(strtolower($acceptedStudent['AcceptedStudent']['placementtype']));
+											} ?>
+										</td>
+									</tr>
+									<?php
+								} ?>
+							</tbody>
+						</table>
+					</div>
+					<br>
+
+					<?php
+					if ($not_admitted_students_count > 0 && $registrarAdmin) { ?>
+						<?= $this->Form->Submit('Delete Selected', array('class' => 'tiny radius button bg-blue', 'id' => 'deleteSelected')); ?>
+						<?php
+					} ?>
+
+					<hr>
+					<div class="row">
+						<div class="large-5 columns">
+							<?= $this->Paginator->counter(array('format' => __('Page %page% of %pages%, showing %current% records out of %count% total'))); ?>
+						</div>
+						<div class="large-7 columns">
+							<div class="pagination-centered">
+								<ul class="pagination">
+									<?= $this->Paginator->prev('<< ' . __(''), array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?> <?= $this->Paginator->numbers(array('separator' => '', 'tag' => 'li')); ?> <?= $this->Paginator->next(__('') . ' >>', array('tag' => 'li'), null, array('class' => 'arrow unavailable')); ?>
+								</ul>
+							</div>
+						</div>
+					</div>
+					<?php
+				} ?>
+
+				<?= $this->Form->end(); ?>
+			</div>
+		</div>
+	</div>
 </div>
 
-<script type='text/javascript'>
-$(document).ready(function() {
+<script type="text/javascript">
+	function toggleView(obj) {
+		if ($('#c' + obj.id).css("display") == 'none')
+			$('#i' + obj.id).attr("src", '/img/minus2.gif');
+		else
+			$('#i' + obj.id).attr("src", '/img/plus2.gif');
+		$('#c' + obj.id).toggle("slow");
+	}
 
-    getDepartments();
-});
+	function toggleViewFullId(id) {
+		if ($('#' + id).css("display") == 'none') {
+			$('#' + id + 'Img').attr("src", '/img/minus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append('Hide Filter');
+		} else {
+			$('#' + id + 'Img').attr("src", '/img/plus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append('Display Filter');
+		}
+		$('#' + id).toggle("slow");
+	}
 
-function toggleView(obj) {
-    if ($('#c' + obj.id).css(
-            "display") == 'none')
-        $('#i' + obj.id).attr("src",
-            '/img/minus2.gif');
-    else
-        $('#i' + obj.id).attr("src",
-            '/img/plus2.gif');
-    $('#c' + obj.id).toggle("slow");
-}
+	var form_being_submitted = false;
 
-function toggleViewFullId(id) {
-    if ($('#' + id).css("display") ==
-        'none') {
-        $('#' + id + 'Img').attr("src",
-            '/img/minus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Hide Filter');
-    } else {
-        $('#' + id + 'Img').attr("src",
-            '/img/plus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Display Filter');
-    }
-    $('#' + id).toggle("slow");
-}
+	const validationMessageNonSelected = document.getElementById('validation-message_non_selected');
 
-function getDepartments() {
-    //serialize form data
-    var col = $("#ajax_college_id")
-        .val();
-    $("#ajax_department_id").attr(
-        'disabled', true);
-    $("#ajax_department_id").empty();
+	var checkForm = function(form) {
+		var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+		var checkedOne = Array.prototype.slice.call(checkboxes).some(x => x.checked);
 
-    //get form action
-    var formUrl =
-        '/course_schedules/get_departments/' +
-        col;
-    $.ajax({
-        type: 'get',
-        url: formUrl,
-        data: col,
-        success: function(data,
-            textStatus, xhr
-        ) {
-            $("#ajax_department_id")
-                .attr(
-                    'disabled',
-                    false);
-            $("#ajax_department_id")
-                .empty();
-            $("#ajax_department_id")
-                .append(
-                    data);
-        },
-        error: function(xhr,
-            textStatus,
-            error) {
-            alert(
-                textStatus
-                );
-        }
-    });
-    return false;
-}
+		//alert(checkedOne);
+		if (!checkedOne) {
+			alert('At least one accepted student must be selected to delete!');
+			validationMessageNonSelected.innerHTML = 'At least one accepted student must be selected to delete!';
+			return false;
+		}
+
+		if (form_being_submitted) {
+			alert("Deleting Selected Accepted Students, please wait a moment...");
+			form.deleteSelected.disabled = true;
+			return false;
+		}
+
+		form.deleteSelected.value = 'Deleting Selected Accepted Students...';
+		form_being_submitted = true;
+		return true;
+	};
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
 </script>

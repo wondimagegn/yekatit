@@ -39,7 +39,6 @@ function updateDepartmentCollege(id) {
 	  <div class="large-12 columns">
              
 <div class="payments index">
-<?php  if ($role_id != ROLE_STUDENT) { ?> 
 <table class="fs13 small_padding" style="margin-bottom:0px">
     <tr><td class="smallheading" colspan="4">View payments </td></tr>
 	<tr>
@@ -68,24 +67,14 @@ function updateDepartmentCollege(id) {
 	</tr>
    <tr>
 		<td style="width:13%"> Reference Number:</td>
-		<td style="width:37%"><?php 
-echo $this->Form->input('reference_number',array('label'=>false,'required'=>false)); ?></td>
-		<td style="width:13%"> Type:</td>
-			<td style="width:37%"><?php 
-			echo $this->Form->input('accepted', array('type' => 'checkbox', 'label' => 'Accepted', 'div' => false, 'checked' => (!isset($this->request->data) || $this->request->data['Payment']['accepted'] == 1 ? 'checked' : false))).'<br/>';
-			echo $this->Form->input('rejected', array('type' => 'checkbox', 'label' => 'Rejected', 'div' => false, 'checked' => (!isset($this->request->data) || $this->request->data['Payment']['rejected'] == 1 ? 'checked' : false))).'<br/>';
-			echo $this->Form->input('notprocessed', array('type' => 'checkbox', 'label' => 'Not Processed', 'div' => false, 'checked' => (!isset($this->request->data) || $this->request->data['Payment']['notprocessed'] == 1 ? 'checked' : false))).'<br/>';
-			
-			?>
-               </td>		
-
+		<td style="width:37%"><?php echo $this->Form->input('reference_number',array('label'=>false,'required'=>false)); ?></td>
+		
 	</tr>
    
 	<tr>
-			<td colspan="4"><?php echo $this->Form->submit(__('View Payment'), array('name' => 'viewPayment', 'id' => 'ViewPaymentButton', 'div' => false,'class'=>'tiny radius button bg-blue')); ?></td>
+			<td colspan="4"><?php echo $this->Form->submit(__('View Payment'), array('name' => 'viewPayment', 'id' => 'ViewPaymentButton', 'div' => false)); ?></td>
 	</tr>
 	</table>
-  <?php } ?>
 </div>
 <div class="payments index">
 <?php 
@@ -101,12 +90,12 @@ echo $this->Form->input('reference_number',array('label'=>false,'required'=>fals
 			<th><?php echo $this->Paginator->sort('semester');?></th>
 			<th><?php echo $this->Paginator->sort('reference_number');?></th>
 			<th><?php echo $this->Paginator->sort('fee_amount');?></th>
-			
+			<th><?php echo $this->Paginator->sort('tutition_fee');?></th>
+			<th><?php echo $this->Paginator->sort('meal');?></th>
+			<th><?php echo $this->Paginator->sort('accomodation');?></th>
+			<th><?php echo $this->Paginator->sort('health');?></th>
 			<th><?php echo $this->Paginator->sort('payment_date');?></th>
-                        <th><?php echo $this->Paginator->sort('Attachment');?></th>
 			
-			<th><?php echo $this->Paginator->sort('Payment Status');?></th>
-			<th><?php echo $this->Paginator->sort('approval_remark');?></th>
 			<th class="actions"><?php echo __('Actions');?></th>
 	</tr>
 	<?php
@@ -127,52 +116,52 @@ echo $this->Form->input('reference_number',array('label'=>false,'required'=>fals
 		<td><?php echo $payment['Payment']['semester']; ?>&nbsp;</td>
 		<td><?php echo $payment['Payment']['reference_number']; ?>&nbsp;</td>
 		<td><?php echo $payment['Payment']['fee_amount']; ?>&nbsp;</td>
-		
-		<td><?php echo $payment['Payment']['payment_date']; ?>&nbsp;</td>
-
-               <td> 
-
-                     <?php 
-						if (
-							isset($payment['Attachment'])
-							&& !empty($payment['Attachment'])
-						) {
-							
-							foreach ($payment['Attachment']
-								as $cuk => $cuv) {
-								echo '<a
-                                    href=' . $this->Media->url(
-									$cuv['dirname'] . DS . $cuv['basename'],
-									true
-								) . '
-                                    target=_blank>View
-                                    Attachment</a> <br/>';
-								
-							}
-							
-						}
-?>
-              </td>
-		<td><?php 
-			if($payment['Payment']['approval_status']==0){
-			  echo 'Pending';
-			} else if($payment['Payment']['approval_status']==1){
-			  echo 'Approved';
-			} else {
-			  echo 'Rejected';
-			}
-		 ?>&nbsp;</td>
 		<td>
-			<?php echo $payment['Payment']['approval_remark']; ?>
-		</td>
+		  <?php 
+		        if ($payment['Payment']['tutition_fee']==1) {
+		            echo 'Yes';
+		        } else {
+		            echo 'No';
+		            
+		        }
+		        
+		        
+		  ?>
+		  
+		  &nbsp;</td>
+		<td><?php 
+		       if ($payment['Payment']['meal']==1) {
+		            echo 'Yes';
+		        } else {
+		            echo 'No';
+		            
+		        }
+		       
+		    
+		    ?>&nbsp;</td>
+		<td><?php 
+		
+		     if ($payment['Payment']['accomodation']==1) {
+		            echo 'Yes';
+		        } else {
+		            echo 'No';
+		            
+		        }
+		?>&nbsp;</td>
+		<td><?php 
+		     if ($payment['Payment']['health']==1) {
+		            echo 'Yes';
+		        } else {
+		            echo 'No';
+		            
+		        }
+		
+		 ?>&nbsp;</td>
+		<td><?php echo $payment['Payment']['payment_date']; ?>&nbsp;</td>
+		
 		<td class="actions">
 			
-			<?php  if ($role_id != ROLE_STUDENT) { 
-				echo $this->Html->link(__('Delete'), array('action' => 'delete', $payment['Payment']['id']), null, sprintf(__('Are you sure you want to delete # %s?'), $payment['Payment']['id']));
-				}
-
-
-			 ?>
+			<?php echo $this->Html->link(__('Delete'), array('action' => 'delete', $payment['Payment']['id']), null, sprintf(__('Are you sure you want to delete # %s?'), $payment['Payment']['id'])); ?>
 		</td>
 	</tr>
 <?php endforeach; ?>

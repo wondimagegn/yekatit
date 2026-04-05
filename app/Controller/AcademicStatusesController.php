@@ -1,16 +1,16 @@
 <?php
 class AcademicStatusesController extends AppController {
 
-		public $name = 'AcademicStatuses';
-		public $menuOptions = array(
-
-		'parent' => 'dashboard',
-		'exclude' => array('index'),
-		'alias' => array(
-		'index' => 'View All Status',
-		'add'=>'Set Academic Status'
-		)
-		);
+	public $name = 'AcademicStatuses';
+    public $menuOptions = array(
+            
+             'parent' => 'dashboard',
+             'exclude' => array('index'),
+             'alias' => array(
+                    'index' => 'View All Status',
+                    'add'=>'Set Academic Status'
+            )
+    );
 	public $paginate = array();
 
 	public function index() {

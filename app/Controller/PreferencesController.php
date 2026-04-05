@@ -1,7 +1,7 @@
 <?php
 class PreferencesController extends AppController {
 
-public $name = 'Preferences';
+	public $name = 'Preferences';
     public $menuOptions = array(
              'parent' => 'placement',
              'exclude' => array('edit_preference'),

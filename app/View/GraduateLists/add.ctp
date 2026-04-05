@@ -1,215 +1,334 @@
-<?php echo $this->Form->create('GraduateList');?>
-<script>
-function toggleView(obj) {
-	if($('#c'+obj.id).css("display") == 'none')
-		$('#i'+obj.id).attr("src", '/img/minus2.gif');
-	else
-		$('#i'+obj.id).attr("src", '/img/plus2.gif');
-	$('#c'+obj.id).toggle("slow");
-}
-function toggleViewFullId(id) {
-	if($('#'+id).css("display") == 'none') {
-		$('#'+id+'Img').attr("src", '/img/minus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Hide Filter');
-		}
-	else {
-		$('#'+id+'Img').attr("src", '/img/plus2.gif');
-		$('#'+id+'Txt').empty();
-		$('#'+id+'Txt').append('Display Filter');
-		}
-	$('#'+id).toggle("slow");
-}
-</script>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-	  <div class="large-12 columns">
-            
-<div class="graduateLists form">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-plus"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Add Student to Graduate List'); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
 
-<div class="smallheading"><?php echo __('Add Student to Graduate List'); ?></div>
-<div onclick="toggleViewFullId('ListPublishedCourse')"><?php 
-	if (!empty($students_for_graduate_list)) {
-		echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span><?php
-		}
-	else {
-		echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); 
-		?><span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span><?php
-		}
-?></div>
-<div id="ListPublishedCourse" style="display:<?php echo (!empty($students_for_graduate_list) ? 'none' : 'display'); ?>">
-<table cellspacing="0" cellpadding="0" class="fs13">
-	<tr>
-		<td style="width:10%">Program:</td>
-		<td style="width:25%"><?php echo $this->Form->input('program_id', array('id' => 'Program', 'class' => 'fs14', 'label' => false, 'type' => 'select', 'options' => $programs, 'default' => $default_program_id)); ?></td>
-		<td style="width:12%">Program Type:</td>
-		<td style="width:53%"><?php echo $this->Form->input('program_type_id', array('id' => 'ProgramType', 'class' => 'fs14', 'label' => false, 'type' => 'select', 'options' => $program_types, 'default' => $default_program_type_id)); ?></td>
-	</tr>
-	<tr>
-		<td>Department:</td>
-		<td colspan="3"><?php echo $this->Form->input('department_id', array('id' => 'ProgramType', 'class' => 'fs14', 'label' => false, 'type' => 'select', 'options' => $departments, 'default' => $default_department_id)); ?></td>
-	</tr>
-	<tr>
-		<td colspan="6">
-		<?php echo $this->Form->submit(__('List Students'), array('name' => 'listStudentsForGraduateList','class'=>'tiny radius button bg-blue','div' => false)); ?>
-		</td>
-	</tr>
-</table>
+				<div style="margin-top: -40px;"><hr></div>
+
+				<div class="graduateLists form">
+
+					<?= $this->Form->create('GraduateList'); ?>
+
+					<div onclick="toggleViewFullId('ListPublishedCourse')">
+						<?php
+						if (!empty($students_for_graduate_list)) {
+							echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+							<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt"> Display Filter</span>
+							<?php
+						} else {
+							echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+							<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt"> Hide Filter</span>
+							<?php
+						} ?>
+					</div>
+
+					<div id="ListPublishedCourse" style="display:<?= (!empty($students_for_graduate_list) ? 'none' : 'display'); ?>">
+						<fieldset style="padding-bottom: 0px;padding-top: 20px;">
+							<!-- <legend>&nbsp;&nbsp; Search Filters &nbsp;&nbsp;</legend> -->
+							<div class="row">
+								<div class="large-12 columns">
+									<div class="large-3 columns">
+										<?= $this->Form->input('program_id', array('id' => 'Program', 'class' => 'fs14', 'label' => 'Program:', 'type' => 'select', 'options' => $programs, 'default' => (!empty($default_program_id) ? $default_program_id : ''), 'style' => 'width:100%;')); ?>
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('program_type_id', array('id' => 'ProgramType', 'class' => 'fs14', 'label' => 'Program Type:', 'type' => 'select', 'options' => $program_types, 'default' => (!empty($default_program_type_id) ? $default_program_type_id : ''), 'style' => 'width:100%;')); ?>
+									</div>
+									<div class="large-6 columns">	
+										<?= $this->Form->input('department_id', array('id' => 'ProgramType', 'class' => 'fs14', 'label' => 'Department:', 'type' => 'select', 'options' => $departments, 'default' => (!empty($default_department_id) ? $default_department_id : ''), 'style' => 'width:100%;')); ?>
+									</div>
+									<hr>
+									<?= $this->Form->submit(__('List Eligible Students'), array('name' => 'listStudentsForGraduateList', 'id' => 'listStudentsForGraduateList', 'class' => 'tiny radius button bg-blue', 'div' => false)); ?>
+								</div>
+							</div>
+						</fieldset>
+						<?= $this->Form->end(); ?>
+					</div>
+					<hr>
+
+					<div id="student_list_for_senate">
+						<?php
+						if (!empty($students_for_graduate_list)) {
+
+                            echo $this->Form->create('GraduateList', array(
+                                  //  'data-abide' => true,
+                                   // 'onsubmit' => 'return checkForm(this);'
+                            ));
+
+							// Keep search data values for redisplay
+							echo $this->Form->input('department_id', array('type' => 'hidden', 'value' => $default_department_id)); 
+							echo $this->Form->input('program_id', array('type' => 'hidden', 'value' => $default_program_id)); 
+							echo $this->Form->input('program_type_id', array('type' => 'hidden', 'value' => $default_program_type_id)); 
+
+							$currentMonth = date('F');
+
+							if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1) {
+								$yFrom = date('Y') - (Configure::read('Calendar.graduateApprovalInPast') + 8);
+							} else {
+								$yFrom = date('Y') - Configure::read('Calendar.graduateApprovalInPast');
+							}
+							$yTo = date('Y') + Configure::read('Calendar.graduateApprovalAhead');  ?>
+
+							<hr/>
+							<blockquote>
+								<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+								<p style="text-align:justify;"><span class="fs16"> Make your entry and selection carefully. You will have <span class="text-red"> limited time to apply changes (<?= Configure::read('Calendar.daysAvaiableForGraduateDeletion'); ?> days) </span> once you add students to graduated students list.</span></p> 
+							</blockquote>
+							<hr>
+
+							<p style="margin-bottom:0px"> <span class="fs14">Please specify graduation date, provide minute number and select students from the list below to include students in graduated students list.</span></p>
+							<fieldset>
+								<div class="row">
+									<div class="large-2 columns">
+										&nbsp;
+									</div>
+									<div class="large-3 columns">
+										<?= $this->Form->input('minute_number', array('id' => 'minuteNumber', 'style' => 'width:90%;',
+                                                'required',
+                                                ' placeholder' => 'Format: ' . (!empty($college_shortname) ? $college_shortname : 'Y12hmc') .
+                                                        '/'.$currentMonth.'/'. $yTo.'', 'title' => 'Format: ' .
+                                                        (!empty($college_shortname) ? $college_shortname : 'Y12hmc') . '/'.
+                                                        $currentMonth.'/'. $yTo.'',
+                                                'label' => 'Minute Number: <small></small></label><small class="error" style="background: #fff; width: 90%; color:red; border-style: solid; border-width: thin; border-color: red; border-radius: 5px;">Format: ' . (!empty($college_shortname) ? $college_shortname : 'AMiT') . '/'.$currentMonth.'/'. $yTo.'</small>')); ?>
+									</div>
+									<div class="large-5 columns">
+										<?= $this->Form->input('graduate_date', array('label' => 'Graduation Date: ', 'minYear' => $yFrom, 'maxYear' => $yTo, 'style' => 'width:30%;')); ?>
+									</div>
+									<div class="large-2 columns">
+										&nbsp;
+									</div>
+								</div>
+							</fieldset>
+							<hr>
+
+							<h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+							<br>
+
+							<?php
+							$count = 1;
+							foreach ($students_for_graduate_list as $c_id => $students) { ?>
+
+								<table cellpadding="0" cellspacing="0" class="table">
+									<tr><td class="vcenter">Degree Designation: &nbsp;&nbsp; <?= $students[0]['Curriculum']['english_degree_nomenclature']; ?></td></tr>
+									<?php
+									if (!empty($students[0]['Curriculum']['specialization_english_degree_nomenclature'])) { ?>
+										<tr><td class="vcenter">Specialization: &nbsp;&nbsp; <?= $students[0]['Curriculum']['specialization_english_degree_nomenclature']; ?></td></tr>
+										<?php
+									} ?>
+									<tr><td class="vcenter">Degree Designation (Amharic): &nbsp;&nbsp <?= $students[0]['Curriculum']['amharic_degree_nomenclature']; ?></td></tr>
+									<?php
+									if (!empty($students[0]['Curriculum']['specialization_amharic_degree_nomenclature'])) { ?>
+										<tr><td class="vcenter">Specialization (Amharic): &nbsp;&nbsp; <?= $students[0]['Curriculum']['specialization_amharic_degree_nomenclature']; ?></td></tr>
+										<?php
+									} ?>
+									<tr><td class="vcenter">Curriculum Name: &nbsp;&nbsp;&nbsp;<?= $students[0]['Curriculum']['name']; ?> &nbsp; &nbsp; &nbsp; &nbsp; <a href="/curriculums/view/<?=$students[0]['Curriculum']['id']; ?>" target="_blank">(Open Curriculum Details)</a></td></tr>
+									<tr><td class="vcenter">Department: &nbsp;&nbsp; <?= $students[0]['Department']['name']; ?></td></tr>
+									<tr><td class="vcenter">Program: &nbsp;&nbsp; <?= $students[0]['Program']['name']; ?></td></tr>
+									<tr><td class="vcenter">Required <?= (!isset($students[0]['Curriculum']['id']) ? 'Credit' : (count(explode('ECTS', $students[0]['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit')); ?> for Graduation: &nbsp;&nbsp; <?= $students[0]['Curriculum']['minimum_credit_points']; ?></td></tr>
+								</table>
+								<br>
+
+								<div style="overflow-x:auto;">
+									<table cellpadding="0" cellspacing="0" class="table student_list">
+										<thead>
+											<tr>
+												<td style="width:3%" class="center"></td>
+												<td style="width:2%" class="center">#</td>
+												<td style="width:30%" class="vcenter">Student Name</td>
+												<td style="width:5%;" class="center">Sex</td>
+												<td style="width:15%" class="center">Student ID</td>
+												<td style="width:15%" class="center">Program Type</td>
+												<td style="width:15%;" class="center"><?= (!isset($students[0]['Curriculum']['id']) ? 'Credit' : (count(explode('ECTS', $students[0]['Curriculum']['type_credit'])) >= 2 ? 'ECTS' : 'Credit')); ?> Taken</td>
+												<td style="width:10%;" class="center">CGPA</td>
+												<td style="width:10%;" class="center">MCGPA</td>
+											</tr>
+										</thead>
+										<tbody>
+											<?php
+											$s_count = 1;
+											foreach ($students as $key => $student) {
+												if ($key == 0) {
+													continue;
+												}
+												//TODO: Remove the following code
+												//if($key > 5)
+												//$student['disqualification'] = null; ?>
+												<tr>
+													<?php
+													if (!empty($student['disqualification'])) { ?>
+														<td  class="center" style="background-color:white" onclick="toggleView(this)" id="<?= $count; ?>"><?= $this->Html->image('plus2.gif', array('id' => 'i' . $count, 'div' => false, 'align' => 'left')); ?>?</td>
+														<?php
+													} else { ?>
+														<td class="center" style="background-color:white">
+															<div style="margin-left: 25%;"><?= $this->Form->input('Student.' . $count . '.id', array('type' => 'hidden', 'value' => $student['Student']['id'])); ?></div>
+															<?= $this->Form->input('Student.' . $count . '.include_graduate', array('type' => 'checkbox', 'label' => false)); ?>
+														</td>
+														<?php
+													} ?>
+													<td style="background-color:white" class="center"><?= $s_count++; ?></td>
+													<td style="background-color:white" class="vcenter"><?= $this->Html->link($student['Student']['full_name'],'#',  array('class' => 'jsview', 'data-animation' => "fade", 'data-reveal-id' => 'myModal', 'data-reveal-ajax' => "/students/get_modal_box/" . $student['Student']['id'])); ?></td>
+													<td style="background-color:white" class="center"><?= (strcasecmp(trim($student['Student']['gender']), 'male') == 0 ? 'M' :(strcasecmp(trim($student['Student']['gender']), 'female') == 0 ? 'F' : trim($student['Student']['gender']))); ?></td>
+													<td style="background-color:white;" class="center"><?= $student['Student']['studentnumber']; ?></td>
+													<td style="background-color:white;" class="center"><?= ($student['Student']['program_type_id'] != PROGRAM_TYPE_REGULAR ? '<span style="font-weight: bold">' . $student['ProgramType']['name'] .'</span>' : $student['ProgramType']['name']); ?></td>
+													<td style="background-color:white;" class="center"><?= $student['credit_taken']; ?></td>
+													<td style="background-color:white;" class="center"><b><?= $student['cgpa']; ?></b></td>
+													<td style="background-color:white;" class="center"><?= $student['mcgpa']; ?></td>
+												</tr>
+												<?php
+												if (!empty($student['disqualification'])) { ?>
+													<tr id="c<?= $count; ?>" style="display:none">
+														<td  class="vcenter" style="background-color:#f0f0f0">&nbsp;</td>
+														<td  class="vcenter" colspan="8" style="background-color:#f0f0f0">
+															<ol>
+																<?php
+																foreach ($student['disqualification'] as $d_key => $disqualification) {
+																	echo '<li>' . $disqualification . '</li>';
+																} ?>
+															</ol>
+														</td>
+													</tr>
+													<?php
+												}
+												$count++;
+											} ?>
+										</tbody>
+									</table>
+								</div>
+								<hr/>
+								<?php
+							} //End of each curriculum students
+
+
+                            echo $this->Form->submit(__('Add Student to Graduate List'), array(
+                                    'name' => 'addStudentToGraduateList',   // keeps working
+                                    'id'   => 'addStudentToGraduateList',
+                                    'div'  => false,
+                                    'class' => 'tiny radius button bg-blue'
+                            ));
+
+                            echo $this->Form->end();
+
+						} else if (isset($this->request->data['listStudentsForGraduateList']) && empty($students_for_graduate_list)) { ?>
+							<div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>The system unable to find list of students who are in the senate list but not in the graduate list based on your search criteria.</div>
+							<?php
+						} ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
-<?php
-if(!empty($students_for_graduate_list)) {
-$yFrom = date('Y') - Configure::read('Calendar.graduateApprovalInPast');
-$yTo = date('Y') + Configure::read('Calendar.graduateApprovalAhead');
-?>
-<p class="fs14" style="margin-bottom:0px">Please enter minute number, graduation date and select students from the senate list (below) who will be included in the graduate list.</p>
-<p class="fs14" style="color:red; margin-top:0px"><strong>Important Note:</strong> Please make your entry and selection carefully. You will have limited time to apply changes on the already graduated students.</p>
-<table class="fs13">
-	<tr>
-		<td style="width:12%">Minute Number:</td>
-		<td style="width:88%"><?php echo $this->Form->input('minute_number', array('label' => false)); ?></td>
-	</tr>
-	<tr>
-		<td>Graduation Date:</td>
-		<td><?php echo $this->Form->input('graduate_date', array('label' => false, 'minYear' => $yFrom, 'maxYear' => $yTo,'style'=>'width:80px')); ?></td>
-	</tr>
-</table>
-<hr />
-<style>
-table.summery tr td{
-padding:2px;
-}
-table.student_list tr td{
-padding:2px;
-}
-</style>
-<?php
-$count = 1;
-foreach($students_for_graduate_list as $c_id => $students) {
-	?>
-	<table class='fs13 summery'>
-		<tr>
-			<td style="width:22%">Department:</td>
-			<td style="width:78%; font-weight:bold"><?php echo $students[0]['Department']['name']; ?></td>
-		</tr>
-		<tr>
-			<td>Program:</td>
-			<td style="font-weight:bold"><?php echo $students[0]['Program']['name']; ?></td>
-		</tr>
-		<tr>
-			<td>Curriculum:</td>
-			<td style="font-weight:bold"><?php echo $students[0]['Curriculum']['name']; ?></td>
-		</tr>
-		<tr>
-			<td>Degree Designation:</td>
-			<td style="font-weight:bold"><?php echo $students[0]['Curriculum']['english_degree_nomenclature']; ?></td>
-		</tr>
-		<?php
-		if(!empty($students[0]['Curriculum']['specialization_english_degree_nomenclature'])) {
-		?>
-		<tr>
-			<td>Specialization:</td>
-			<td style="font-weight:bold"><?php echo $students[0]['Curriculum']['specialization_english_degree_nomenclature']; ?></td>
-		</tr>
-		<?php
+
+<script>
+
+	function toggleView(obj) {
+		if ($('#c' + obj.id).css("display") == 'none') {
+			$('#i' + obj.id).attr("src", '/img/minus2.gif');
+		} else {
+			$('#i' + obj.id).attr("src", '/img/plus2.gif');
 		}
-		?>
-		<tr>
-			<td>Degree Designation (Amharic):</td>
-			<td><?php echo $students[0]['Curriculum']['amharic_degree_nomenclature']; ?></td>
-		</tr>
-		<?php
-		if(!empty($students[0]['Curriculum']['specialization_amharic_degree_nomenclature'])) {
-		?>
-		<tr>
-			<td>Specialization (Amharic):</td>
-			<td><?php echo $students[0]['Curriculum']['specialization_amharic_degree_nomenclature']; ?></td>
-		</tr>
-		<?php
-		}
-		?>
-		<tr>
-			<td>Required Credit for Graduation:</td>
-			<td style="font-weight:bold"><?php echo $students[0]['Curriculum']['minimum_credit_points']; ?></td>
-		</tr>
-	</table>
-	<table class="student_list">
-		<tr>
-			<th style="width:4%"></th>
-			<th style="width:2%">S.No</th>
-			<th style="width:28%">Student Name</th>
-			<th style="width:10%">ID</th>
-			<th style="width:5%">Sex</th>
-			<th style="width:10%">Credit Taken</th>
-			<th style="width:10%">CGPA</th>
-			<th style="width:31%">MCGPA</th>
-		</tr>
-	<?php
-	$s_count = 1;
-	foreach($students as $key => $student) {
-		if($key == 0)
-			continue;
-		//TODO: Remove the following code
-		//if($key > 5)
-			//$student['disqualification'] = null;
-		?>
-		<tr>
-			<?php
-			if(!empty($student['disqualification'])) {
-			?>
-				<td style="background-color:white" onclick="toggleView(this)" id="<?php echo $count; ?>"><?php echo $this->Html->image('plus2.gif', array('id' => 'i'.$count, 'div' => false, 'align' => 'left')); ?>?</td>
-			<?php
-			}
-			else {
-				?>
-				<td style="background-color:white"><?php 
-				echo $this->Form->input('Student.'.$count.'.id', array('type' => 'hidden', 'value' => $student['Student']['id']));
-				echo $this->Form->input('Student.'.$count.'.include_graduate', array('type' => 'checkbox', 'label' => false));
-				?></td>
-				<?php
-			}
-			?>
-			<td style="background-color:white"><?php echo $s_count++; ?></td>
-			<td style="background-color:white"><?php echo $this->Html->link(__($student['Student']['full_name']), array('controller' => 'students', 'action' => 'view', $student['Student']['id']), array('target' => '_blank', 'style' =>  'font-weight:normal')); ?></td>
-			<td style="background-color:white"><?php echo $student['Student']['studentnumber']; ?></td>
-			<td style="background-color:white"><?php echo (strcasecmp($student['Student']['gender'], 'male') == 0 ? 'M' : 'F'); ?></td>
-			<td style="background-color:white"><?php echo $student['credit_taken']; ?></td>
-			<td style="background-color:white"><?php echo $student['cgpa']; ?></td>
-			<td style="background-color:white"><?php echo $student['mcgpa']; ?></td>
-		</tr>
-		<?php
-		if(!empty($student['disqualification'])) {
-		?>
-		<tr id="c<?php echo $count; ?>" style="display:none">
-			<td colspan="8" style="background-color:#f0f0f0">
-				<ol>
-					<?php
-					foreach($student['disqualification'] as $d_key => $disqualification) {
-						echo '<li>'.$disqualification.'</li>';
-					}
-					?>
-				</ol>
-			</td>
-		</tr>
-		<?php
-		}
-		$count++;
+		$('#c' + obj.id).toggle("slow");
 	}
-	?>
-	</table>
-	<?php
-	}//End of each curriculum students
-echo $this->Form->submit(__('Add Student to Graduate List'), array('name' => 'addStudentToGraduateList','class'=>'tiny radius button bg-blue', 'div' => false));
-}
-else if(isset($this->request->data) && empty($students_for_graduate_list)) {
-	echo '<div id="flashMessage" class="info-box info-message"><span></span>The system unable to find list of students who are not in the graduate list but in the senate list.</div>';
-}
-?>
 
-</div>
-	  </div> <!-- end of columns 12 -->
-	</div> <!-- end of row --->
-      </div> <!-- end of box-body -->
-</div><!-- end of box -->
-<?php echo $this->Form->end();?>
+	function toggleViewFullId(id) {
+		if ($('#' + id).css("display") == 'none') {
+			$('#' + id + 'Img').attr("src", '/img/minus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append(' Hide Filter');
+		} else {
+			$('#' + id + 'Img').attr("src", '/img/plus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append(' Display Filter');
+		}
+		$('#' + id).toggle("slow");
+	}
+
+    /*
+    // Global flags
+    var looking_for_students_for_the_graduate_list = false;
+    var form_being_submitted = false;
+
+    // ==================== LIST STUDENTS BUTTON ====================
+    $('#listStudentsForGraduateList').click(function(event) {
+
+        if (looking_for_students_for_the_graduate_list) {
+            alert('Looking for eligible students for the graduate list, please wait a moment...');
+            return false;
+        }
+
+        // Reset minute number and disable add button while searching
+        if ($("#minuteNumber").length) {
+            $('#minuteNumber').val('');
+        }
+
+        $('#addStudentToGraduateList').prop('disabled', true);
+        $('#student_list_for_senate').hide();
+
+        // Start searching
+        $(this).val('Looking for Eligible Students...');
+        looking_for_students_for_the_graduate_list = true;
+
+        // Let the form submit naturally (or AJAX if you change it later)
+        return true;
+    });
+
+    // ==================== FORM VALIDATION & SUBMIT ====================
+    var checkForm = function(form) {
+
+        // 1. Check if Minute Number is filled
+        var minuteNumber = $('#minuteNumber').val().trim();
+        if (minuteNumber === '') {
+            $('#minuteNumber').focus();
+            alert('Please enter the minute number.');
+            return false;
+        }
+
+        // 2. Check if at least one student is selected
+        var checkedOne = $('input[type="checkbox"][name*="include_graduate"]').is(':checked');
+
+        if (!checkedOne) {
+            alert('At least one student must be selected to add to the graduate list.');
+            if (validationMessageNonSelected) {
+                validationMessageNonSelected.innerHTML = 'At least one student must be selected to add to the graduate list.';
+            }
+            return false;
+        }
+
+        // 3. Prevent double submission
+        if (form_being_submitted) {
+            alert("Adding Selected Students to Graduate List, please wait a moment...");
+            return false;
+        }
+
+        // 4. Mark as submitting and update UI
+        form_being_submitted = true;
+
+        $('#addStudentToGraduateList')
+            .val('Adding Selected Students to Graduate List...')
+            .prop('disabled', true);
+
+        $('#listStudentsForGraduateList').prop('disabled', true);
+
+        return true;   // Allow form to submit
+    };
+
+    // Optional: Reset flags when page is shown again (back button, etc.)
+    $(window).on('pageshow', function() {
+        form_being_submitted = false;
+        looking_for_students_for_the_graduate_list = false;
+
+        $('#addStudentToGraduateList')
+            .val('<?= __('Add Student to Graduate List') ?>')
+            .prop('disabled', false);
+
+        $('#listStudentsForGraduateList')
+            .val('List Eligible Students')   // change text to your actual button text
+            .prop('disabled', false);
+    });
+
+*/
+</script>

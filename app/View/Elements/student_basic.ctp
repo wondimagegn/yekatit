@@ -1,169 +1,153 @@
-<?php 
+<?php
+if (isset($student_section_exam_status) && !empty($student_section_exam_status)) { 
+    if ((!isset($student_section_exam_status['StudentBasicInfo']) || (isset($student_section_exam_status['StudentBasicInfo']) && empty($student_section_exam_status['StudentBasicInfo']))) && isset($student_section_exam_status['Student']) && !empty($student_section_exam_status['Student'])) {
+        $student_section_exam_status['StudentBasicInfo'] = $student_section_exam_status['Student'];
+    } ?>
+    <table cellpadding="0" cellspacing="0" class="table">
+        <tr>
+            <td>
+                <div class="row">
+                    <div class="large-7 columns">
+                        <table cellpadding="0" cellspacing="0" class="table">
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">Full Name: </span>
+                                    <?= (isset($student_section_exam_status['StudentBasicInfo']['full_name']) ? $student_section_exam_status['StudentBasicInfo']['full_name'] . ' &nbsp; &nbsp; &nbsp; &nbsp; ' .  $this->Html->link('Open Profile', array('controller' => 'students', 'action' => 'student_academic_profile', (isset($student_section_exam_status['StudentBasicInfo']['id']) ? $student_section_exam_status['StudentBasicInfo']['id'] : ''))) : (isset($student_section_exam_status['Student']['full_name']) ? $student_section_exam_status['Student']['full_name']  . ' &nbsp; &nbsp; &nbsp; &nbsp; '.  $this->Html->link('Open Profile', array('controller' => 'students', 'action' => 'student_academic_profile', $student_section_exam_status['Student']['id'])) : '')); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">Student ID: </span>
+                                    <?= (isset($student_section_exam_status['StudentBasicInfo']['studentnumber']) ? $student_section_exam_status['StudentBasicInfo']['studentnumber'] : (isset($student_section_exam_status['Student']['studentnumber']) ? $student_section_exam_status['Student']['studentnumber'] : '')); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">Sex: </span>
+                                    <?= (isset($student_section_exam_status['StudentBasicInfo']['gender']) ? (ucfirst(strtolower(trim($student_section_exam_status['StudentBasicInfo']['gender'])))) :  (isset($student_section_exam_status['Student']['gender']) ? (ucfirst(strtolower(trim($student_section_exam_status['Student']['gender'])))) : '')); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">
+                                        <?= (isset($student_section_exam_status['College']['type']) ? $student_section_exam_status['College']['type'].': ' : 'College: '); ?>
+                                    </span>
+                                    <?= $student_section_exam_status['College']['name']; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">
+                                        <?= (isset($student_section_exam_status['Department']['type']) ? $student_section_exam_status['Department']['type'].': ' : 'Department: '); ?>
+                                    </span>
+                                    <?= (isset($student_section_exam_status['Department']['name']) ? $student_section_exam_status['Department']['name'] : 'Pre/Freshman'); ?>
+                                </td>
+                            </tr>
+                            <?php
+                            if (isset($student_section_exam_status['Curriculum']['name'])) { ?>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">Attached Curriculum: </span>
+                                        <?= $student_section_exam_status['Curriculum']['name'] . ' - ' . $student_section_exam_status['Curriculum']['year_introduced'] . (isset($student_section_exam_status['Curriculum']['type_credit']) ? (count(explode('ECTS', $student_section_exam_status['Curriculum']['type_credit'])) >= 2 ? ' (ECTS)' : ' (Credit)') : ''); ?>
+                                    </td>
+                                </tr>
+                                <?php
+                            } ?>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">Program: </span>
+                                    <?= (isset($student_section_exam_status['Program']['name']) ? $student_section_exam_status['Program']['name'] : 'N/A'); ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font">
+                                    <span class="text-gray">Program Type: </span>
+                                    <?= (isset($student_section_exam_status['ProgramType']['name']) ? $student_section_exam_status['ProgramType']['name'] : 'N/A'); ?>
+                                </td>
+                            </tr>
+                            <?php
+                            if (isset($student_section_exam_status['StudentBasicInfo']) && $student_section_exam_status['StudentBasicInfo']['graduated'] == 0) { ?>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">Year Level: </span>
+                                        <?= (isset($student_section_exam_status['Section']['YearLevel']['name']) ? $student_section_exam_status['Section']['YearLevel']['name'] . ' (' . $student_section_exam_status['Section']['academicyear'] . ')' : (isset($student_section_exam_status['Section']) && empty($student_section_exam_status['Section']['YearLevel']) ? 'Pre/1st' . ' (' . $student_section_exam_status['Section']['academicyear'] . ')' : '---')); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">Section: </span>
+                                        <?= (isset($student_section_exam_status['Section']['name']) ? $student_section_exam_status['Section']['name'] . (!$student_section_exam_status['Section']['archive'] && !$student_section_exam_status['Section']['StudentsSection']['archive'] ? ' &nbsp;(<b class="accepted"> Current </b>)' : ' &nbsp;(<span class="rejected"> Previous </span>)') : '---'); ?>
+                                    </td>
+                                </tr>
+                                <?php
+                            }  else if ((isset($student_section_exam_status['StudentBasicInfo']) && $student_section_exam_status['StudentBasicInfo']['graduated'] == 1)) { ?>
+                                <tr>
+                                    <td class="font center">
+                                        <span class="text-green">Graduated Student Profile</span>
+                                    </td>
+                                </tr>
+                                <?php
+                            } ?>
+                        </table>
+                        <br>
+                    </div>
 
- if (isset($student_section_exam_status) && !empty($student_section_exam_status)) {   
-?>
-    <table><tr><td>
-     <table>
-           
-           <tr><td class="font">College:&nbsp;&nbsp;&nbsp;
-            <?php 
-            
-            echo $student_section_exam_status['College']['name'];
-            
-            ?>
-            </td></tr>
-            
-           <tr><td class="font">Department:&nbsp;&nbsp;&nbsp;
-            <?php 
-                if (isset($student_section_exam_status['Department']['name'])
-                && !empty($student_section_exam_status['Department']['name'])) {
-                   echo $student_section_exam_status['Department']['name'];
-                 } else {
-                    echo 'Pre/Freshman';
-                 }
-            ?>
-            </td></tr>
-             <tr><td class="font">Program:&nbsp;&nbsp;&nbsp;
-            <?php 
-                if (isset($student_section_exam_status['Program']['name'])
-                && !empty($student_section_exam_status['Program']['name'])) {
-                   echo $student_section_exam_status['Program']['name'];
-                 } else {
-                    echo '---';
-                 }
-            ?>
-            </td></tr>
-             <tr><td class="font">Program Type:&nbsp;&nbsp;&nbsp;
-            <?php 
-                if (isset($student_section_exam_status['ProgramType']['name'])
-                && !empty($student_section_exam_status['ProgramType']['name'])) {
-                   echo $student_section_exam_status['ProgramType']['name'];
-                 } else {
-                    echo '---';
-                 }
-            ?>
-            </td></tr>
-            
-            <tr><td class="font">Name:&nbsp;&nbsp;&nbsp;
-            <?php 
-              if (isset($student_section_exam_status['StudentBasicInfo']['full_name'])) {
-                //echo $student_section_exam_status['StudentBasicInfo']['full_name'];
-                 
-                 echo $this->Html->link($student_section_exam_status['StudentBasicInfo']['full_name'], array('controller' => 'students', 'action' => 'student_academic_profile',$student_section_exam_status['StudentBasicInfo']['id']));
-              } else if (isset($student_section_exam_status['Student']['full_name'])) {
-               // echo $student_section_exam_status['Student']['full_name'];
-                
-                 echo $this->Html->link($student_section_exam_status['Student']['full_name'], array('controller' => 'students', 'action' => 'student_academic_profile',$student_section_exam_status['Student']['id']));
-              }
-            ?>
-            </td></tr>
-            <tr><td class="font">Student Number:&nbsp;&nbsp;&nbsp;
-            <?php
-                if (isset($student_section_exam_status['StudentBasicInfo']['studentnumber'])) { 
-                   // echo $student_section_exam_status['StudentBasicInfo']['studentnumber']; 
-                    echo $this->Html->link($student_section_exam_status['StudentBasicInfo']['studentnumber'], array('controller' => 'students', 'action' => 'student_academic_profile',$student_section_exam_status['StudentBasicInfo']['id']));
-                } else if (isset($student_section_exam_status['Student']['studentnumber'])) {
-                    // echo $student_section_exam_status['Student']['studentnumber'];
-                     
-                      echo $this->Html->link($student_section_exam_status['Student']['studentnumber'], array('controller' => 'students', 'action' => 'student_academic_profile',$student_section_exam_status['Student']['id']));
-                }
-            ?>
-            </td></tr>
-         
-            <tr><td class="font">Year Level:&nbsp;&nbsp;&nbsp;
-            <?php 
-               if (isset($student_section_exam_status['Section']['YearLevel']['name'])) {
-                    echo $student_section_exam_status['Section']['YearLevel']['name'];
-               } else {
-                    if (isset($student_section_exam_status['Section']) && $student_section_exam_status['Section']['StudentsSection']['archive']==0) {
-                            echo 'Pre/Fresh';
-                    } else {
-                        echo '---';
-                    }
-                    
-               }
-            ?>
-            </td></tr>
-            <tr><td class="font">Section:&nbsp;&nbsp;&nbsp;
-            <?php 
-            if (isset($student_section_exam_status['Section']['name'])) {
-                echo $student_section_exam_status['Section']['name'];
-            } else {
-                echo '---';
-            }
-            ?>
-            </td></tr>
-            
-           
-       </table>
-       </td><td>
-        <?php 
-         if (!empty($student_section_exam_status['StudentExamStatus'])) {
-            echo "<table>";
-           
-            ?>
-           <tr><td class="font">Semester:&nbsp;&nbsp;&nbsp;<?php
-           		if (isset($student_section_exam_status['StudentExamStatus']['semester'])) {
-           		  
-            		echo $student_section_exam_status['StudentExamStatus']['semester'];
-           		} else {
-           		     echo '---';
-           		}
-           		
-            
-            ?></td></tr>
-            <tr><td class="font">Academic Year:&nbsp;&nbsp;&nbsp;<?php 
-            if (isset($student_section_exam_status['StudentExamStatus']['academic_year'])) {
-              
-            echo $student_section_exam_status['StudentExamStatus']['academic_year'];
-            
-            } else {
-            	echo '---';
-            }
-            
-            ?></td></tr>
-         
-             <tr><td class="font">SGPA:&nbsp;&nbsp;&nbsp;<?php 
-               if (isset($student_section_exam_status['StudentExamStatus']['sgpa'])) {
-                 	echo $student_section_exam_status['StudentExamStatus']['sgpa'];
-             
-               } else {
-               		echo '---';
-               }
-             	
-             
-             ?></td></tr>
-             <?php 
-                if (!empty($student_section_exam_status['StudentExamStatus']['sgpa'])) {
-                ?>
-                <tr><td class="font">CGPA:&nbsp;&nbsp;&nbsp;<?php echo $student_section_exam_status['StudentExamStatus']['cgpa'];?></td></tr>
-                <?php 
-                
-                }
-                
-                if (!empty($student_section_exam_status['StudentExamStatus']['AcademicStatus'])) {
-                     echo '<tr><td class="font">Academic Status:&nbsp;&nbsp;&nbsp;';
-                     if (isset($student_section_exam_status['StudentExamStatus']['AcademicStatus'])) {
-                     	echo $student_section_exam_status['StudentExamStatus']['AcademicStatus']['name'];
-                     } else {
-                     	echo '---';
-                     }
-                     
-                     
-                     echo '</td></tr>';
-                }
-             ?>
-          
-            <?php 
+                    <div class="large-5 columns">
+                        <?php
+                        if (isset($student_section_exam_status['StudentExamStatus']) && !empty($student_section_exam_status['StudentExamStatus'])) { ?>
+                            <table cellpadding="0" cellspacing="0" class="table">
+                                <thead>
+                                    <tr>
+                                        <td class="fs13"><b>Student Academic Status</b></td>
+                                    </tr>
+                                </thead>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">Academic Year: </span>
+                                        <?= (isset($student_section_exam_status['StudentExamStatus']['academic_year']) ? $student_section_exam_status['StudentExamStatus']['academic_year'] : '---'); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">Semester: </span>
+                                        <?= (isset($student_section_exam_status['StudentExamStatus']['semester']) ? $student_section_exam_status['StudentExamStatus']['semester'] : '---'); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font">
+                                        <span class="text-gray">SGPA: </span>
+                                        <?= (isset($student_section_exam_status['StudentExamStatus']['sgpa']) ? $student_section_exam_status['StudentExamStatus']['sgpa'] : '---'); ?>
+                                    </td>
+                                </tr>
 
-        echo "</table>";
-    }
-   ?>
-       
-       </td></tr>
-       </table>
- <?php 
- 
- }
- 
-?> 	
+                                <?php
+                                if (!empty($student_section_exam_status['StudentExamStatus']['sgpa'])) { ?>
+                                    <tr>
+                                        <td class="font">
+                                            <span class="text-gray">CGPA: </span>
+                                            <?= (isset($student_section_exam_status['StudentExamStatus']['cgpa']) ? $student_section_exam_status['StudentExamStatus']['cgpa'] : '---'); ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                }
+
+                                if (!empty($student_section_exam_status['StudentExamStatus']['AcademicStatus'])) { ?>
+                                    <tr>
+                                        <td class="font">
+                                            <span class="text-gray">Academic Status: </span>
+                                            <?= ($student_section_exam_status['StudentBasicInfo']['graduated'] == 1 ? '<span>Graduated</span>' : (isset($student_section_exam_status['StudentExamStatus']['AcademicStatus']) ? $student_section_exam_status['StudentExamStatus']['AcademicStatus']['name'] : '---')); ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                } ?>
+                            </table>
+                            <?php
+                        } ?>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <hr>
+    <?php
+} ?>

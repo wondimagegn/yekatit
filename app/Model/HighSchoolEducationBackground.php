@@ -44,7 +44,7 @@ class HighSchoolEducationBackground extends AppModel {
 			),
 		),
 	);
-	//The Associations below have been created with all possible keys, those that are not needed can be removed
+	
     var $belongsTo = array (
      'Region' => array(
 			'className' => 'Region',
@@ -54,6 +54,7 @@ class HighSchoolEducationBackground extends AppModel {
 			'order' => ''
 		),
     );
+	
 	var $hasMany = array(
 		'Student' => array(
 			'className' => 'Student',
@@ -69,39 +70,33 @@ class HighSchoolEducationBackground extends AppModel {
 			'counterQuery' => ''
 		)
 	);
-	
-	function deleteHighSchoolEducationBackgroundList ($student_id=null,$data=null) {
-	        $dontdeleteids=array();
-	        $deleteids=array();
-	        $deleteids=$this->find('list',
-            array('conditions'=>array('HighSchoolEducationBackground.student_id'=>$student_id),
-            'fields'=>'id'));
-         
-            if (!empty($data['HighSchoolEducationBackground'])) {
-	            foreach ($data['HighSchoolEducationBackground'] as $in=>$va) {
-	                  if (!empty($va['id'])) {
-	                        if (in_array($va['id'],$deleteids)) {
-	                            $dontdeleteids[]=$va['id'];
-	                        }
-          
-	                  } 
-	            }
-	        
-	        }
-	        if (!empty($dontdeleteids)) {
-	            foreach ($deleteids as $in=>&$va) {
-	                    if (in_array($va,$dontdeleteids)) {
-	                        unset($deleteids[$in]);
-	                    }
-	            }
-	        }
-	       
-            if (!empty($deleteids)) {
-                $this->deleteAll(array(
-                'HighSchoolEducationBackground.id'=>$deleteids), false);
-            }
-           
-            
-	}
 
+	function deleteHighSchoolEducationBackgroundList($student_id = null, $data = null)
+	{
+		$dontdeleteids = array();
+		$deleteids = array();
+		$deleteids = $this->find('list', array('conditions' => array('HighSchoolEducationBackground.student_id' => $student_id), 'fields' => 'id'));
+
+		if (!empty($data['HighSchoolEducationBackground'])) {
+			foreach ($data['HighSchoolEducationBackground'] as $in => $va) {
+				if (!empty($va['id'])) {
+					if (in_array($va['id'], $deleteids)) {
+						$dontdeleteids[] = $va['id'];
+					}
+				}
+			}
+		}
+
+		if (!empty($dontdeleteids)) {
+			foreach ($deleteids as $in => &$va) {
+				if (in_array($va, $dontdeleteids)) {
+					unset($deleteids[$in]);
+				}
+			}
+		}
+
+		if (!empty($deleteids)) {
+			$this->deleteAll(array('HighSchoolEducationBackground.id' => $deleteids), false);
+		}
+	}
 }

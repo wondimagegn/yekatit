@@ -1,26 +1,26 @@
 <?php
-if(!empty($clearances)) {
-?>
-<p class="fs14" style="margin-bottom:0px; font-weight:bold">Clearance History</p>
-<table style="margin-top:0px; width:40%">
-	<tr>
-		<th style="width:40%">Requested Date</th>
-		<th style="width:60%">Accepted Date</th>
-	</tr>
-<?php
-foreach($clearances as $clearance) {
-	?>
-	<tr>
-		<td><?php echo $this->Format->short_date($clearance['Clearance']['request_date']); ?></td>
-		<td><?php echo $this->Format->short_date($clearance['Clearance']['acceptance_date']); ?></td>
-	</tr>
+if (!empty($clearances)) { ?>
+	<div class="fs16 smallheading" style="margin-bottom: 10px;"><span>Clearance History: </span></div>
+	<table cellpadding="0" cellspacing="0" class="table-borderless" style="width:50%">
+		<thead>
+			<tr>
+				<td style="text-align: center;width:40%">Requested Date</td>
+				<td style="text-align: center;width:60%">Accepted Date</td>
+			</tr>
+		</thead>
+		<tbody>
+			<?php
+			foreach ($clearances as $clearance) { ?>
+				<tr>
+					<td style="text-align: center;"><?= $this->Time->format("M j, Y", $clearance['Clearance']['request_date'], NULL, NULL); ?></td>
+					<td style="text-align: center;"><?= $this->Time->format("M j, Y", $clearance['Clearance']['acceptance_date'], NULL, NULL); ?></td>
+				</tr>
+				<?php
+			} ?>
+		</tbody>
+	</table>
 	<?php
-}
-?>
-</table>
-<?php
-}
-else {
-	echo '<div class="warning-box warning-message"><span></span>The student does not has any clearance.</div>';
-}
-?>
+} else { ?>
+	<div class='warning-box warning-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>The student does not have any clearance.</div>
+	<?php
+} ?>

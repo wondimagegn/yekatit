@@ -7,12 +7,10 @@ class OnlineApplicantStatusesController extends AppController
 	public $menuOptions = array(
 
 		'parent' => 'placement',
-		'exclude' => array('search'),
-
+		'exclude' => array('search', 'get_applicant_detail'),
 		'alias' => array(
 			'index' => 'View Online Admission Status',
 			'add' => 'Add Online Admission Status',
-
 		)
 	);
 
@@ -35,7 +33,7 @@ class OnlineApplicantStatusesController extends AppController
 	public function beforeFilter()
 	{
 		parent::beforeFilter();
-		$this->Auth->Allow('add', 'edit', 'search');
+		$this->Auth->Allow('get_applicant_detail', 'search');
 	}
 	/*
 	 *Generic search for returned items
@@ -66,14 +64,16 @@ class OnlineApplicantStatusesController extends AppController
 	public function index()
 	{
 
-		$this->paginate = array('contain' => array('OnlineApplicant'), 'order' => array('OnlineApplicantStatus.created DESC'));
+		$this->paginate = array('contain' => array('OnlineApplicant', 'User' => array('Staff' => array('Position'))), 'order' => array('OnlineApplicantStatus.created DESC'));
+
+		debug($this->passedArgs);
 		// filter by application number
 		if (
-			isset($this->passedArgs['OnlineApplicantStatus.trackingnumber'])
+			isset($this->passedArgs['OnlineApplicantStatus.applicationnumber'])
 		) {
-			$applicationnumber = $this->passedArgs['OnlineApplicantStatus.trackingnumber'];
+			$applicationnumber = $this->passedArgs['OnlineApplicantStatus.applicationnumber'];
 			if (!empty($applicationnumber)) {
-				$this->paginate['conditions'][]['OnlineApplicant.trackingnumber'] = $applicationnumber;
+				$this->paginate['conditions'][]['OnlineApplicant.applicationnumber'] = $applicationnumber;
 			}
 			$this->request->data['OnlineApplicantStatus']['applicationnumber'] = $this->passedArgs['OnlineApplicantStatus.applicationnumber'];
 		}
@@ -87,19 +87,42 @@ class OnlineApplicantStatusesController extends AppController
 		}
 		// filter by period
 		if (isset($this->passedArgs['OnlineApplicantStatus.request_to.year'])) {
-			$this->paginate['conditions'][] = array('OnlineApplicantStatus.created <= \'' . $this->passedArgs['OnlineApplicantStatus.request_to.year']
-				. '-' . $this->passedArgs['OnlineApplicantStatus.request_to.month'] . '-' . $this->passedArgs['OnlineApplicantStatus.request_to.day'] . '\'');
+
 
 			$this->paginate['conditions'][] = array('OnlineApplicantStatus.created >= \'' . $this->passedArgs['OnlineApplicantStatus.request_from.year']
 				. '-' . $this->passedArgs['OnlineApplicantStatus.request_from.month'] . '-' . $this->passedArgs['OnlineApplicantStatus.request_from.day'] . '\'');
+			$this->paginate['conditions'][] = array('OnlineApplicantStatus.created <= \'' . $this->passedArgs['OnlineApplicantStatus.request_to.year']
+				. '-' . $this->passedArgs['OnlineApplicantStatus.request_to.month'] . '-' . $this->passedArgs['OnlineApplicantStatus.request_to.day'] . '\'');
 			$this->request->data['OnlineApplicantStatus']['request_from'] = $this->passedArgs['OnlineApplicantStatus.request_from.year']
 				. '-' . $this->passedArgs['OnlineApplicantStatus.request_from.month'] . '-' . $this->passedArgs['OnlineApplicantStatus.request_from.day'];
+
+
 
 			$this->request->data['OnlineApplicantStatus']['request_to'] = $this->passedArgs['OnlineApplicantStatus.request_to.year']
 				. '-' . $this->passedArgs['OnlineApplicantStatus.request_to.month'] . '-' . $this->passedArgs['OnlineApplicantStatus.request_to.day'];
 		}
+		
+		if(isset($this->request->data['OnlineApplicantStatus']['applicationnumber']) 
+			&& !empty($this->request->data['OnlineApplicantStatus']['applicationnumber'])){
+			unset($this->paginate['conditions']);
+			$this->paginate['conditions'][]['OnlineApplicant.applicationnumber'] = $this->request->data['OnlineApplicantStatus']['applicationnumber'];
+
+			
+		} else if(
+		isset($this->passedArgs['OnlineApplicantStatus.applicationnumber'])
+		){
+			unset($this->paginate['conditions']);
+			$applicationnumber = $this->passedArgs['OnlineApplicantStatus.applicationnumber'];
+
+			$this->paginate['conditions'][]['OnlineApplicant.applicationnumber'] = $applicationnumber;
+
+
+
+		}
+		debug($this->passedArgs['OnlineApplicantStatus.applicationnumber']);
 
 		$this->Paginator->settings = $this->paginate;
+		debug($this->Paginator->settings);
 		$onlineApplicantStatuses =
 			$this->Paginator->paginate('OnlineApplicantStatus');
 
@@ -109,11 +132,9 @@ class OnlineApplicantStatusesController extends AppController
 
 		$statuses = array('Pending' => 'Pending', 'Accepted' => 'Accepted', 'Rejected' => 'Rejected');
 		$this->set(compact('statuses'));
+		debug($onlineApplicantStatuses);
 
-		$this->set(
-			'onlineApplicantStatuses',
-			$this->Paginator->paginate()
-		);
+		$this->set(compact('onlineApplicantStatuses'));
 	}
 
 	public function view($id = null)
@@ -130,7 +151,9 @@ class OnlineApplicantStatusesController extends AppController
 	public function add($request_id = null)
 	{
 		if ($this->request->is('post')) {
+			$this->request->data['OnlineApplicantStatus']['user_id'] = $this->Auth->user('id');
 			$this->OnlineApplicantStatus->create();
+
 			if ($this->OnlineApplicantStatus->save($this->request->data)) {
 				//update processed when the status of is document_sent
 				$applicantDetail = $this->OnlineApplicantStatus->OnlineApplicant->find(
@@ -144,18 +167,24 @@ class OnlineApplicantStatusesController extends AppController
 					$request_processed = 1;
 				} else if ($this->request->data['OnlineApplicantStatus']['status'] == "Rejected") {
 					$request_processed = -1;
-				} else if ($this->request->data['OnlineApplicantStatus']['status'] == 'Pending') {
+				} else {
 					$request_processed = 0;
 				}
 
-				$this->OnlineApplicantStatus->OnlineApplicant->saveField(
-					'application_status',
-					$request_processed
-				);
-				$this->OnlineApplicantStatus->OnlineApplicant->saveField(
-					'approved_by',
-					$this->Auth->user('full_name')
-				);
+                if($request_processed == -1 || $request_processed == 1){
+                    $this->OnlineApplicantStatus->OnlineApplicant->saveField(
+                        'application_status',
+                        $request_processed
+                    );
+                    $this->OnlineApplicantStatus->OnlineApplicant->saveField(
+                        'approved_by',
+                        $this->Auth->user('full_name')
+                    );
+                }
+                if ($this->request->data['OnlineApplicantStatus']['status'] == "Document Verified") {
+                    $this->OnlineApplicantStatus->OnlineApplicant->saveField('document_submitted',1);
+                }
+
 
 				$message = "Your online admission status has been updated and please check  the most recent status using your application  number  <u> " . $applicantDetail['OnlineApplicant']['applicationnumber'] . "</u> <br/>";
 
@@ -194,6 +223,13 @@ class OnlineApplicantStatusesController extends AppController
 				),
 				'contain' => array('OnlineApplicantStatus')
 			));
+			$selectedApplicantStatus = $this->OnlineApplicantStatus->find('all', array(
+				'conditions' => array(
+					'OnlineApplicantStatus.online_applicant_id' => $request_id,
+				),
+				'contain' => array('User' => array('Staff' => array('Position')))
+			));
+			$this->set(compact('selectedApplicantStatus'));
 		} else {
 			$requests = $this->OnlineApplicantStatus->OnlineApplicant->find('all', array(
 				'conditions' => array(
@@ -205,12 +241,12 @@ class OnlineApplicantStatusesController extends AppController
 			));
 		}
 		$onlineApplicants = array();
-		debug($requests);
+
 		foreach ($requests as $k) {
 			//check if the status is document_sent
 			$onlineApplicants[$k['OnlineApplicant']['id']] = $k['OnlineApplicant']['full_name'] . '(' . $k['OnlineApplicant']['applicationnumber'] . ')';
 		}
-		$statuses = array('Pending' => 'Pending', 'Accepted' => 'Accepted', 'Rejected' => 'Rejected');
+		$statuses = array('Received and Checked' => 'Received and Checked', 'Document Verified' => 'Document Verified', 'Accepted' => 'Accepted By Quality and Assurance ', 'Rejected' => 'Rejected By Quality and Assurance');
 
 		$this->set(compact(
 			'onlineApplicants',
@@ -240,7 +276,7 @@ class OnlineApplicantStatusesController extends AppController
 					$request_processed = 1;
 				} else if ($this->request->data['OnlineApplicantStatus']['status'] == "Rejected") {
 					$request_processed = -1;
-				} else if ($this->request->data['OnlineApplicantStatus']['status'] == 'Pending') {
+				} else {
 					$request_processed = 0;
 				}
 
@@ -258,7 +294,7 @@ class OnlineApplicantStatusesController extends AppController
 				$Email = new CakeEmail('default');
 				$Email->template('onlineapplication');
 				$Email->emailFormat('html');
-				$Email->from(array('wondetask@gmail.com' => 'AMU Student Portal'));
+				$Email->from(array('wondetask@gmail.com' => 'Student Portal'));
 				$Email->to($applicantDetail['OnlineApplicant']['email']);
 				$Email->subject('Online Admission Status Updated: ' . $applicantDetail['OnlineApplicant']['first_name'] . ' ' . $applicantDetail['OnlineApplicant']['father_name'] . ' for ' . $applicantDetail['OnlineApplicant']['academic_year'] . ' academic year');
 				$Email->viewVars(array('message' => $message));
@@ -279,7 +315,7 @@ class OnlineApplicantStatusesController extends AppController
 				$this->Session->setFlash('<span></span>' . __('The official request status could not be saved. Please, try again.'), 'default', array('class' => 'error-box success-message'));
 			}
 		} else {
-			$options = array('conditions' => array('OnlineApplicantStatus.' . $this->OfficialRequestStatus->primaryKey => $id), 'contain' => 'OnlineApplicant');
+			$options = array('conditions' => array('OnlineApplicantStatus.id' => $id), 'contain' => 'OnlineApplicant');
 			$this->request->data = $this->OnlineApplicantStatus->find('first', $options);
 		}
 
@@ -308,24 +344,139 @@ class OnlineApplicantStatusesController extends AppController
 			//check if the status is document_sent
 			$onlineApplicants[$k['OnlineApplicant']['id']] = $k['OnlineApplicant']['full_name'] . '(' . $k['OnlineApplicant']['applicationnumber'] . ')';
 		}
-		$statuses = array('Pending' => 'Pending', 'Accepted' => 'Accepted', 'Rejected' => 'Rejected');
+		$statuses = array('Received and Checked' => 'Received and Checked', 'Document Verified' => 'Document Verified', 'Accepted' => 'Accepted By Quality and Assurance ', 'Rejected' => 'Rejected By Quality and Assurance');
 
 		$this->set(compact('onlineApplicants', 'statuses'));
 	}
-	public function delete($id = null)
+
+    public function delete($id = null)
+    {
+        if (!$this->OnlineApplicantStatus->exists($id)) {
+
+            if ($this->request->is('ajax')) {
+                $this->set([
+                    'success' => false,
+                    'message' => 'Invalid Status ID',
+                    '_serialize' => ['success', 'message']
+                ]);
+                return;
+            }
+
+            $this->Session->setFlash(
+                '<span></span>Invalid Status ID',
+                'default',
+                array('class' => 'error-box error-message')
+            );
+
+            return $this->redirect($this->referer(['action' => 'index'], true));
+
+        }
+
+        $this->request->allowMethod('post', 'delete');
+
+        $applicantStatus = $this->OnlineApplicantStatus->find('first', array(
+            'conditions' => array(
+                'OnlineApplicantStatus.id' => $id
+            )
+        ));
+        $acceptedStudent = $this->OnlineApplicantStatus->OnlineApplicant->AcceptedStudent->find('count', array(
+            'conditions' => array(
+                'AcceptedStudent.online_applicant_id' => $applicantStatus['OnlineApplicantStatus']['online_applicant_id']
+            )
+        ));
+
+
+        $response = array('success' => false, 'message' => '');
+
+        if ($acceptedStudent == 0) {
+            if ($this->OnlineApplicantStatus->delete($id)) {
+                if ($this->request->is('ajax')) {
+                    $this->set([
+                        'success' => true,
+                        'message' => 'Online Applicant status deleted successfully.',
+                        '_serialize' => ['success', 'message']
+                    ]);
+                    $this->Session->setFlash(
+                        '<span></span> Online Applicant  Status deleted successfully ',
+                        'default',
+                        array('class' => 'success-box success-message')
+                    );
+                    return;
+                }
+
+                $this->Session->setFlash(
+                    '<span></span> Online Applicant Status deleted successfully ',
+                    'default',
+                    array('class' => 'success-box success-message')
+                );
+
+            } else {
+                if ($this->request->is('ajax')) {
+                    $this->set([
+                        'success' => false,
+                        'message' => 'Online Applicant Status could not be deleted. Please try again.',
+                        '_serialize' => ['success', 'message']
+                    ]);
+                    return;
+                }
+
+
+                $response['message'] = __('The Online Applicant Status could not be deleted. Please, try again.');
+
+                $this->Session->setFlash(
+                    '<span></span>' . $response['message'],
+                    'default',
+                    array('class' => 'error-box error-message')
+                );
+
+            }
+        } else {
+            $response['message'] = __('The application status could not be deleted since it is processed fully.');
+            if (!$this->request->is('ajax')) {
+                $this->Session->setFlash(
+                    '<span></span>' . $response['message'],
+                    'default',
+                    array('class' => 'error-box error-message')
+                );
+            }
+        }
+
+        if ($this->request->is('ajax')) {
+            $this->autoRender = false;
+            $this->response->type('json');
+            $this->response->body(json_encode($response));
+            return $this->response;
+        }
+
+        return $this->redirect($this->referer());
+    }
+
+
+    public function get_applicant_detail()
 	{
-		$this->OfficialRequestStatus->id = $id;
-		if (!$this->OfficialRequestStatus->exists()) {
-			throw new NotFoundException(__('Invalid applicant  status'));
-		}
-		$this->request->allowMethod('post', 'delete');
-		if ($this->OfficialRequestStatus->delete()) {
+		$this->layout = 'ajax';
+		if (
+			isset($this->request->data['OnlineApplicantStatus']['online_applicant_id']) &&
+			!empty($this->request->data['OnlineApplicantStatus']['online_applicant_id'])
+		) {
+			$options = array(
+				'conditions' => array('OnlineApplicant.id' => $this->request->data['OnlineApplicantStatus']['online_applicant_id']),
+				'contain' => array(
+					'Attachment',
+					'OnlineApplicantStatus' => array('User'),
 
-			$this->Session->setFlash('<span></span>' . __('The online applicant status  has been deleted.'), 'default', array('class' => 'success-box success-message'));
-		} else {
-
-			$this->Session->setFlash('<span></span>' . __('The online applicant status could not be deleted. Please, try again.'), 'default', array('class' => 'error-box error-message'));
+					'Payment',
+					'HigherEducationBackground',
+					'HighSchoolEducationBackground',
+					'Program',
+					'ProgramType',
+					'Department',
+					'College' => array('Campus')
+				)
+			);
+			$applicant = $this->OnlineApplicantStatus->OnlineApplicant->find('first', $options);
 		}
-		return $this->redirect(array('action' => 'index'));
+
+		$this->set(compact('applicant'));
 	}
 }

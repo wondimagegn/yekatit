@@ -1,220 +1,224 @@
-<script type="text/javascript">
-function toggleView(obj) {
-    if ($('#c' + obj.id).css(
-            "display") == 'none')
-        $('#i' + obj.id).attr("src",
-            '/img/minus2.gif');
-    else
-        $('#i' + obj.id).attr("src",
-            '/img/plus2.gif');
-    $('#c' + obj.id).toggle("slow");
-}
-
-function toggleViewFullId(id) {
-    if ($('#' + id).css("display") ==
-        'none') {
-        $('#' + id + 'Img').attr("src",
-            '/img/minus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Hide Filter');
-    } else {
-        $('#' + id + 'Img').attr("src",
-            '/img/plus2.gif');
-        $('#' + id + 'Txt').empty();
-        $('#' + id + 'Txt').append(
-            'Display Filter');
-    }
-    $('#' + id).toggle("slow");
-}
-</script>
-<?php echo $this->Form->create('AcceptedStudent', array('action' => 'attach_curriculum')); ?>
 <div class="box">
-    <div class="box-body">
-        <div class="row">
-            <div
-                class="large-12 columns">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-attach-outline" style="font-size: larger; font-weight: bold;"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= __('Attach Students to a Curriculum') ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
 
-                <div
-                    class="reservedPlaces form">
+				<?= $this->Form->create('AcceptedStudent', array('action' => 'attach_curriculum')); ?>
 
-                    <div
-                        onclick="toggleViewFullId('ListStudent')"><?php
-																	if (!empty($autoplacedstudents)) {
-																		echo $this->Html->image('plus2.gif', array('id' => 'ListSectionImg'));
-																	?><span style="font-size:10px; vertical-align:top; font-weight:bold"
-                            id="ListSectionTxt">Display
-                            Filter</span><?php
-																	} else {
-																		echo $this->Html->image('minus2.gif', array('id' => 'ListSectionImg'));
-												?><span style="font-size:10px; vertical-align:top; font-weight:bold"
-                            id="ListSectionTxt">Hide
-                            Filter</span><?php
-																	}
-												?></div>
-                    <div id="ListStudent"
-                        style="display:<?php echo (!empty($autoplacedstudents) ? 'none' : 'display'); ?>">
-                        <p>Please select
-                            the academic
-                            year and
-                            program, you
-                            want to
-                            attach
-                            curriculum.
-                        </p>
-                        <?php
+				<div style="margin-top: -30px;">
+					<?php
+					if (!isset($auto_approve)) { ?>
+						<hr>
+						<blockquote>
+							<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+							<span style="text-align:justify;" class="fs16 text-gray">This tool will help you to attach students to approved curriculums in your department. <br> <i class="rejected">Only students which are admitted, not graduated and does'nt have a curriculum attachement appear here for attachent.</i></span>
+						</blockquote>
+						<hr>
 
-						echo '<table class="fs16 small_padding" >';
-						echo '<tr><td>Academic Year</td><td>' . $this->Form->input('AcceptedStudent.academicyear', array(
-							'id' => 'academicyear',
-							'label' => false, 'type' => 'select', 'options' => $acyear_array_data,
-							'empty' => "--Select Academic Year--", 'selected' => isset($selected_academicyear) ? $selected_academicyear : ''
-						)) . '</td><td>Field</td><td>' . $this->Form->input('AcceptedStudent.department_id', array('label' => false)) . '</td></tr>';
-						echo '<tr><td>Program</td><td>' . $this->Form->input('AcceptedStudent.program_id', array('label' => false)) . '</td><td>Program Type</td><td>' . $this->Form->input('AcceptedStudent.program_type_id', array('label' => false)) . '</td></tr>';
+						<div onclick="toggleViewFullId('ListPublishedCourse')">
+							<?php
+							if (!empty($autoplacedstudents)) {
+								echo $this->Html->image('plus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Display Filter</span>
+								<?php
+							} else {
+								echo $this->Html->image('minus2.gif', array('id' => 'ListPublishedCourseImg')); ?>
+								<span style="font-size:10px; vertical-align:top; font-weight:bold" id="ListPublishedCourseTxt">Hide Filter</span>
+								<?php
+							} ?>
+						</div>
 
-						echo '<tr><td>Name</td><td>' .
-							$this->Form->input('AcceptedStudent.name', array('label' => false)) . '</td>
-<td>Limit</td><td>' .
-							$this->Form->input('AcceptedStudent.limit', array('label' => false)) . '</td></tr>';
-
-						echo '<tr>';
-						echo '<td colspan="4">';
-						echo $this->Form->Submit(__('Continue'), array(
-							'div' => false,
-							'name' => 'searchbutton', 'class' => 'tiny radius button bg-blue'
-						));
-						echo '</td>';
-						echo '</tr>';
-						echo '</table>';
-						?>
-
-                    </div>
-
-                    <?php
-
-					if (!empty($autoplacedstudents)) {
-						echo $this->Form->hidden('AcceptedStudent.academicyear', array('value' => $selected_academicyear));
-						if (!isset($turn_of_approve_button)) {
-							echo "<table>";
-
-							echo "<tr><td>" . $this->Form->input('curriculum_id', array(
-								'empty' => '--select curriculum--',
-								'required' => true
-							)) . "</td></tr>";
-							echo "</table>";
-						}
-
-						$count = 0;
-
-					?>
-                    <table>
-                        <tr>
-                            <th colspan=13
-                                class="smallheading">
-                                <?php echo  __('List of student placed to ' . $departments[$this->request->data['AcceptedStudent']['department_id']] . ' and has not attached to curriculum.'); ?>
-                            </th>
-                        </tr>
-                        <tr>
-
-                            <th><?php echo ('No.'); ?>
-                            </th>
-                            <th
-                                style="padding:0">
-                                <?php echo 'Select/ Unselect All <br/>' . $this->Form->checkbox("SelectAll", array('id' => 'select-all', 'checked' => '')); ?>
-                            </th>
-                            <th><?php echo ('Full Name'); ?>
-                            </th>
-                            <th><?php echo ('Sex'); ?>
-                            </th>
-                            <th><?php echo ('Student Number'); ?>
-                            </th>
-
-                            <th><?php echo ('Entrace GPA'); ?>
-                            </th>
-                            <th><?php echo ('University Attended'); ?>
-                            </th>
-                            <th><?php echo ('Department'); ?>
-                            </th>
-
-                            <th><?php echo ('Field of study'); ?>
-                            </th>
-                            <th><?php echo ('Academic Year'); ?>
-                            </th>
-                            <th><?php echo ('Field approval'); ?>
-                            </th>
-
-                            <th><?php echo ('Placement Type '); ?>
-                            </th>
-
-                        </tr>
-                        <?php
-							$i = 0;
-							$serial_number = 1;
-
-							foreach ($autoplacedstudents as $acceptedStudent) :
-								$class = null;
-								if ($i++ % 2 == 0) {
-									$class = ' class="altrow"';
-								}
-							?>
-                        <tr<?php echo $class; ?>>
-
-                            <td><?php echo $serial_number++; ?>
-                            </td>
-                            <td><?php echo $this->Form->checkbox('AcceptedStudent.approve.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')); ?>&nbsp;
-                            </td>
-                            <?php echo $this->Form->hidden('AcceptedStudent.' . $count . '.id', array('value' => $acceptedStudent['AcceptedStudent']['id'])); ?>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['full_name']; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['sex']; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['studentnumber']; ?>&nbsp;
-                            </td>
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['gpa']; ?>&nbsp;
-                            </td>
-
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['university_attended']; ?>&nbsp;
-                            </td>
-
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['attended_stream']; ?>&nbsp;
-                            </td>
-
-
-                            <td><?php echo $acceptedStudent['Department']['name']; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['academicyear']; ?>&nbsp;
-                            </td>
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['Placement_Approved_By_Department'] == 1 ? 'Approved By Department' : 'Not Approved By Department'; ?>&nbsp;
-                            </td>
-
-                            <td><?php echo $acceptedStudent['AcceptedStudent']['placementtype']; ?>&nbsp;
-                            </td>
-
-                            </tr>
-
-                            <?php
-								$count++;
-
-							endforeach;
-
-								?>
-                    </table>
-
-                    <?php
-
-
-						echo '<div>' . $this->Form->Submit(__('Attach'), array('div' => false, 'class' => 'tiny radius button bg-blue', 'name' => 'attach')) . '</div>';
+						<div id="ListPublishedCourse" style="display:<?= (isset($auto_approve) ? 'none' : 'display'); ?>">
+							<fieldset style="padding-bottom: 0px;padding-top: 15px;">
+								<!-- <legend>&nbsp;&nbsp; Search Filters &nbsp;&nbsp;</legend> -->
+								<div class="row">
+									<div class="large-4 columns">
+										<?= $this->Form->input('AcceptedStudent.academicyear', array('label' => 'Admission Year: ', 'style' => 'width:90%', 'options' => $acyear_list, 'default' => isset($selected_academicyear) ? $selected_academicyear : $defaultacademicyear)); ?>
+									</div>
+									<div class="large-4 columns">
+										<?= $this->Form->input('AcceptedStudent.program_id', array('label' => 'Program: ', 'style' => 'width:90%', 'options' => $programs)); ?>
+									</div>
+									<div class="large-4 columns">
+										<?= $this->Form->input('AcceptedStudent.program_type_id', array('label' => 'Program Type: ', 'style' => 'width:90%', 'options' => $programTypes)); ?>
+									</div>
+								</div>
+								<div class="row">
+									<div class="large-4 columns">
+										<?= $this->Form->input('AcceptedStudent.name', array('label' => 'Student Name or ID:', 'placeholder' => 'Student Name or ID...', 'default' => /* $name */ '', 'style' => 'width:90%;')); ?>
+									</div>
+									<div class="large-4 columns">
+										<?= $this->Form->input('AcceptedStudent.limit', array('id' => 'limit ', 'type' => 'number', 'min' => '100',  'max' => '1000', 'value' => $limit, 'step' => '100', 'label' => ' Limit: ', 'style' => 'width:90%;')); ?>
+									</div>
+								</div>
+								<hr>
+								<?= $this->Form->Submit(__('Search'), array('div' => false, 'name' => 'searchbutton', 'class' => 'tiny radius button bg-blue')); ?>
+							</fieldset>
+						</div>
+						<hr>
+						<?php
 					}
 
-					?>
+					if (!empty($autoplacedstudents)) { ?>
+						
+						<?php
+						echo $this->Form->hidden('AcceptedStudent.academicyear', array('value' => $selected_academicyear));
+						if (!isset($turn_of_approve_button)) { ?>
+							<hr>
+							<blockquote>
+								<h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
+								<span style="text-align:justify;" class="fs16 text-black"><i class="rejected">Only recent curriculums which are active, locked and approved by the registrar appear here for attachent.</i> <br> If you miss any of the curriculums in the options list here but available in "Curriculum > List Curriculums" page, Contact your respective registrar to approve, lock or activate the required curriculum to appear here for attachement.</span>
+							</blockquote>
+							<hr>
 
-                </div>
-            </div>
-            <!-- end of columns 12 -->
-        </div> <!-- end of row -->
-    </div> <!-- end of box-body -->
-</div><!-- end of box -->
-<?php echo $this->Form->end(); ?>
+							<fieldset style="padding-bottom: 5px;padding-top: 5px;">
+								<div class="large-2 columns">
+									&nbsp;
+								</div>
+								<div class="large-8 columns">
+									<?= $this->Form->input('curriculum_id', array('label' => 'Curriculum: <span></span>', 'id' => 'selectedCurriculum', 'empty' => '[ Select Curriculum ]', 'required' => true, 'style' => 'width: 90%;')); ?>
+								</div>
+								<div class="large-2 columns">
+									&nbsp;
+								</div>
+							</fieldset>
+							<?php
+						}
+						$count = 0;  ?>
+						
+						<hr>
+						<h6 class="fs15 text-gray">List of students admitted on <?= $selected_academicyear; ?> academic year and placed to <?= $department_name; ?> which are not attached to any curriculum.</h6>
+						<hr>
+
+						<h6 id="validation-message_non_selected" class="text-red fs14"></h6>
+						<br>
+
+						<div style="overflow-x:auto;">
+							<table cellpadding="0" cellspacing="0" class="table">
+								<thead>
+									<tr>
+										<td class="center"><?= $this->Form->checkbox("SelectAll", array('id' => 'select-all', 'checked' => '')); ?></td>
+										<td class="center">#</td>
+										<td class="center">Full Name</td>
+										<td class="center">Sex</td>
+										<td class="center">Student ID</td>
+										<td class="center">EHEECE</td>
+										<td class="center">CGPA</td>
+										<td class="center">Department</td>
+										<td class="center">Admission Year</td>
+										<td class="center">Department Approval</td>
+										<td class="center">Placement Type</td>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$serial_number = 1;
+									foreach ($autoplacedstudents as $acceptedStudent) { ?>
+										<tr>
+											<td class="center">
+												<?= $this->Form->hidden('AcceptedStudent.' . $count . '.id', array('value' => $acceptedStudent['AcceptedStudent']['id'])); ?>
+												<div style="margin-left: 15%;"><?= $this->Form->checkbox('AcceptedStudent.approve.' . $acceptedStudent['AcceptedStudent']['id'], array('class' => 'checkbox1')); ?></div>
+											</td>
+											<td class="center"><?= $serial_number++; ?></td>
+											<td class="vcenter"><?= $acceptedStudent['AcceptedStudent']['full_name']; ?></td>
+											<td class="center"><?= (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'male') == 0 ? 'M' : (strcasecmp(trim($acceptedStudent['AcceptedStudent']['sex']), 'female') == 0 ? 'F' : trim($acceptedStudent['AcceptedStudent']['sex']))); ?></td>
+											<td class="center"><?= $acceptedStudent['AcceptedStudent']['studentnumber']; ?></td>
+											<td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['EHEECE_total_results']) ? (int) $acceptedStudent['AcceptedStudent']['EHEECE_total_results'] : ''); ?></td>
+											<td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['freshman_result']) ? $acceptedStudent['AcceptedStudent']['freshman_result'] : (isset($acceptedStudent['Student']['StudentExamStatus'][0]['cgpa']) && !empty($acceptedStudent['Student']['StudentExamStatus'][0]['cgpa']) ? $acceptedStudent['Student']['StudentExamStatus'][0]['cgpa'] : '')); ?></td>
+											<td class="center"><?= $acceptedStudent['Department']['name']; ?></td>
+											<td class="center"><?= $acceptedStudent['AcceptedStudent']['academicyear']; ?></td>
+											<td class="center"><?= (isset($acceptedStudent['AcceptedStudent']['Placement_Approved_By_Department']) && $acceptedStudent['AcceptedStudent']['Placement_Approved_By_Department'] == 1 ? '<span class="accepted">Yes</span>' : '<span class="on-progress">No</span>'); ?></td>
+											<td class="center"><?= (!empty($acceptedStudent['AcceptedStudent']['placementtype']) ? ucwords(strtolower($acceptedStudent['AcceptedStudent']['placementtype'])) : ''); ?></td>
+										</tr>
+										<?php
+										$count++;
+									} ?>
+								</tbody>
+							</table>
+						</div>
+						<hr>
+						<?= $this->Form->Submit(__('Attach Selected'), array('div' => false, 'id' => 'attachCurriculum', 'name' => 'attach', 'class' => 'tiny radius button bg-blue')); ?>
+						<?php
+					} ?>
+					<?= $this->Form->end(); ?>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	function toggleView(obj) {
+		if ($('#c' + obj.id).css("display") == 'none')
+			$('#i' + obj.id).attr("src", '/img/minus2.gif');
+		else
+			$('#i' + obj.id).attr("src", '/img/plus2.gif');
+		$('#c' + obj.id).toggle("slow");
+	}
+
+	function toggleViewFullId(id) {
+		if ($('#' + id).css("display") == 'none') {
+			$('#' + id + 'Img').attr("src", '/img/minus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append('Hide Filter');
+		} else {
+			$('#' + id + 'Img').attr("src", '/img/plus2.gif');
+			$('#' + id + 'Txt').empty();
+			$('#' + id + 'Txt').append('Display Filter');
+		}
+		$('#' + id).toggle("slow");
+	}
+
+	var form_being_submitted = false;
+
+	const validationMessageNonSelected = document.getElementById('validation-message_non_selected');
+
+	$('#attachCurriculum').click(function() {
+		var isValid = true;
+		//var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+		var checkboxes = document.querySelectorAll('input[type="checkbox"][name^="data[AcceptedStudent][approve]"]');
+		var checkedOne = Array.prototype.slice.call(checkboxes).some(x => x.checked);
+
+		var selectedCurriculum = $("#selectedCurriculum option:selected").text();
+
+		/* alert(checkedOne);
+		alert(selectedCurriculum); */
+
+		if ($("#selectedCurriculum").val() == '') {
+			$("#selectedCurriculum").focus();
+			isValid = true;
+			return false;
+		}
+
+		if (!checkedOne) {
+			alert('At least one student must be selected attach to ' + selectedCurriculum + ' curriculum.');
+			validationMessageNonSelected.innerHTML = 'At least one student must be selected attach to ' + selectedCurriculum + ' curriculum.';
+			isValid = false;
+			return false;
+		}
+
+		if (form_being_submitted) {
+			alert('Attaching selected students to ' + selectedCurriculum + ' curriculum. please wait a moment...');
+			$('#attachCurriculum').attr('disabled', true);
+			isValid = false;
+			return false;
+		}
+
+		if (!form_being_submitted && isValid) {
+			$('#attachCurriculum').val('Attaching Selected Students...');
+			form_being_submitted = true;
+			isValid = true
+			return true;
+		} else {
+			return false;
+		}
+	});
+
+	if (window.history.replaceState) {
+		window.history.replaceState(null, null, window.location.href);
+	}
+</script>

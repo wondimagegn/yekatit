@@ -1,19 +1,8 @@
 <?php
 App::uses('AppModel', 'Model');
-/**
- * StudentEvalutionComment Model
- *
- * @property InstructorEvalutionQuestion $InstructorEvalutionQuestion
- * @property Student $Student
- * @property PublishedCourse $PublishedCourse
- */
-class StudentEvalutionComment extends AppModel {
+class StudentEvalutionComment extends AppModel
+{
 
-/**
- * Validation rules
- *
- * @var array
- */
 	public $validate = array(
 		'instructor_evalution_question_id' => array(
 			'numeric' => array(
@@ -57,13 +46,6 @@ class StudentEvalutionComment extends AppModel {
 		),
 	);
 
-	// The Associations below have been created with all possible keys, those that are not needed can be removed
-
-/**
- * belongsTo associations
- *
- * @var array
- */
 	public $belongsTo = array(
 		'InstructorEvalutionQuestion' => array(
 			'className' => 'InstructorEvalutionQuestion',

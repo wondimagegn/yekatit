@@ -1,97 +1,138 @@
-<?php ?>
-<style>
-.bordering {
-border-left:1px #cccccc solid;
-border-right:1px #cccccc solid;
-}
-.bordering2 {
-border-left:1px #000000 solid;
-border-right:1px #000000 solid;
-border-top:1px #000000 solid;
-border-bottom:1px #000000 solid;
-}
-.courses_table tr td, .courses_table tr th {
-padding:1px
-}
-</style>
+<?php
+/* if (isset($notAssignedCourseeList) && !empty($notAssignedCourseeList)) { ?>
+    <!-- <h6 class="text-gray"><?php //echo $headerLabel; ?></h6> -->
+    <div style="overflow-x:auto;">
+        <table style="width:100%" cellpadding="0" cellspacing="0" class='table'>
+            <thead>
+                <tr>
+                    <th class="center">#</th>
+                    <th class="vcenter">Course Department </th>
+                    <th class="vcenter">Course</th>
+                    <th class="center">Section</th>
+                    <th class="center">Program</th>
+                    <th class="center">Program Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $count = 0;
+                foreach ($notAssignedCourseeList as $departmentNamee => $courseList) {
+                    $dptName = !empty($departmentNamee) ? $departmentNamee : 'Freshman'; ?>
+                    <tr>
+                        <td> </td>
+                        <td colspan="5">Student Department: <?= $dptName;  ?></td>
+                    </tr>
+                    <?php
+                    if (!empty($courseList)) {
+                        foreach ($courseList as $rkey => $rvalue) {
+                            $count = 0;
+                            $year = !empty($rkey) ? $rkey : '1st'; ?>
 
-<?php 
+                            <tr> 
+                                <td style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85);"> </td>
+                                <td colspan="5" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85);">Year Level: <?= $year; ?></td>
+                            </tr>
 
-if (isset($notAssignedCourseeList) && 
-!empty($notAssignedCourseeList)) {
-  ?>
- <h5><?php echo $headerLabel;?></h5>
- <table style="width:100%">
-                   
-			<tr>
-			<td class="bordering2">S.N<u>o</u> </td> 
-			<td class="bordering2">Course Department </td> 
-			<td class="bordering2">Course</td> 
+                            <?php
+                            if (isset($rvalue) && !empty($rvalue)) {
+                                foreach ($rvalue as $mn => $ym) { ?>
+                                    <tr>
+                                        <td class="center"><?= ++$count; ?></td>
+                                        <td class="vcenter"><?= isset($ym['GivenByDepartment']['name']) ? $ym['GivenByDepartment']['name'] : '<<-- Not Dispatched -->>'; ?></td>
+                                        <td class="vcenter"><?= $ym['Course']['course_title'] . ' (' . $ym['Course']['course_code'] .')'; ?> </td>
+                                        <td class="center"><?= $ym['Section']['name'] ?></td>
+                                        <td class="center"><?= $ym['Program']['name'] ?></td>
+                                        <td class="center"><?= $ym['ProgramType']['name']; ?></td>
+                                    </tr>
+                                    <?php
+                                }
+                            } else { ?>
+                                <tr>
+                                    <td colspan="6" class="info-message info-box" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85);">Either all courses are assigned to instructors, or no course is published for <?= $rkey; ?> year <?= $departmentNamee; ?> students for <?= $this->data['Report']['acadamic_year'] . ', '. $this->data['Report']['semester'] .' semester.'; ?></td>
+                                </tr>
+                                <?php
+                            }
+                        }
+                    }
+                } ?>
+            </tbody>
+        </table>
+    </div>
+    <br>
+    <?php
+}  */?>
 
-			<td class="bordering2">Section </td> 
-			<td class="bordering2">Program </td> 
-			<td class="bordering2">Program Type </td> 
+<?php
+if (isset($notAssignedCourseeList) && !empty($notAssignedCourseeList)) { 
+    foreach ($notAssignedCourseeList as $dept => $yearLevel) {
+        $filteredLevels = array();
+        foreach ($yearLevel as $ykey => $courses) {
+            if (!empty($courses)) {
+                $filteredLevels[$ykey] = $courses;
+            }
+        }
 
-			</tr>     
-               
-<?php  
-$count=0;  
-foreach($notAssignedCourseeList as $departmentNamee=>$courseList) {
-?>
-  <tr>
-         <td colspan="6">Student Department: <?php echo $departmentNamee ?></td> 
- </tr>     
-<?php 
-    foreach ($courseList as $rkey => $rvalue) {
-      $count=0;
-     
-    ?>
-   <tr>
-         <td colspan="6">Year: <?php echo $rkey ?></td> 
- </tr>     
-     
-    
-        <?php 
-    if(isset($rvalue) && !empty($rvalue)){
-        foreach($rvalue as $mn=>$ym){ 
-         
-          ?>
-          <tr>
-        <td class="bordering" > 
-<?php 
-           echo ++$count;      
-?>
-        </td>
-        <td class="bordering" > 
-         <?php 
-          echo $ym['GivenByDepartment']['name'];
-	?>
-         </td> 
-         <td class="bordering" >  <?php 
-          echo $ym['Course']['course_title'].' '.$ym['Course']['course_code'];
-	?>  </td> 
-        <td class="bordering"><?php echo $ym['Section']['name']?> 
-        </td>
-        <td class="bordering"><?php echo $ym['Program']['name']?> 
-        </td>
-        <td class="bordering"><?php echo $ym['ProgramType']['name'];?> 
-        </td>
-    </tr>
-   
-        <?php 
-        
-          }
+        if (!empty($filteredLevels)) {
+            $notAssignedCourseeList[$dept] = $filteredLevels;
         } else {
-        
-         ?>
-          <tr><td colspan="6" class="info-message info-box">There is no course in given criteria which is not assigned to instructors.</td></tr>
-         <?php 
-		}
+            unset($notAssignedCourseeList[$dept]);
+        }
+    }  
     
+    if (!empty($notAssignedCourseeList)) {
+        $count = 0;
+        foreach ($notAssignedCourseeList as $departmentNamee => $courseList) { 
+            $dptName = !empty($departmentNamee) ? $departmentNamee : 'Freshman';
+            if (!empty($courseList)) {
+                foreach ($courseList as $rkey => $rvalue) { ?>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%" cellpadding="0" cellspacing="0" class='table'>
+                            <thead>
+                                <tr>
+                                    <th colspan="6" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;">
+                                        <?= $dptName . ', ' . ($year = !empty($rkey) ? $rkey . ' year' : '1st'); ?>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th class="center">#</th>
+                                    <th class="vcenter">Course Given By</th>
+                                    <th class="vcenter">Course</th>
+                                    <th class="center">Section</th>
+                                    <th class="center">Program</th>
+                                    <th class="center">Program Type</th>
+                                </tr>
+                            </thead>
+                            <tbody> 
+                                <?php
+                                $count = 0;
+                                if (isset($rvalue) && !empty($rvalue)) {
+                                    foreach ($rvalue as $mn => $ym) { ?>
+                                        <tr>
+                                            <td class="center"><?= ++$count; ?></td>
+                                            <td class="vcenter"><?= (isset($ym['GivenByDepartment']['name']) ? $ym['GivenByDepartment']['name'] : '<span class="rejected"><<-- Not Dispatched -->></span>'); ?></td>
+                                            <td class="vcenter"><?= $ym['Course']['course_title'] . ' (' . $ym['Course']['course_code'] .')'; ?> </td>
+                                            <td class="center"><?= $ym['Section']['name'] ?></td>
+                                            <td class="center"><?= $ym['Program']['name'] ?></td>
+                                            <td class="center"><?= $ym['ProgramType']['name']; ?></td>
+                                        </tr>
+                                        <?php
+                                    }
+                                } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <br>
+                    <br>
+                    <?php
+                }
+            }
+        }      
+    } else { ?>
+        <div class='info-box info-message'><span style='margin-right: 15px;'></span><i style="font-family: 'Times New Roman', Times, serif; font-weight: bold;">Either all courses are assigned to instructors, or no course is published for <?= $this->data['Report']['acadamic_year'] . ', '. $this->data['Report']['semester'] .' semester.'; ?></i></div>
+        <script>
+            $('#getReportExcel1').attr('disabled', true);//.hide();
+            $('#getReportExcel2').attr('disabled', true);//.hide();
+        </script>
+        <?php
     }
- }
- ?>
- </table>
- <?php 
-}   
-?>
+} ?>

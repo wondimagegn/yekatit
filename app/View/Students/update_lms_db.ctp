@@ -27,19 +27,20 @@ function toggleViewFullId(id) {
                 <div
                     onclick="toggleViewFullId('UpdateKoha')">
                     <?php
-					if (!empty($acceptedStudents)) {
-						echo $this->Html->image('plus2.gif', array('id' => 'UpdateKohaImg'));
-					?><span style="font-size:10px; vertical-align:top; font-weight:bold"
+                    if (!empty($acceptedStudents)) {
+                        echo $this->Html->image('plus2.gif', array('id' => 'UpdateKohaImg'));
+                    ?><span
+                        style="font-size:10px; vertical-align:top; font-weight:bold"
                         id="UpdateKohaTxt">Display
                         Filter</span><?php
-																																} else {
-																																	echo $this->Html->image('minus2.gif', array('id' => 'UpdateKohaImg'));
-																																	?><span
+                                        } else {
+                                            echo $this->Html->image('minus2.gif', array('id' => 'UpdateKohaImg'));
+                                            ?><span
                         style="font-size:10px; vertical-align:top; font-weight:bold"
                         id="UpdateKohaTxt">Hide
                         Filter</span><?php
-																																}
-																																?>
+                                        }
+                                            ?>
                 </div>
                 <div id="UpdateKoha"
                     style="display:<?php echo (!empty($acceptedStudents) ? 'none' : 'display'); ?>">
@@ -62,19 +63,21 @@ function toggleViewFullId(id) {
                                 Year:
                             </td>
                             <td><?php echo $this->Form->input('Search.academicyear', array(
-									'id' => 'academicyear',
-									'label' => false, 'type' => 'select', 'options' => $acyear_array_data,
-									'empty' => "--Select Academic Year--", 'selected' => isset($defaultacademicyear) ? $defaultacademicyear : ''
-								)); ?></td>
+                                    'id' => 'academicyear',
+                                    'label' => false, 'type' => 'select', 'options' => $acyear_array_data,
+                                    'empty' => "--Select Academic Year--", 'selected' => isset($defaultacademicyear) ? $defaultacademicyear : ''
+                                )); ?>
+                            </td>
                             <td>Semester:
                             </td>
                             <td><?php echo $this->Form->input(
-									'Search.semester',
-									array('label' => false, 'options' => array(
-										'I' => 'I', 'II' => 'II',
-										'III' => 'III'
-									), 'empty' => '--select semester--')
-								); ?></td>
+                                    'Search.semester',
+                                    array('label' => false, 'options' => array(
+                                        'I' => 'I', 'II' => 'II',
+                                        'III' => 'III'
+                                    ), 'empty' => '--select semester--')
+                                ); ?>
+                            </td>
                         </tr>
 
                         <tr>
@@ -93,23 +96,34 @@ function toggleViewFullId(id) {
 
                             <td
                                 style="width:15%">
-                                Department/School:
+                                College:
                             </td>
                             <td
-                                style="width:50%"><?php
-													echo $this->Form->input('Search.college_id', array('label' => false, 'type' => 'select', 'empty' => '---Select Department --'));
-													?></td>
+                                style="width:50%">
+                                <?php
+                                echo $this->Form->input('Search.college_id', array('label' => false, 'type' => 'select', 'empty' => '---Select College --'));
+                                ?>
+                            </td>
                         </tr>
 
 
                         <tr>
                             <td
-                                colspan="6">
-                                <?php echo $this->Form->Submit('Continue', array(
-									'div' => false, 'id' => 'submitBtn', 'name' => 'updateLMSDB',
-									'class' => 'tiny radius button bg-blue'
-								)); ?>
+                                colspan="3">
+                                <?php echo $this->Form->Submit('Update LMS', array(
+                                    'div' => false, 'id' => 'submitBtn', 'name' => 'updateLMSDB',
+                                    'class' => 'tiny radius button bg-blue'
+                                )); ?>
                             </td>
+
+                            <td
+                                colspan="3">
+                                <?php echo $this->Form->Submit('Clean LMS Database', array(
+                                    'div' => false, 'id' => 'submitBtnDelete', 'name' => 'deleteLMSDB',
+                                    'class' => 'tiny radius button bg-blue'
+                                )); ?>
+                            </td>
+
                         </tr>
                     </table>
                 </div>
@@ -118,8 +132,8 @@ function toggleViewFullId(id) {
                 </div>
                 <?php
 
-				echo $this->Form->end();
-				?>
+                echo $this->Form->end();
+                ?>
             </div>
             <!-- end of columns 12 -->
         </div> <!-- end of row --->
@@ -134,20 +148,15 @@ function toggleViewFullId(id) {
 		}
 	);
 	*/
-$('#update_lms_form').submit(
-function() {
-    var image = new Image();
-    image.src = '/img/busy.gif';
-    //$('#submitBtn').value="Processing ...";
-    $('#submitBtn').attr(
-        "disabled", true);
-    $('#submitBtn').attr(
-        "value",
-        "Processing...");
-    $("#ProcessingLMS").empty()
-        .html(
-            '<img src="/img/busy.gif" class="displayed" >'
-            );
-    return true;
+/*
+$('#update_lms_form').submit(function(){
+		var image = new Image();
+		image.src = '/img/busy.gif';
+		//$('#submitBtn').value="Processing ...";
+		$('#submitBtn').attr("disabled",true);
+		$('#submitBtn').attr("value","Processing...");
+		$("#ProcessingLMS").empty().html('<img src="/img/busy.gif" class="displayed" >');
+		return true;
 });
+*/
 </script>

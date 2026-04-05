@@ -114,7 +114,7 @@ class DateHelper extends AppHelper {
 
             $output_string .= '>';
 
-            $this->_createInputs($field, $date, $disabled, & $output_string);
+            $this->_createInputs($field, $date, $disabled, /* &  */$output_string);
             $output_string .= '</select>' . "\n";
         }
 
@@ -156,7 +156,7 @@ class DateHelper extends AppHelper {
     }
 
     function _calculateId($str) { //Model.0.field_name -> Model0FieldName
-        $pieces = split('[\._]', $str);
+        $pieces = str_split('[\._]', $str);
         $result = '';
         foreach ($pieces as $piece) {
             $piece = ucfirst($piece);

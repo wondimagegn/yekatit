@@ -1,8 +1,12 @@
 <?php echo $this->Form->create('Page', array(
-    'controller' => 'pages', 'action' => 'online_admission_tracking', 'method' => 'post',
-    'id' => 'MyForm',
+    'controller' => 'pages', 
+    'action' => 'online_admission_tracking',
+     'type' => 'file',
+  
     'enctype' => 'multipart/form-data',
-    'type' => 'file',
+	'id' => 'MyFormTracking'
+   
+    
 )); ?>
 <div class="box">
     <div class="box-body">
@@ -33,10 +37,25 @@
                         submit the
                         files.</u>
                 </p>
+                <p>
+
+                    <?php
+                    if (isset($request['Invoice'][0]['receipt_code']) && !empty($request['Invoice'][0]['receipt_code'])) {
+
+                        echo $this->Html->link(__('Please download the invoice by clicking this link and 
+                        settled the payment at bank if you have not yet settled the payment'), "javascript:void(0)",
+                                array("escape" => false, "onclick" => "window.open('" . $this->Html->url(array('controller' => 'invoices',
+                                                'action' => 'generate_invoice', $request['Invoice'][0]['receipt_code'])) . "',
+                                                'photo','height=650,width=1000,scrollbars=yes,resizable=yes')"));
+
+
+                    }
+                    ?>
+                </p>
             </div>
             <div
                 class="large-12 columns">
-                <?php echo $this->Form->input('OnlineApplicant.trackingnumber', array('label' => '', 'placeholder' => 'Application number')); ?>
+                <?=$this->Form->input('OnlineApplicant.applicationnumber', array('label' => '', 'placeholder' => 'Application number')); ?>
 
 
 
@@ -175,9 +194,22 @@
                 </div>
 
             </div>
-            <?php if (isset($request) && !empty($request)) { ?>
+            <?php if (isset($request) && !empty($request)) {
+
+
+
+
+
+                 ?>
             <div
                 class="large-12 columns">
+                <?php
+                debug($unpaidPayment);
+                 if (isset($unpaidPayment) && !empty($unpaidPayment) && isset($paymentMethods) && !empty($paymentMethods)) {
+                              echo $this->element('payment_methods/options');
+
+                        }
+                    ?>
                 <table>
                     <thead>
                         <tr>

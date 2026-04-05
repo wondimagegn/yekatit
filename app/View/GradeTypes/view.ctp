@@ -1,107 +1,66 @@
-<div class="gradeTypes view">
-<div class="smallheading"><?php echo __('Grade Type');?></div>
-<table class="fs13">
-	<tr>
-		<td style="width:15%">Type:</td>
-		<td style="width:85%"><?php echo $gradeType['GradeType']['type']; ?></td>
-	</tr>
-	<tr>
-		<td>Date Created:</td>
-		<td><?php echo $this->Format->humanize_date($gradeType['GradeType']['created']); ?></td>
-	</tr>
-	<tr>
-		<td>Date Modified:</td>
-		<td><?php echo $this->Format->humanize_date($gradeType['GradeType']['modified']); ?></td>
-	</tr>
-</table>
+<div class="box">
+	<div class="box-header bg-transparent">
+		<div class="box-title" style="margin-top: 10px;"><i class="fontello-info-outline"></i>
+			<span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= 'Grade Type Details: ' . (isset($gradeType['GradeType']['type']) ? $gradeType['GradeType']['type'] : ''); ?></span>
+		</div>
+	</div>
+	<div class="box-body">
+		<div class="row">
+			<div class="large-12 columns">
+				<table cellpadding="0" cellspacing="0" class="table-borderless fs13">
+					<tr>
+						<td style="width:15%"><span class="text-gray" style="font-weight: bold;">Type:</span> &nbsp;&nbsp; <?= $gradeType['GradeType']['type']; ?></td>
+					</tr>
+					<tr>
+						<td><span class="text-gray" style="font-weight: bold;">Date Created:</span> &nbsp;&nbsp; <?= $this->Time->format("M j, Y g:i A", $gradeType['GradeType']['created'], NULL, NULL); ?></td>
+					</tr>
+					<tr>
+						<td><span class="text-gray" style="font-weight: bold;">Date Modified:</span> &nbsp;&nbsp; <?= $this->Time->format("M j, Y g:i A", $gradeType['GradeType']['modified'], NULL, NULL); ?></td>
+					</tr>
+				</table>
+				<hr>
+				<h5 class="fs15 text-gray"><?= __('List of Grades for ' . $gradeType['GradeType']['type'] . ' grade type'); ?></h5>
+				<br>
+			</div>
+			<?php
+			if (!empty($gradeType['Grade'])) { ?>
+				<div class="large-12 columns">
+					<table cellpadding="0" cellspacing="0" class="responsive table-borderless fs13">
+						<thead>
+							<tr>
+								<!-- <td>#</td> -->
+								<td style="text-align: center;"><?= __('Grade'); ?></th>
+								<td style="text-align: center;"><?= __('Point Value'); ?></td>
+								<td style="text-align: center;"><?= __('Pass Grade'); ?></td>
+								<td style="text-align: center;"><?= __('Repeatable'); ?></td>
+								<td style="text-align: center;"><?= __('Active'); ?></td>
+								<td style="text-align:center"><?= __('Actions'); ?></td>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							$count = 1;
+							foreach ($gradeType['Grade'] as $grade) { ?>
+								<tr>
+									<!-- <td><?= $count++; ?></td> -->
+									<td style="text-align: center;"><?= $grade['grade']; ?></td>
+									<td style="text-align: center;"><?= $grade['point_value']; ?></td>
+									<td style="text-align: center;"><?= ($grade['pass_grade'] == 1 ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?></td>
+									<td style="text-align: center;"><?= ($grade['allow_repetition'] == 1 ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?></td>
+									<td style="text-align: center;"><?= ($grade['active'] == 1 ? '<span style="color:green">Yes</span>' : '<span style="color:red">No</span>'); ?></td>
+									<td class="actions">
+										<?= $this->Html->link(__(''), array('action' => 'edit', $gradeType['GradeType']['id']), array('class' => 'fontello-pencil', 'title' => 'Edit'));
+										$action_controller_id = 'view~gradeTypes~' . $grade['grade_type_id']; ?> &nbsp;
+										<?= $this->Html->link(__(''), array('controller' => 'grades', 'action' => 'delete', $grade['id'], $action_controller_id), array('class' => 'fontello-trash', 'title' => 'Delete'), sprintf(__('Are you sure you want to delete %s grade?'), $grade['grade'])); ?>
+									</td>
+								</tr>
+								<?php
+							} ?>
+						</tbody>
+					</table>
+				</div>
+				<?php
+			} ?>
+		</div>
+	</div>
 </div>
-<div class="related">
-<div class="fs15"><?php echo __('List of Grades for '.$gradeType['GradeType']['type'].' grade type');?></div>
-	<?php if (!empty($gradeType['Grade'])):?>
-	<table cellpadding = "0" cellspacing = "0">
-	<tr>
-	    <th><?php echo __('S.No'); ?></th>
-		<th><?php echo __('Grade'); ?></th>
-		<th><?php echo __('Point Value'); ?></th>
-		
-		<th><?php echo __('Pass Grade'); ?></th>
-		
-		<th class="actions" style="text-align:center"><?php echo __('Actions');?></th>
-	</tr>
-	<?php
-		$i = 0;
-		$count=1;
-		foreach ($gradeType['Grade'] as $grade):
-			$class = null;
-			if ($i++ % 2 == 0) {
-				$class = ' class="altrow"';
-			}
-		?>
-		<tr<?php echo $class;?>>
-			<td><?php echo $count++;?></td>
-			<td><?php echo $grade['grade'];?></td>
-			<td><?php echo $grade['point_value'];?></td>
-			<td><?php echo ($grade['pass_grade'] == 1 ? 'Yes' : 'No');?></td>
-			
-			<td class="actions">
-				
-				<?php echo $this->Html->link(__('Edit'), array( 'action' => 'edit', $gradeType['GradeType']['id'])); 
-				$action_controller_id='view~gradeTypes~'.$grade['grade_type_id'];
-				?>
-				
-				<?php echo $this->Html->link(__('Delete'), array('controller'=>'grades','action' => 'delete', $grade['id'],$action_controller_id), null, sprintf(__('Are you sure you want to delete # %s?'), $grade['id'])); ?>
-			</td>
-		</tr>
-	<?php endforeach; ?>
-	</table>
-<?php endif; ?>
-</div>
-<!--- 
-<div class="related">
-	<h3><?php echo __('Related Courses');?></h3>
-	<?php if (!empty($gradeType['Course'])):?>
-	<table cellpadding = "0" cellspacing = "0">
-	<tr>
-		<th><?php echo __('Id'); ?></th>
-		<th><?php echo __('Course Title'); ?></th>
-		<th><?php echo __('Course Code'); ?></th>
-		
-		<th><?php echo __('Credit'); ?></th>
-		<th width="5%"><?php echo __('L T L');?></th>
-		<th><?php echo __('Curriculum'); ?></th>
-		<th><?php echo __('Course Category'); ?></th>
-		<th><?php echo __('Department'); ?></th>
-		
-		<th class="actions"><?php echo __('Actions');?></th>
-	</tr>
-	<?php
-		$i = 0;
-		foreach ($gradeType['Course'] as $course):
-			$class = null;
-			if ($i++ % 2 == 0) {
-				$class = ' class="altrow"';
-			}
-		?>
-		<tr<?php echo $class;?>>
-			<td><?php echo $course['id'];?></td>
-			<td><?php echo $course['course_title'];?></td>
-			<td><?php echo $course['course_code'];?></td>
-			
-			<td><?php echo $course['credit'];?></td>
-			<td><?php echo $course['course_detail_hours'];?></td>
-			
-			<td><?php echo $course['Curriculum']['name'];?></td>
-			<td><?php echo $course['CourseCategory']['name'];?></td>
-			<td><?php echo $course['Curriculum']['Department']['name'];?></td>
-			
-			<td class="actions">
-				<?php echo $this->Html->link(__('View'), array('controller' => 'courses', 'action' => 'view', $course['id'])); ?>
-				<?php echo $this->Html->link(__('Edit'), array('controller' => 'courses', 'action' => 'edit', $course['id'])); ?>
-				<?php echo $this->Html->link(__('Delete'), array('controller' => 'courses', 'action' => 'delete', $course['id']), null, sprintf(__('Are you sure you want to delete # %s?'), $course['id'])); ?>
-			</td>
-		</tr>
-	<?php endforeach; ?>
-	</table>
-<?php endif; ?>
-</div>
---->

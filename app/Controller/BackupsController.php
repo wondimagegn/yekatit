@@ -1,52 +1,56 @@
 <?php
 App::uses('Folder', 'Utility');
-define("TMP_FILE_PATH","/var/www/smis-2/app/tmp/cause.txt");
-@chmod(TMP_FILE_PATH,777);
+define("TMP_FILE_PATH", "/var/www/smis-2/app/tmp/cause.txt");
+@chmod(TMP_FILE_PATH, 777);
 
-class BackupsController extends AppController {
-	
-     var $name = 'Backups';
-     var $menuOptions = array(
-            'exclude'=>array('delete_one_month_old_backup'),
-			'alias' => array(
-                    'index' => 'Download Backup',
-            )
-     );
-     public $components = array('DataTable');
-     public $paginate = array();
-      function beforeFilter() {
-	    parent::beforeFilter();
-	    $this->Auth->Allow('delete_one_month_old_backup');
-      }
-      function __init_search() {
-        // We create a search_data session variable when we fill any criteria 
-        // in the search form.
-          if(!empty($this->request->data['Backup'])){
-		     $search_session = $this->request->data['Backup'];
-		     // Session variable 'search_data'
-		     $this->Session->write('backup_search_data', $search_session);
-          } else {
-        	$search_session = $this->Session->read('backup_search_data');
-        	$this->request->data['Backup'] = $search_session;
-          } 
-      }
-	
-	function take_backup($cron = false) {
-	    //read the command from smis.php
-	    if(isset($this->request->data['generateDatabaseBackup'])) {
-		$command=Configure::read('Utility.command');
-		debug($command);
-		$output = shell_exec($command." > cause.text");
-       
-		$this->Session->setFlash('<span></span>'.__('You have successfully generate database backup, you can download the backup from the following list.'), 'default', array('class' => 'success-message success-box'));
-		  return $this->redirect(array('action' => 'index'));
+class BackupsController extends AppController
+{
+	var $name = 'Backups';
+
+	var $menuOptions = array(
+		'exclude' => array('delete_one_month_old_backup'),
+		'alias' => array(
+			'index' => 'Download Backup',
+		)
+	);
+
+	public $components = array('DataTable');
+	public $paginate = array();
+
+	function beforeFilter()
+	{
+		parent::beforeFilter();
+		$this->Auth->Allow('delete_one_month_old_backup');
+	}
+
+	function __init_search()
+	{
+		if (!empty($this->request->data['Backup'])) {
+			$search_session = $this->request->data['Backup'];
+			$this->Session->write('backup_search_data', $search_session);
+		} else {
+			$search_session = $this->Session->read('backup_search_data');
+			$this->request->data['Backup'] = $search_session;
 		}
 	}
-	
-	function index($backup_id = null) {
+
+	function take_backup($cron = false)
+	{
+		//read the command from smis.php
+		if (isset($this->request->data['generateDatabaseBackup'])) {
+			$command = Configure::read('Utility.command');
+			debug($command);
+			$output = shell_exec($command . " > cause.text");
+			$this->Flash->success(__('You have successfully generated database backup, you can download the backup from the following list.'));
+			return $this->redirect(array('action' => 'index'));
+		}
+	}
+
+	function index($backup_id = null)
+	{
 		$this->__init_search();
 		$this->paginate['limit'] = 20;
-		$this->paginate['order'] = array('Backup.created DESC');
+		$this->paginate['order'] = array('Backup.created' => 'DESC');
 		$backupList = array();
 		$files_for_download = array();
 		$dir = new Folder(Configure::read('Utility.backupPath'));
@@ -56,149 +60,145 @@ class BackupsController extends AppController {
 		$files3 = $dir->find('.*\.gz');
 		$files4 = $dir->find('.*\.sql');
 		$files = array_merge($files1, $files2, $files3, $files4);
-	   
-		foreach ($files as $file) {
-			$index = count($files_for_download);
-			$file = new File($dir->pwd() . DS . $file);
-			$backupDetail = $this->Backup->find('first',
-				array(
-					'conditions' =>
-					array(
+
+		if (!empty($backupList)) {
+			foreach ($files as $file) {
+				$index = count($files_for_download);
+				$file = new File($dir->pwd() . DS . $file);
+				$backupDetail = $this->Backup->find('first', array(
+					'conditions' => array(
 						'Backup.name' => $file->name,
 						'Backup.location' => $file->Folder->path,
 						'Backup.mime' => mime_content_type($file->path)
 					),
 					'recursive' => -1
-				)
-			);
-			if(empty($backupDetail) && $file->size() > 0) {
-				$bl_index = count($backupList);
-				$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
-				$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
-				$backupList[$bl_index]['Backup']['name'] = $file->name;
-				$backupList[$bl_index]['Backup']['size'] = $file->size();
-				$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
-				$backupList[$bl_index]['Backup']['backup_taken'] = 0;
-				$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
+				));
+
+				if (empty($backupDetail) && $file->size() > 0) {
+					$bl_index = count($backupList);
+					$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
+					$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
+					$backupList[$bl_index]['Backup']['name'] = $file->name;
+					$backupList[$bl_index]['Backup']['size'] = $file->size();
+					$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
+					$backupList[$bl_index]['Backup']['backup_taken'] = 0;
+					$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
+				}
 			}
 		}
-		if(!empty($backupList)) {
+
+		if (!empty($backupList)) {
 			$this->Backup->saveAll($backupList);
 		}
-		//If search button is clicked
-		//if(isset($this->request->data['viewBackup'])) {
-		//debug($this->request->data);
-		if(isset($this->request->data['viewBackup']) && !empty($this->request->data['Backup'])) {
+		
+		if (isset($this->request->data['viewBackup']) && !empty($this->request->data['Backup'])) {
 			$backup_from_date = $this->request->data['Backup']['backup_date_from'];
 			$backup_to_date = $this->request->data['Backup']['backup_date_to'];
-			$backup_from_date = $backup_from_date['year'].'-'.$backup_from_date['month'].'-'.$backup_from_date['day'].' 00:00:00';
-			$backup_to_date = $backup_to_date['year'].'-'.$backup_to_date['month'].'-'.$backup_to_date['day'].' 23:59:59';
+			$backup_from_date = $backup_from_date['year'] . '-' . $backup_from_date['month'] . '-' . $backup_from_date['day'] . ' 00:00:00';
+			$backup_to_date = $backup_to_date['year'] . '-' . $backup_to_date['month'] . '-' . $backup_to_date['day'] . ' 23:59:59';
 			$this->paginate['conditions']['Backup.created >='] = $backup_from_date;
 			$this->paginate['conditions']['Backup.created <='] = $backup_to_date;
 		}
-	    $this->Paginator->settings=$this->paginate;
-	    debug($this->Paginator->settings);
-		$files_for_download =$this->Paginator->paginate('Backup'); 
-      
-		foreach($files_for_download as &$ffd_value) {
-			if(file_exists($ffd_value['Backup']['location'].DS.$ffd_value['Backup']['name']))
-				$ffd_value['Backup']['file_exists'] = true;
-			else
-				$ffd_value['Backup']['file_exists'] = false;
-		}
-		if(empty($files_for_download)) {
-			if(!empty($this->request->data)) {
-				$this->Session->setFlash('<span></span>'.__('There is no backup in the selected date range.'), 'default', array('class' => 'info-message info-box'));
-			}
-			else {
-				$this->Session->setFlash('<span></span>'.__('There is no backup to download.'), 'default', array('class' => 'info-message info-box'));
-			}
-		}
-		
-		$this->set(compact('files_for_download'));
-		$response=$files_for_download;
-		$this->set('_serialize','response');
 
-		if(!empty($backup_id)) {
-			$backupDetail = $this->Backup->find('first',
-				array(
-					'conditions' =>
-					array(
-						'Backup.id' => $backup_id
-					),
-					'recursive' => -1
-				)
-			);
-			
-			if(!empty($backupDetail) && file_exists($backupDetail['Backup']['location'].DS.$backupDetail['Backup']['name'])) {
+		$this->Paginator->settings = $this->paginate;
+		//debug($this->Paginator->settings);
+		$files_for_download = $this->Paginator->paginate('Backup');
+
+		if (!empty($files_for_download)) {
+			foreach ($files_for_download as &$ffd_value) {
+				if (file_exists($ffd_value['Backup']['location'] . DS . $ffd_value['Backup']['name'])) {
+					$ffd_value['Backup']['file_exists'] = true;
+				} else {
+					$ffd_value['Backup']['file_exists'] = false;
+				}
+			}
+		}
+
+		if (empty($files_for_download)) {
+			if (!empty($this->request->data)) {
+				$this->Flash->info(__('There is no backup in the selected date range.'));
+			} else {
+				$this->Flash->info(__('There is no backup to download.'));
+			}
+		}
+
+		$this->set(compact('files_for_download'));
+		$response = $files_for_download;
+		$this->set('_serialize', 'response');
+
+		if (!empty($backup_id)) {
+			$backupDetail = $this->Backup->find('first', array('conditions' => array('Backup.id' => $backup_id), 'recursive' => -1));
+
+			if (!empty($backupDetail) && file_exists($backupDetail['Backup']['location'] . DS . $backupDetail['Backup']['name'])) {
 				$backupDetail['Backup']['backup_taken'] = 1;
-				if($backupDetail['Backup']['first_backup_taken_date'] == 0 || $backupDetail['Backup']['first_backup_taken_date'] == null || $backupDetail['Backup']['first_backup_taken_date'] == '0000-00-00')
+				if ($backupDetail['Backup']['first_backup_taken_date'] == 0 || $backupDetail['Backup']['first_backup_taken_date'] == null || $backupDetail['Backup']['first_backup_taken_date'] == '0000-00-00') {
 					$backupDetail['Backup']['first_backup_taken_date'] = date('Y-m-d H:i:s');
+				}
+
 				$backupDetail['Backup']['last_backup_taken_date'] = date('Y-m-d H:i:s');
 				$this->Backup->save($backupDetail);
-				$file_extension = strtolower(substr($backupDetail['Backup']['name'], strripos($backupDetail['Backup']['name'], '.')+1));
+				$file_extension = strtolower(substr($backupDetail['Backup']['name'], strripos($backupDetail['Backup']['name'], '.') + 1));
 				$this->viewClass = 'Media';
 				$params = array(
-				'id' => $backupDetail['Backup']['name'],
-				'name' => substr($backupDetail['Backup']['name'], 0, strripos($backupDetail['Backup']['name'], '.')),
-				'download' => true,
-				'extension' => $file_extension, // must be lower case
-				'mimeType' => array($file_extension => $backupDetail['Backup']['mime']),
-				'path' => Configure::read('Utility.backupPath')// don't forget terminal 'DS'
+					'id' => $backupDetail['Backup']['name'],
+					'name' => substr($backupDetail['Backup']['name'], 0, strripos($backupDetail['Backup']['name'], '.')),
+					'download' => true,
+					'extension' => $file_extension, // must be lower case
+					'mimeType' => array($file_extension => $backupDetail['Backup']['mime']),
+					'path' => Configure::read('Utility.backupPath') // don't forget terminal 'DS'
 				);
 				$this->set($params);
 			}
 		}
 	}
-	
-	function delete_one_month_old_backup ($cron=false) {
-        $backupList = array();
+
+	function delete_one_month_old_backup($cron = false)
+	{
+		$backupList = array();
 		//debug(Configure::read('Utility.command'));
 		$dir = new Folder(Configure::read('Utility.backupPath'));
-		
+
 		$files1 = $dir->find('.*\.zip');
 		$files2 = $dir->find('.*\.tar');
 		$files3 = $dir->find('.*\.gz');
 		$files4 = $dir->find('.*\.sql');
 		$files = $files1 + $files2 + $files3 + $files4;
-	   
-		foreach ($files as $file) {
-			
-			$file = new File($dir->pwd() . DS . $file);
-			$backupDetail = $this->Backup->find('first',
-				array(
-					'conditions' =>
-					array(
+
+		if (!empty($files)) {
+			foreach ($files as $file) {
+				$file = new File($dir->pwd() . DS . $file);
+				$backupDetail = $this->Backup->find('first', array(
+					'conditions' => array(
 						'Backup.name' => $file->name,
 						'Backup.location' => $file->Folder->path,
-						
-						'Backup.created <='=> date("Y-m-d 23:59:59",strtotime("-32 day"))
+						'Backup.created <=' => date("Y-m-d 23:59:59", strtotime("-32 day"))
 					),
 					'recursive' => -1
-				)
-			);
-			if(!empty($backupDetail)) {
-				$bl_index = count($backupList);
-				$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
-				$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
-				$backupList[$bl_index]['Backup']['name'] = $file->name;
-				$backupList[$bl_index]['Backup']['size'] = $file->size();
-				$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
-				$backupList[$bl_index]['Backup']['backup_taken'] = 0;
-				$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
+				));
+
+				if (!empty($backupDetail)) {
+					$bl_index = count($backupList);
+					$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
+					$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
+					$backupList[$bl_index]['Backup']['name'] = $file->name;
+					$backupList[$bl_index]['Backup']['size'] = $file->size();
+					$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
+					$backupList[$bl_index]['Backup']['backup_taken'] = 0;
+					$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
+				}
 			}
 		}
-		$full_file_path=array();
-		foreach ($backupList as $bcindex=>$bv) {
-		   $full_file_path[]=$bv['Backup']['location'].'/'.$bv['Backup']['name'];
-		}
-		if ($cron) {
-		    return $full_file_path;
+
+		$full_file_path = array();
+
+		if (!empty($backupList)) {
+			foreach ($backupList as $bcindex => $bv) {
+				$full_file_path[] = $bv['Backup']['location'] . '/' . $bv['Backup']['name'];
+			}
 		}
 		
-			
+		if ($cron) {
+			return $full_file_path;
+		}
 	}
-	
-	
-	
 }

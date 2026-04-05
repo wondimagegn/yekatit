@@ -1,3054 +1,3649 @@
 <?php
-class CourseAddsController extends AppController {
+class CourseAddsController extends AppController
+{
+	var $name = 'CourseAdds';
 
-    var $name = 'CourseAdds';
-    var $menuOptions = array(
-                //'parent' => 'courseRegistrations',
-                 'parent'=>'registrations',
-                 'alias' => array(
-                    'index' => 'View Course Adds',
-                    'add' => 'Add course for single student',
-                    'approve_adds'=>'Approve Students Add Request',
-                    'student_add_courses'=>'Add Courses'
-                   
-            )
-                
-       );
-     //var $components =array('AcademicYear', 'Security');
-       var $components =array('AcademicYear');         
-   
-   //var $components =array('AcademicYear');
-    function beforeRender() {
+	var $menuOptions = array(
+		'parent' => 'registrations',
+		'alias' => array(
+			'index' => 'List Course Adds',
+			'add' => 'Request Course Add for Student',
+			'approve_adds' => 'Approve Course Add Requests',
+			'student_add_courses' => 'Add Courses',
+			'mass_add' => 'Approve Mass Add Requests',
+			'cancel_mass_add' => 'Cancel Approved Mass Adds',
+			'cancel_course_add' => 'Cancel Course Add of Student',
+		),
+		'exclude' => array(
+			'get_published_add_courses',
+			'approve_auto_rejected_course_add',
+			'search'
+		)
+	);
 
-        $acyear_array_data = $this->AcademicYear->acyear_array();
-        //To diplay current academic year as default in drop down list
-        $defaultacademicyear=$this->AcademicYear->current_academicyear();
-        foreach($acyear_array_data as $k=>$v){
-                if($v==$defaultacademicyear){
-                $defaultacademicyear=$k;
-                    break;
-                }
-        }
-        if(!empty($this->program_type_id)){
-	   		   $program_types=$programTypes =  $this->CourseAdd->Student->ProgramType->find('list',array('conditions'=>
-	   		   	array('ProgramType.id'=>$this->program_type_id)));
-	   } else{
-	   		   $program_types=$programTypes=$this->CourseAdd->Student->ProgramType->find('list');
-	   }
+	//var $components =array('AcademicYear', 'Security');
+	var $components = array('AcademicYear');
 
-       if(!empty($this->program_id)){
-	   		   $programs=$this->CourseAdd->Student->Program->find('list',array('conditions'=>
-	   		   	array('Program.id'=>$this->program_id)));
-	   } else{
-	   		   $programs=$this->CourseAdd->Student->Program->find('list');
-	   }
-        $this->set(compact('acyear_array_data','defaultacademicyear','program_types','programs',
-        	'programTypes'));
-        unset($this->request->data['User']['password']);
-	}
-	/**
-	* After successful test , this before filter will be applied to all controller
-	* in our application to make our application more secure, protecting against form modification,
-	* CSRF attacks
-	*/
-	
-	function beforeFilter () {
-	     parent::beforeFilter();
-		 $this->Auth->allow('get_published_add_courses','invalid','search');
-	}
-		 /*
-	 *Generic search for returned items
-	 */
-	 function search() {
-		// the page we will redirect to
-		$url['action'] = 'index';
-		
-		// build a URL will all the search elements in it
-		// the resulting URL will be 
-		// domain.com/returned_items/index/Search.keywords:mykeyword/Search.tag_id:3
-		foreach ($this->request->data as $k=>$v){ 
-			foreach ($v as $kk=>$vv){ 
-				$url[$k.'.'.$kk]=$vv; 
-			} 
+	public $paginate = array();
+
+	function beforeRender()
+	{
+
+		parent::beforeRender();
+		//$acyear_array_data = $this->AcademicYear->academicYearInArray(date('Y') - 5, date('Y'));
+
+		//////////////////////////////////// DONT EDIT /////////////////////////////////////////////
+
+		$defaultacademicyear = $this->AcademicYear->current_academicyear();
+
+		if (is_numeric(ACY_BACK_COURSE_ADD_DROP_APPROVAL) && ACY_BACK_COURSE_ADD_DROP_APPROVAL) {
+			$acyear_array_data = $this->AcademicYear->academicYearInArray(((explode('/', $defaultacademicyear)[0]) - ACY_BACK_COURSE_ADD_DROP_APPROVAL), (explode('/', $defaultacademicyear)[0]));
+
+			$acYearMinuSeparated = $this->AcademicYear->acYearMinuSeparated(((explode('/', $defaultacademicyear)[0]) - ACY_BACK_COURSE_ADD_DROP_APPROVAL), (explode('/', $defaultacademicyear)[0]));
+			$defaultacademicyearMinusSeparted = str_replace('/', '-', $defaultacademicyear);
+		} else {
+			$acyear_array_data[$defaultacademicyear] = $defaultacademicyear;
+			
+			$defaultacademicyearMinusSeparted = str_replace('/', '-', $defaultacademicyear);
+			$acYearMinuSeparated[$defaultacademicyearMinusSeparted] = $defaultacademicyearMinusSeparted;
 		}
 
-		// redirect the user to the url
-		return $this->redirect($url, null, true);
-	 }
-   
-   function __init_search() {
-        // We create a search_data session variable when we fill any criteria 
-        // in the search form.
-        if(!empty($this->request->data['Student'])){
-               
-                    $search_session = $this->request->data['Student'];
-                   // Session variable 'search_data'
-                    $this->Session->write('search_data', $search_session);
-                
-        } else {
+		$this->set('defaultacademicyear', $defaultacademicyear);
+		$this->set('defaultacademicyearMinusSeparted', $defaultacademicyearMinusSeparted);
 
-        	$search_session = $this->Session->read('search_data');
-        	$this->request->data['Student'] = $search_session;
-        } 
+		//////////////////////////////////// END DONT EDIT /////////////////////////////////////////////
 
-    }
-   
-	function index() {
-		//$this->CourseAdd->recursive = 0;
-		$this->paginate=array ('limit'=>200,'contain'=>array('PublishedCourse'=>array('Course'),
-		'Student'=>array('id','full_name','department_id','program_id',
-		'program_type_id'),'YearLevel'=>array('id','name')),
-		'order'=>'CourseAdd.created DESC');
-		 $options=array();
-		 $department_id=array();
-	     if ($this->role_id == ROLE_REGISTRAR) {
-	                  if (!empty($this->department_ids)) {
-	                       $department_id=$this->department_ids;
-	                          
-		                  $departments=$this->CourseAdd->Student->Department->find('list',
-		                  array('conditions'=>array('Department.id'=>$department_id)));
-		      
-	                  } if (!empty($this->college_ids)) {
-	                     $colleges=$this->CourseAdd->Student->College->find('list',
-		                  array('conditions'=>array('College.id'=>$this->college_ids)));
-		      
-	                  }
-	                 
-	      } else if ($this->role_id == ROLE_DEPARTMENT ) {
-	              $department_id=$this->department_id;
-	            
-		          $departments=$this->CourseAdd->Student->Department->find('list',
-		          array('conditions'=>array('Department.id'=>$department_id)));
-	      } else if ($this->role_id == ROLE_COLLEGE) {
-	             $department_ids = $this->CourseAdd->Student->Department->find('list',
-	              array('conditions'=>array('Department.college_id'=>$this->college_id)));
-	              $department_id = array_keys($department_ids);
-	             $beginning['pre']='Pre/Fresh';
-	             $departments=$this->CourseAdd->Student->Department->find(
-	             'list',array('conditions'=>array('Department.college_id'=>$this->college_id)));
-		      
-		        $departments = $beginning+$departments;
-	      }
-		  
-		  $this->__init_search_index();  
-		  if ($this->Session->read('search_data_index')) {
-		    $this->request->data['viewCourseAdds']=true;
-		  }
-		 
-		  
-		  if (!empty($this->request->data) && isset($this->request->data['viewCourseAdds'])) { 
-                    		                
-		            
-		             if (!empty($this->request->data['Search']['program_type_id'])) {
-	                       if ($this->role_id == ROLE_REGISTRAR) {
-	                              $options[] = array(
-                                   
-                                    'Student.program_type_id'=>$this->request->data['Search']['program_type_id'],
-                                    'Student.department_id'=>$department_id  
-                                );
-	                                           
-	                         } 
-	                         
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-                                 $options[] = array(
-                                    
-                                    'Student.program_type_id'=>$this->request->data['Search']['program_type_id'],
-                                     'Student.department_id'=>$department_id    
-                                 );
-	                        }  
-	                        
-	                       if ($this->role_id == ROLE_COLLEGE) {
-                                
-                                 
-                                 $options[] = array(
-                                    
-                                     'Student.program_type_id'=>$this->request->data['Search']['program_type_id'],
-                                     'Student.college_id'=>$this->college_id   
-                                 );
-	                        }    
-	                }
-	                
-	                if (!empty($this->request->data['Search']['program_id'])) {
-	                       if ($this->role_id == ROLE_REGISTRAR) {
-	                              $options[] = array(
-                                   
-                                    'Student.program_id'=>$this->request->data['Search']['program_id'],
-                                    'Student.department_id'=>$department_id  
-                                );
-	                                           
-	                         } 
-	                         
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-                                 $options[] = array(
-                                    
-                                    'Student.program_id'=>$this->request->data['Search']['program_id'],
-                                     'Student.department_id'=>$department_id    
-                                 );
-	                        }  
-	                         if ($this->role_id == ROLE_COLLEGE) {
-                                
-                                 
-                                 $options[] = array(
-                                    
-                                    'Student.program_id'=>$this->request->data['Search']['program_id'],
-                                     'Student.college_id'=>$this->college_id   
-                                 );
-	                        }    
-	                }
-		              if (!empty($this->request->data['Search']['college_id'])) {
-	                        if ($this->role_id == ROLE_REGISTRAR) {
-	                              
-                                    $options[] = array(
-                                    
-                                       'Student.department_id is null',
-                                       'Student.college_id'=>$this->request->data['Search']['college_id']  
-                                     );
-	                                           
-	                         } 
-	                         
-	                      
-	                }
-		             if (!empty($this->request->data['Search']['department_id'])) {
-	                       if ($this->role_id == ROLE_REGISTRAR) {
-	                              $options[] = array(
-                                   
-                                    'Student.department_id'=>$this->request->data['Search']['department_id'] 
-                                );
-	                                           
-	                         } 
-	                         
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-                                 $options[] = array(
-                                    
-                                     'Student.department_id'=>$this->request->data['Search']['department_id']  
-                                 );
-	                        }  
-	                        
-	                      if ($this->role_id == ROLE_COLLEGE) {
-                                
-                                if (strcasecmp($this->request->data['Search']['department_id'],'pre')===0) {
-                                    $options[] = array(
-                                    
-                                       'Student.department_id is null',
-                                       'Student.college_id'=>$this->college_id   
-                                     );
-                                } else {
-                                   $options[] = array(
-                                    
-                                    'Student.department_id'=>$this->request->data['Search']['department_id'],
-                                 );
-                                }
-                                
-	                       } 
-	                }
-	                
-	                 if (!empty($this->request->data['Search']['semester'])) {
-	                       
-	                              $options[] = array(
-                                   
-                                    'CourseAdd.semester'=>$this->request->data['Search']['semester'],
-                                    'Student.department_id'=>$department_id  
-                                );
 
-	                }
-		            
-		             if (!empty($this->request->data['Search']['academic_year'])) {
-	                       
-	                              $options[] = array(
-                                   
-                                    'CourseAdd.academic_year'=>$this->request->data['Search']['academic_year'],
-                                    'Student.department_id'=>$department_id  
-                                );
+		$programs = ClassRegistry::init('Program')->find('list', array('conditions' => array('Program.id' => $this->program_ids, 'Program.active' => 1)));
+		$program_types = $programTypes = ClassRegistry::init('ProgramType')->find('list', array('conditions' => array('ProgramType.id' => $this->program_type_ids, 'ProgramType.active' => 1)));
 
-	                }
-	                
-		            if ($this->request->data['Search']['rejected']==1 && $this->request->data['Search']['accepted']==0 
-	               && $this->request->data['Search']['notprocessed']==0) {
-	                         if ($this->role_id == ROLE_DEPARTMENT) {
-	                             $options[] = array(
-	                               
-	                                "CourseAdd.department_approval"=>0,
-	                                'Student.department_id'=>$department_id
-	                           );         
-	                         }
-	                         if ($this->role_id == ROLE_REGISTRAR) {
-	                              $options[] = array(
-	                               
-	                                "CourseAdd.registrar_confirmation"=>0,
-	                                'Student.department_id'=>$department_id
-	                           );         
-	                         }
-	                              
-	                         if ($this->role_id == ROLE_COLLEGE) {
-	                           
-	                           if (strcasecmp($this->request->data['Search']['department_id'],'pre')===0) {
-                                    $options[] = array(
-                                        "CourseAdd.department_approval"=>0,
-                                       'Student.department_id is null',
-                                       'Student.college_id'=>$this->college_id   
-                                     );
-                                } else {
-                                   $options[] = array(
-                                     "CourseDrop.department_approval"=>0,
-                                    'Student.department_id'=>$department_id
-                                 );
-                                }
-                              
-	                        }
-	                          
-	              }
-	              
-	               if ($this->request->data['Search']['accepted']==1 && $this->request->data['Search']['rejected']==0
-	               && $this->request->data['Search']['notprocessed']==0) {
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-	                          $options[] = array(
-	                               
-	                                "CourseAdd.department_approval"=>1,
-	                                'Student.department_id'=>$department_id
-	                           );         
-	                        }
-	                         if ($this->role_id == ROLE_REGISTRAR) {
-	                           $options[] = array(
-	                               
-	                                "CourseAdd.registrar_confirmation"=>1,
-	                                'Student.department_id'=>$department_id
-	                           );      
-	                         }
-	                    if ($this->role_id == ROLE_COLLEGE) {
-	                           
-	                           if (strcasecmp($this->request->data['Search']['department_id'],'pre')===0) {
-                                    $options[] = array(
-                                       "CourseAdd.department_approval"=>1,
-                                       'Student.department_id is null',
-                                       'Student.college_id'=>$this->college_id   
-                                     );
-                                } else {
-                                   $options[] = array(
-                                    "CourseAdd.department_approval"=>1,
-                                    'Student.department_id'=>$department_id
-                                 );
-                                }
-                              
-	                        
-	                   }  
-	              }
-	              
-	               if ($this->request->data['Search']['accepted']==0 && $this->request->data['Search']['rejected']==0
-	               && $this->request->data['Search']['notprocessed']==1) {
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-	                            $options[] = array(
-	                               
-	                                "CourseAdd.department_approval is null",
-	                                'Student.department_id'=>$department_id
-	                           );
-	                        }   
-	                        
-	                        if ($this->role_id == ROLE_REGISTRAR) {
-	                          $options[] = array(
-	                                "CourseAdd.department_approval=1",
-	                                "CourseAdd.registrar_confirmation is null",
-	                                'Student.department_id'=>$department_id
-	                           );
-	                        }
-	                        
-	                     if ($this->role_id == ROLE_COLLEGE) {
-	                           
-	                           if (strcasecmp($this->request->data['Search']['department_id'],'pre')===0) {
-                                    $options[] = array(
-                                       'Student.department_id is null',
-                                        "CourseAdd.department_approval is null",
-                                       'Student.college_id'=>$this->college_id   
-                                     );
-                                } else {
-                                   $options[] = array(
-                                     "CourseAdd.department_approval is null",
-                                    'Student.department_id'=>$department_id
-                                 );
-                                }
-                              
-	                        
-	                    }               
-	                                      
-	              }
-	              
-	               if ($this->request->data['Search']['accepted']==1 && $this->request->data['Search']['rejected']==1
-	               && $this->request->data['Search']['notprocessed']==0) {
-	                         if ($this->role_id == ROLE_DEPARTMENT) {
-	                                
-	                            $options[] = array(
-	                               
-	                                "CourseAdd.department_approval"=>array(0,1),
-	                                'Student.department_id'=>$department_id
-	                           );                 
-	                         }
-	                         
-	                         if ($this->role_id == ROLE_REGISTRAR) {
-	                           $options[] = array(
-	                                "CourseAdd.department_approval=1",
-	                                "CourseAdd.registrar_confirmation"=>array(0,1),
-	                                'Student.department_id'=>$department_id
-	                           );       
-	                         }  
-	                         
-	                          if ($this->role_id == ROLE_COLLEGE) {
-	                               $options[] = array(
-	                               
-	                                "CourseAdd.department_approval"=>array(0,1),
-	                                'Student.department_id'=>$department_id
-	                               );            
-	                         }  
-	              }
-	              
-	               if ($this->request->data['Search']['accepted']==1 && $this->request->data['Search']['rejected']==0
-	               && $this->request->data['Search']['notprocessed']==1) {
-	                       if ($this->role_id == ROLE_DEPARTMENT) {
-	                           $options[] = array(
-	                                 'Student.department_id'=>$department_id,
-	                                 'OR'=>array(
-	                                 "CourseAdd.department_approval"=>1,
-	                                 "CourseAdd.department_approval is null ")
-	                           ); 
-	                       }
-	                       
-	                       if ($this->role_id == ROLE_REGISTRAR) {
-	                            $options[] = array(
-	                                 'Student.department_id'=>$department_id,
-	                                 "CourseAdd.department_approval=1",
-	                                 'OR'=>array(
-	                                 "CourseAdd.registrar_confirmation"=>1,
-	                                 "CourseAdd.registrar_confirmation is null ")
-	                           ); 
-	                       } 
-	                       
-	                        if ($this->role_id == ROLE_COLLEGE) {
-	                           $options[] = array(
-	                                 'Student.department_id'=>$department_id,
-	                                 'OR'=>array(
-	                                 "CourseAdd.department_approval"=>1,
-	                                 "CourseAdd.department_approval is null ")
-	                           ); 
-	                       }               
-	              }
-	              
-	               if ($this->request->data['Search']['accepted']==0 && $this->request->data['Search']['rejected']==1
-	               && $this->request->data['Search']['notprocessed']==1) {
-	                        if ($this->role_id == ROLE_DEPARTMENT) {
-	                           $options[] = array(
-	                                 'Student.department_id'=>$department_id,
-	                                 'OR'=>array("CourseAdd.department_approval"=>0,
-	                                 "CourseAdd.department_approval is null")
-	                           );
-	                           
-	                       }
-	                       
-	                       if ($this->role_id == ROLE_REGISTRAR) {
-	                            $options[] = array(
-	                                 "CourseAdd.department_approval=1",
-	                                 'Student.department_id'=>$department_id,
-	                                 'OR'=>array("CourseAdd.registrar_confirmation"=>0,
-	                                 "CourseAdd.registrar_confirmation is null")
-	                           );
-	                       }
-	                       
-	                        if ($this->role_id == ROLE_COLLEGE) {
-	                           $options[] = array(
-	                                 'Student.department_id'=>$department_id,
-	                                 'OR'=>array("CourseAdd.department_approval"=>0,
-	                                 "CourseAdd.department_approval is null")
-	                           );
-	                           
-	                       }                  
-	              }
-	              
-	      }
-	      if ($this->role_id == ROLE_STUDENT) {
-	              $options[] = array(
-                        "CourseAdd.student_id"=>$this->student_id
-			         );
-	       } else {
-	            if (empty($options)) {
-	                $options[] = array(
-                        "Student.department_id"=>$department_id
-			         );
-	            }
-	      }
-	      if(empty($this->request->data['Search']['program_type_id']) && !empty($this->program_type_id)){
-	      	    $options[] = array(
-                        "Student.program_type_id"=>$this->program_type_id
-                 );
-	      }
-	      if(empty($this->request->data['Search']['program_id']) && !empty($this->program_id)){
-	      	    $options[] = array(
-                        "Student.program_id"=>$this->program_id
-                 );
-	      }
+		$yearLevels = $this->year_levels;
 
-        $courseAdds=$this->paginate($options);
-       
-	    if (empty($courseAdds)) {
-	       $this->Session->setFlash('<span></span>'.__('There is no add courses in the system in the given criteria.'),'default',array('class'=>'info-box info-message'));
-	    } else {
-	        $this->set('courseAdds',$courseAdds);
-	       
-	    }
-		  $this->set(compact('programs','programTypes','departments'));
+		$this->set(compact('acyear_array_data', 'program_types', 'programs', 'programTypes', 'acYearMinuSeparated', 'defaultacademicyearMinusSeparted', 'yearLevels'));
+
+		if (isset($this->request->data['User']['password'])) {
+			unset($this->request->data['User']['password']);
+		}
 	}
 
-	function view($id = null) {
+	function beforeFilter()
+	{
+		parent::beforeFilter();
+		$this->Auth->allow(
+			'get_published_add_courses',
+			//'invalid',
+			'search'
+			//'approve_auto_rejected_course_add'
+		);
+	}
+
+	function search()
+	{
+		$url['action'] = 'index';
+
+		if (isset($this->request->data) && !empty($this->request->data)) {
+			foreach ($this->request->data as $k => $v) {
+				if (!empty($v) && is_array($v)) {
+					foreach ($v as $kk => $vv) {
+						if (!empty($vv) && is_array($vv)) {
+							foreach ($vv as $kkk => $vvv){
+								$url[$k . '.' . $kk . '.' . $kkk] = str_replace('/', '-', trim($vvv));
+							}
+						} else {
+							$url[$k . '.' . $kk] = str_replace('/', '-', trim($vv));
+						}
+					}
+				}
+			}
+		}
+
+		return $this->redirect($url, null, true);
+	}
+
+	function __init_search()
+	{
+		if (!empty($this->request->data['Student'])) {
+			$this->Session->write('search_data', $this->request->data['Student']);
+		} else if ($this->Session->check('search_data')) {
+			$this->request->data['Student'] = $this->Session->read('search_data');
+		}
+	}
+
+	function __init_search_index()
+	{
+		if (!empty($this->request->data['Search'])) {
+			$this->Session->write('search_data_index', $this->request->data['Search']);
+		} else if ($this->Session->check('search_data_index')) {
+			$this->request->data['Search'] = $this->Session->read('search_data_index');
+		}
+	}
+
+	function __init_clear_session_filters()
+	{
+		if ($this->Session->check('search_data')) {
+			$this->Session->delete('search_data');
+		}
+
+		if ($this->Session->check('search_data_index')) {
+			$this->Session->delete('search_data_index');
+		}
+	}
+
+	function index()
+	{
+		$limit = 100;
+		$name = '';
+		//$studentnumber = '';
+		$default_department_id =  '';
+		$default_college_id =  '';
+		$selected_academic_year = '';
+		$page = 1;
+		$direction = 'desc';
+		$sort = 'CourseAdd.created';
+		
+		$options = array();
+
+		$default_ac_year = $this->AcademicYear->current_academicyear();
+		$allowed_academic_years_for_add_drop[$default_ac_year] = $default_ac_year;
+
+		if (is_numeric(ACY_BACK_COURSE_ADD_DROP_APPROVAL) && ACY_BACK_COURSE_ADD_DROP_APPROVAL) {
+			$allowed_academic_years_for_add_drop = $this->AcademicYear->academicYearInArray(((explode('/', $default_ac_year)[0]) - ACY_BACK_COURSE_ADD_DROP_APPROVAL), (explode('/', $default_ac_year)[0]));
+		}
+		
+		if (/* isset($this->passedArgs) &&  */!empty($this->passedArgs)) {
+
+			//debug($this->passedArgs);
+
+			if (!empty($this->passedArgs['Search.limit'])) {
+				$limit = $this->request->data['Search']['limit'] = $this->passedArgs['Search.limit'];
+			}
+
+			if (!empty($this->passedArgs['Search.name'])) {
+				$name = $this->request->data['Search']['name'] = str_replace('-', '/', trim($this->passedArgs['Search.name']));
+			}
+
+			if (!empty($this->passedArgs['Search.department_id'])) {
+				$default_department_id = $this->request->data['Search']['department_id'] = $this->passedArgs['Search.department_id'];
+			}
+
+			if (isset($this->passedArgs['Search.college_id']) && !empty($this->passedArgs['Search.college_id'])) {
+				$default_college_id = $this->request->data['Search']['college_id'] = $this->passedArgs['Search.college_id'];
+			}
+
+			if (!empty($this->passedArgs['Search.academic_year'])) {
+				$selected_academic_year = $this->request->data['Search']['academic_year'] =  str_replace('-', '/', trim($this->passedArgs['Search.academic_year']));
+				$allowed_academic_years_for_add_drop[$selected_academic_year] = $selected_academic_year;
+			}
+
+			if (!empty($this->passedArgs['Search.semester'])) {
+				$this->request->data['Search']['semester'] = $this->passedArgs['Search.semester'];
+			} 
+
+			if (!empty($this->passedArgs['Search.program_id'])) {
+				$this->request->data['Search']['program_id'] = $this->passedArgs['Search.program_id'];
+			}
+
+			if (isset($this->passedArgs['Search.program_type_id'])) {
+				$this->request->data['Search']['program_type_id'] = $this->passedArgs['Search.program_type_id'];
+			}
+
+			if (isset($this->passedArgs['Search.graduated'])) {
+				$this->request->data['Search']['graduated'] = $this->passedArgs['Search.graduated'];
+			}
+
+			/* if (isset($this->passedArgs['Search.studentnumber'])) {
+				$studentnumber = $this->request->data['Search']['studentnumber'] = str_replace('-', '/', trim($this->passedArgs['Search.studentnumber']));
+			} */
+
+			if (isset($this->passedArgs['Search.status']) && !empty($this->passedArgs['Search.status'])) {
+				$this->request->data['Search']['status'] = $this->passedArgs['Search.status'];
+			}
+
+			if (isset($this->passedArgs['page'])) {
+				$page = $this->request->data['Search']['page'] = $this->passedArgs['page'];
+			}
+
+			if (isset($this->passedArgs['sort'])) {
+				$sort = $this->request->data['Search']['sort'] = $this->passedArgs['sort'];
+			}
+
+			if (isset($this->passedArgs['direction'])) {
+				$direction = $this->request->data['Search']['direction'] = $this->passedArgs['direction'];
+			}
+
+			//$this->__init_search();
+			$this->__init_search_index();
+			//$this->request->data['search'] = true;
+		}
+
+		if (isset($data) && !empty($data['Search'])) {
+			$this->request->data['Search'] = $data['Search'];
+			$this->__init_clear_session_filters();
+			$this->__init_search_index();
+		}
+
+		if (isset($this->request->data['search'])) {
+			unset($this->passedArgs);
+			$this->__init_clear_session_filters();
+			$this->__init_search_index();
+		}
+
+		
+		if (!empty($this->request->data)) {
+			//debug($this->request->data);
+
+			if (!empty($page) && !isset($this->request->data['search'])) {
+				$this->request->data['Search']['page'] = $page;
+			}
+
+			if (isset($this->request->data['Search']['status']) && $this->request->data['Search']['status'] == 'auto_rejected' && (empty($this->request->data['Search']['academic_year']) || empty($this->request->data['Search']['semester']))) {
+				$curr_acy_semester = $this->AcademicYear->current_acy_and_semester();
+				if (empty($this->request->data['Search']['academic_year'])) {
+					$this->request->data['Search']['academic_year'] = $curr_acy_semester['academic_year'];
+				}
+				if (empty($this->request->data['Search']['semester'])) {
+					$this->request->data['Search']['semester'] = $curr_acy_semester['semester'];
+				}
+			}
+
+			if (!isset($this->request->data['Search']['status'])) {
+				$this->request->data['Search']['status'] = 'notprocessed';
+			}
+
+			if (!isset($this->request->data['Search']['graduated'])) {
+				$this->request->data['Search']['graduated'] = 0;
+			}
+			
+			if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) {
+				
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_id, 'Department.active' => 1))); 
+				$options['conditions'][] = array('Student.department_id' => $this->department_id);
+				$default_department_id = $this->request->data['Search']['department_id'] = $this->department_id;
+
+				if ($this->request->data['Search']['status'] == 'notprocessed') {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval is null',
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0
+					);
+				} else if ($this->request->data['Search']['status'] == 'accepted') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.registrar_confirmation' => 1
+						)
+					);
+				} else if ($this->request->data['Search']['status'] == 'rejected') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 0,
+							'CourseAdd.registrar_confirmation' => 0
+						),
+					);
+				} else if ($this->request->data['Search']['status'] == 'auto_rejected') {
+					$options['conditions'][] = array('CourseAdd.auto_rejected' => 1);
+				}
+
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE) {
+
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->college_id, 'Department.active' => 1)));
+				$default_college_id = $this->request->data['Search']['department_id'] = $this->college_id;
+
+				if (!empty($this->request->data['Search']['department_id'])) {
+					$options['conditions'][] = array('Student.department_id' => $this->request->data['Search']['department_id']);
+				} else {
+					$options['conditions'][] = array('Student.college_id' => $this->college_id);
+				}
+
+				if ($this->request->data['Search']['status'] == 'notprocessed') {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval is null',
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0
+					);
+				} else if ($this->request->data['Search']['status'] == 'accepted') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.registrar_confirmation' => 1
+						)
+					);
+				} else if ($this->request->data['Search']['status'] == 'rejected') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 0,
+							'CourseAdd.registrar_confirmation' => 0
+						),
+					);
+				} else if ($this->request->data['Search']['status'] == 'auto_rejected') {
+					$options['conditions'][] = array('CourseAdd.auto_rejected' => 1);
+				}
+
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+
+				if (!empty($this->department_ids)) {
+					$colleges = array();
+					//$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+					$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, $this->department_ids, array(), 1);
+
+					if (!empty($this->request->data['Search']['department_id'])) {
+						$options['conditions'][] = array('Student.department_id' => $this->request->data['Search']['department_id']);
+					} else {
+						$options['conditions'][] = array('Student.department_id' => $this->department_ids);
+					}
+				} else if (!empty($this->college_ids)) {
+					$departments = array();
+					$colleges = $this->CourseAdd->Student->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+					
+					if (!empty($this->request->data['Search']['college_id'])) {
+						$options['conditions'][] = array('Student.college_id' => $this->request->data['Search']['college_id'], 'Student.department_id IS NULL');
+					} else {
+						$options['conditions'][] = array('Student.college_id' => $this->college_ids , 'Student.department_id IS NULL');
+					}
+				}
+
+				if ($this->request->data['Search']['status'] == 'notprocessed') {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval' => 1,
+						'CourseAdd.registrar_confirmation is null',
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0
+					);
+				} else if ($this->request->data['Search']['status'] == 'accepted') {
+					$options['conditions'][] = array(
+						'CourseAdd.registrar_confirmation' => 1,
+						'CourseAdd.department_approval' => 1,
+						/* 'OR' => array(
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.registrar_confirmation' => 1
+						) */
+					);
+				} else if ($this->request->data['Search']['status'] == 'rejected') {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval' => 1, 
+						'CourseAdd.registrar_confirmation' => 0
+					);
+				} else if ($this->request->data['Search']['status'] == 'auto_rejected') {
+					$options['conditions'][] = array('CourseAdd.auto_rejected' => 1);
+				}
+
+			} else  if ($this->Session->read('Auth.User')['role_id'] == ROLE_STUDENT) {
+				unset($this->passedArgs);
+				unset($this->request->data);
+				return $this->redirect(array('action' => 'index'));
+			} else {
+
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+				$colleges = $this->CourseAdd->Student->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+
+				if (!empty($this->request->data['Search']['department_id'])) {
+					$options['conditions'][] = array('Student.department_id' => $this->request->data['Search']['department_id']);
+				} else if (empty($this->request->data['Search']['department_id']) && !empty($this->request->data['Search']['college_id'])) {
+					$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->request->data['Search']['college_id'], 'Department.active' => 1)));
+					$options['conditions'][] = array(
+						'OR' => array(
+							'Student.college_id' => $this->request->data['Search']['college_id'],
+							'Student.department_id' => array_keys($departments)
+						)
+					);
+				} else {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'Student.college_id' => array_keys($colleges),
+							'Student.department_id' => array_keys($departments)
+						)
+					);
+				}
+
+				if ($this->request->data['Search']['status'] == 'notprocessed') {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval is null', 
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0
+					);
+				} else if ($this->request->data['Search']['status'] == 'accepted') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.registrar_confirmation' => 1
+						)
+					);
+				} else if ($this->request->data['Search']['status'] == 'rejected') {
+					$options['conditions'][] = array(
+						'OR' => array(
+							'CourseAdd.department_approval' => 0,
+							'CourseAdd.registrar_confirmation' => 0
+						),
+					);
+				} else if ($this->request->data['Search']['status'] == 'auto_rejected') {
+					$options['conditions'][] = array('CourseAdd.auto_rejected' => 1);
+				}
+			}
+
+			if (!empty($selected_academic_year)) {
+				$options['conditions'][] = array('CourseAdd.academic_year' => $selected_academic_year);
+			} else {
+				$options['conditions'][] = array('CourseAdd.academic_year' => $allowed_academic_years_for_add_drop);
+			}
+
+			if (!empty($this->request->data['Search']['semester'])) {
+				$options['conditions'][] = array('CourseAdd.semester' => $this->request->data['Search']['semester']);
+			}
+
+			if (!empty($this->request->data['Search']['program_id'])) {
+				$options['conditions'][] = array('Student.program_id' => $this->request->data['Search']['program_id']);
+			} else if (empty($this->request->data['Search']['program_id']) && $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+				$options['conditions'][] = array('Student.program_id' => $this->program_ids);
+			}
+
+			if (!empty($this->request->data['Search']['program_type_id'])) {
+				$options['conditions'][] = array('Student.program_type_id' => $this->request->data['Search']['program_type_id']);
+			} else if (empty($this->request->data['Search']['program_type_id']) && $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+				$options['conditions'][] = array('Student.program_type_id' => $this->program_type_ids);
+			}
+
+			if (isset($this->request->data['Search']['college_id']) && !empty($this->request->data['Search']['college_id']) && $this->Session->read('Auth.User')['role_id'] != ROLE_REGISTRAR ) {
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->request->data['Search']['college_id'], 'Department.active' => 1)));
+			}
+
+			if ($this->request->data['Search']['graduated'] == 0) {
+				$options['conditions'][] = array('Student.graduated = 0');
+			} else if ($this->request->data['Search']['graduated'] == 1) {
+				$options['conditions'][] = array('Student.graduated = 1');
+			}
+
+			/* if (isset($studentnumber) && !empty($studentnumber)) {
+				//unset($options['conditions']);
+				$options['conditions'][] = array('Student.studentnumber' => trim($studentnumber));
+			} */
+
+			if (isset($name) && !empty($name)) {
+				//unset($options['conditions']);
+				$options['conditions'][] = array(
+					'OR' => array(
+						'Student.first_name LIKE ' => '%' . $name . '%',
+						'Student.middle_name LIKE ' =>  '%' . $name . '%',
+						'Student.last_name LIKE ' =>  '%' . $name . '%',
+						'Student.studentnumber LIKE ' =>  '%' . $name . '%',
+					)
+				);
+			}
+
+		} else {
+
+			if ($this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE) {
+				
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->college_id, 'Department.active' => 1)));
+				
+				$options['conditions'][] = array(
+					'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+					'CourseAdd.auto_rejected' => 0, 
+					'CourseAdd.cron_job' => 0,
+					'CourseAdd.department_approval is null',
+					'OR' => array(
+						'Student.college_id' => $this->college_id,
+						'Student.department_id' => array_keys($departments)
+					)
+				);
+
+				$default_college_id = $this->college_id;
+
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) {
+				
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_id)));
+				
+				$options['conditions'][] = array(
+					'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+					'CourseAdd.auto_rejected' => 0, 
+					'CourseAdd.cron_job' => 0,
+					'CourseAdd.department_approval is null',
+					'Student.department_id' => $this->department_id
+				);
+
+				$default_department_id = $this->department_id;
+
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+				if (!empty($this->department_ids)) {
+					
+					$colleges = array();
+					
+					//$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+					$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, $this->department_ids, array(), 1);
+					
+					$options['conditions'][] = array(
+						'Student.department_id' => $this->department_ids, 
+						'Student.program_id' => $this->program_ids, 
+						'Student.program_type_id' => $this->program_type_ids
+					);
+
+				} else if (!empty($this->college_ids)) {
+					
+					$departments = array();
+					
+					$colleges = $this->CourseAdd->Student->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+					
+					$options['conditions'][] = array(
+						'Student.college_id' => $this->college_ids, 
+						'Student.department_id IS NULL', 
+						'Student.program_id' => $this->program_ids, 
+						'Student.program_type_id' => $this->program_type_ids
+					);
+				}
+
+				$options['conditions'][] = array(
+					'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+					'CourseAdd.auto_rejected' => 0, 
+					'CourseAdd.cron_job' => 0,
+					'CourseAdd.department_approval' => 1,
+					'CourseAdd.registrar_confirmation is null'
+				);
+
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_STUDENT) {
+				$options['conditions'][] = array('Student.id' => $this->student_id);
+			} else {
+
+				$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+				$colleges = $this->CourseAdd->Student->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+
+				if (!empty($departments) && !empty($colleges)) {
+					$options['conditions'][] = array(
+						'CourseAdd.department_approval is null',
+						'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0,
+						'OR' => array(
+							'Student.department_id' => $this->department_ids,
+							'Student.college_id' => $this->college_ids
+						)
+					);
+				} else if (!empty($departments)) {
+					$options['conditions'][] = array(
+						'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0,
+						'CourseAdd.department_approval is null',
+						'Student.department_id' => $this->department_ids
+					);
+				} else if (!empty($colleges)) {
+					$options['conditions'][] = array(
+						'CourseAdd.academic_year' => $allowed_academic_years_for_add_drop,
+						'CourseAdd.auto_rejected' => 0, 
+						'CourseAdd.cron_job' => 0,
+						'CourseAdd.department_approval is null',
+						'Student.college_id' => $this->college_ids
+					);
+				}
+			}
+
+			if (!empty($options['conditions'])) {
+				$options['conditions'][] = array('Student.graduated = 0');
+			}
+
+		}
+
+		//debug($options['conditions']);
+
+		$courseAdds = array();
+
+		if (!empty($options['conditions'])) {
+			$this->Paginator->settings = array(
+				'conditions' => $options['conditions'],
+				'contain' => array(
+					'PublishedCourse' => array(
+						'Course' => array(
+							'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+						),
+						'GivenByDepartment' => array(
+							'College' => array('id', 'name', 'type', 'stream'),
+						),
+						'Department' => array(
+							'College' => array('id', 'name', 'type','stream'),
+							'fields' => array('id', 'name', 'type'),
+						),
+						'College' => array('id', 'name', 'type','stream'),
+						'Section' => array(
+							'fields' => array('id', 'name', 'academicyear', 'curriculum_id', 'program_id', 'program_type_id', 'archive'),
+							'YearLevel' => array('id', 'name'),
+							'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+						),
+					),
+					'Student' => array(
+						'fields' => array('id', 'full_name', 'gender', 'studentnumber', 'college_id', 'department_id', 'program_id', 'program_type_id', 'graduated', 'academicyear', 'admissionyear'),
+						'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+					),
+					'YearLevel' => array('id', 'name'),
+				),
+				'order' => array($sort => $direction),
+				'limit' => (!empty($limit) ? $limit : 100),
+				'maxLimit' => 1000,
+				'page' => $page,
+				'recursive' => -1
+			);
+
+			//$courseAdds = $this->paginate($options);
+
+			try {
+				$courseAdds = $this->Paginator->paginate($this->modelClass);
+				$this->set(compact('courseAdds'));
+			} catch (NotFoundException $e) {
+				if (!empty($this->request->data['Search'])) {
+					unset($this->request->data['Search']['page']);
+					unset($this->request->data['Search']['sort']);
+					unset($this->request->data['Search']['direction']);
+				}
+				unset($this->passedArgs);
+				return $this->redirect(array('action' => 'index'));
+			} catch (Exception $e) {
+				if (!empty($this->request->data['Search'])) {
+					unset($this->request->data['Search']['page']);
+					unset($this->request->data['Search']['sort']);
+					unset($this->request->data['Search']['direction']);
+				}
+				unset($this->passedArgs);
+				return $this->redirect(array('action' => 'index'));
+			}
+		} else {
+			$this->set(compact('courseAdds'));
+		}
+
+		if (empty($courseAdds) && !empty($options)) {
+			$this->Flash->info('There is no Course Add found with the given criteria.');
+			$turn_off_search = false;
+		} else {
+			//debug($courseAdds[0]);
+			//$turn_off_search = false;
+
+			if (empty($courseAdds)) {
+				$turn_off_search = false;
+			} else {
+				$turn_off_search = true;
+			}
+
+			if ((isset($this->request->data['Search']['status']) && $this->request->data['Search']['status'] == 'auto_rejected')) {
+				$current_load = array();
+				$graduatingClassStudent = array();
+				foreach ($courseAdds as $key => $courseAdd) {
+					if (isset($courseAdd['CourseAdd']['id']) && !empty($courseAdd['CourseAdd']['id']) && isset($courseAdd['Student']['id']) && !empty($courseAdd['Student']['id']) && $courseAdd['Student']['graduated'] == 0 && $courseAdd['CourseAdd']['academic_year'] == $this->request->data['Search']['academic_year'] && $courseAdd['CourseAdd']['semester'] == $this->request->data['Search']['semester'] && isset($courseAdd['PublishedCourse']['Section']['archive']) && !($courseAdd['PublishedCourse']['Section']['archive'])) {
+						$current_load[$courseAdd['Student']['id']] = $this->CourseAdd->Student->calculateStudentLoad($courseAdd['Student']['id'], $courseAdd['CourseAdd']['semester'], $courseAdd['CourseAdd']['academic_year']);
+						if (ClassRegistry::init('StudentStatusPattern')->isgraduatingClassStudent($courseAdd['Student']['id'])) {
+							$graduatingClassStudent[$courseAdd['Student']['id']] = true;
+						} else {
+							$graduatingClassStudent[$courseAdd['Student']['id']] = false;
+						}
+					}
+				}
+
+				if (!empty($current_load)) {
+					//debug($current_load);
+					$this->set(compact('current_load'));
+				}
+
+				//debug($graduatingClassStudent);
+
+				$this->set(compact('graduatingClassStudent'));
+			}
+		}
+
+		$this->set(compact(/* 'courseAdds', */ 'programs', 'programTypes', 'departments', 'colleges', 'limit', 'name', 'studentnumber', 'turn_off_search', 'default_department_id', 'default_college_id', 'allowed_academic_years_for_add_drop'));
+	}
+
+	function view($id = null)
+	{
 		if (!$id) {
-			$this->Session->setFlash(__('Invalid course add'));
+			$this->Flash->error(__('Invalid Course Add ID.'));
 			return $this->redirect(array('action' => 'index'));
 		}
+
+		$this->CourseAdd->id = $id;
+		
+		if (!$this->CourseAdd->exists()) {
+			$this->Flash->error(__('Invalid Course Add ID.'));
+			return $this->redirect(array('action' => 'index'));
+		}
+		
 		$this->set('courseAdd', $this->CourseAdd->read(null, $id));
 	}
-    function add($id=null) {
-        $logged_user_detail = ClassRegistry::init('User')->find('first',array('conditions' =>
-                      				array(
-                      					'User.id' =>$this->Auth->user('id')
-                      				),
-                      				'contain' => 
-                      				array(
-                      					'Staff',
-                      					'Student'
-                      				))
-        );
-         // add 
-         if($id) {
-                 $this->__init_search_index();
-                 //check privilage ?
-	             $elegible_registrar_responsibility=0;
-	             if (!empty($this->department_ids)) {
-                    $elegible_registrar_responsibility=$this->CourseAdd->Student->find('count',
-                    array('conditions'=>array(
-                    	'Student.id'=>$id,
-                    	'Student.department_id'=>$this->department_ids,
-                    	'Student.program_type_id'=>$this->program_type_id,
-                    	'Student.program_id'=>$this->program_id,
-                    	))
-                    );
-                 } else if (!empty($this->college_ids)) {
-                   $elegible_registrar_responsibility=$this->CourseAdd->Student->find('count',
-                   array('conditions'=>array('Student.id'=>$id,'Student.college_id'=>$this->college_ids,
-                   	'Student.program_type_id'=>$this->program_type_id,
-                    	'Student.program_id'=>$this->program_id,
-                   'Student.department_id is null')));         
-                    
-                 }
-                
-                 if ($elegible_registrar_responsibility==0) {
-                        $this->Session->setFlash('<span></span> You do not have the privilage to add coures for  the selected student. Your action is loggged and reported to the system administrators.','default',array('class'=>'error-box error-message'));
-                      
-						$details=null;
-						
-						if (isset ($logged_user_detail['Staff']) && !empty($logged_user_detail['Staff'])) {
-						  $details.=$logged_user_detail['Staff'][0]['first_name'].' '.
-						  $logged_user_detail['Staff'][0]['middle_name'].' '.
-						  $logged_user_detail['Staff'][0]['last_name'].' ('.
-						  $logged_user_detail['User']['username'].')';
-						} else if (isset ($logged_user_detail['Student']) && 
-						!empty($logged_user_detail['Student'])) {
-						$details.=$logged_user_detail['Student'][0]['first_name'].' '.
-						$logged_user_detail['Student'][0]['middle_name'].' '.
-						$logged_user_detail['Student'][0]['last_name'].' ('.
-						$logged_user_detail['User']['username'].')';
-						
-						}
-				       
-						ClassRegistry::init('AutoMessage')->sendPermissionManagementBreakAttempt(Configure::read('User.user'), '<u>'.$details.'</u> is trying to add courses for students without assigned privilage. Please give appropriate warning.'); 
-                        //$this->redirect('add');
-	                 
-                }
-           if (!empty($this->request->data['Search']['academicyear'])) {
-              $current_academic_year=$this->request->data['Search']['academicyear'] ;
-               $semester=$this->request->data['Search']['semester'];
-           } else {
-              $current_academic_year= $this->AcademicYear->current_academicyear(); 
-               $latestAcSemester=  ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($id,
-           $current_academic_year,1);
-       
-               $semester=$latestAcSemester['semester'];
-           
-           }    
-           $student_section_exam_status=$this->CourseAdd->Student->get_student_section($id,
-	           $current_academic_year);
-	           
-	           $getRegistrationDeadLine=false;
-	            
-	           if(empty($student_section_exam_status)) {
-	             
-	             $this->Session->setFlash('<span></span>'.__('You are sectionless. Please advice department.'),'default',array('class'=>'warning-box warning-message'));     
-	             $this->redirect('/');
-	            
-	            }
-	           
-	            if (!empty($this->department_ids)) {
-	             $year_level_id = $this->CourseAdd->YearLevel->field('name',
-	              array('id'=>$student_section_exam_status['Section']['year_level_id']));
-	              
-	            $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->
-	            check_add_date_end($current_academic_year,$semester,
-	            $student_section_exam_status['StudentBasicInfo']['department_id'],$year_level_id);
-	             
-	          
-	            } else if (!empty($this->college_ids)) {
-	                  
-	                  $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->
-	                  check_add_date_end($current_academic_year,$semester,
-	                  $student_section_exam_status['StudentBasicInfo']['college_id'],0);
-	               
-	            }
-	            if ($getRegistrationDeadLine==0 || $getRegistrationDeadLine==1) {
-	              
-	            } else {
-	                    $add_start_date=$getRegistrationDeadLine;
-	                    $getRegistrationDeadLine=0;        
-	            }
-	            
-	          if (!$getRegistrationDeadLine) {
-	                if(isset($add_start_date) && !empty($add_start_date)) {
-	                    $this->Session->setFlash('<span></span>'.__('Course add start at '.
-	                    $add_start_date.' Please come back when course add starts.', true),
-	                    'default',array('class'=>'info-box info-message'));
-	                    $this->redirect(array('controller'=>'courseAdds','action'=>'add'));  
-	                } else {
-	                     $this->Session->setFlash('<span></span>'.
-	                     __('Course add dead line is passed for students but as registrar you can 
-	                     maintain student adds. Beware that student should have to register for 
-	                     the semester and academic year before adding courses.', true),'default',
-	                     array('class'=>'info-box info-message'));
-	                }
-	                 
-	          }
-	        
-	        $student_section = $this->CourseAdd->Student->student_academic_detail($id,$current_academic_year);  
-	         if (empty($student_section_exam_status['Section']['year_level_id'])) {
-	              $published_detail=array('academic_year'=>$current_academic_year,
-	              'semester'=>$semester,'student_id'=>$id,'year_level_id'=>0);
-	         
-	         } else {
-	             $published_detail=array('academic_year'=>$current_academic_year,
-	            'semester'=>$semester,'student_id'=>$id, 'year_level_id'=>
-	            $student_section_exam_status['Section']['year_level_id']);
-	           
-	         }
-	         
-	          if (!empty($student_section_exam_status['Section'])) {
-	               
-	               if (!empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
-	               $ownDepartmentPublishedForAdd=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array('PublishedCourse.semester'=>$semester,
-	               'PublishedCourse.department_id'=>$student_section_exam_status['StudentBasicInfo']['department_id'],
-	               'PublishedCourse.section_id'=>$student_section_exam_status['Section']['id'],
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.add'=>1),'contain'=>array('Course')));
-	               } else if (empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
-	                  $ownDepartmentPublishedForAdd=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array('PublishedCourse.semester'=>$semester,
-	               'PublishedCourse.department_id is null ',
-	                'PublishedCourse.college_id'=>$student_section_exam_status['College']['id'],
-	               'PublishedCourse.section_id'=>$student_section_exam_status['Section']['id'],
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.add'=>1),'contain'=>array('Course')));
-	      
-	               }
-	               
-	               $pub_own_as_add_courses = array();
-	               $count=0;
-	               foreach ($ownDepartmentPublishedForAdd as $ownIndex=>$ownValue) {
-	                   $already_added = $this->CourseAdd->find('count',array('conditions'=>
-	               array('CourseAdd.student_id'=>$id,
-	               'CourseAdd.published_course_id'=>$ownValue['PublishedCourse']['id'])));
-	                   if ($already_added>0) {
-	                      $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=1;
-	                   } else {
-	                     $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=0;
-	                   }         
-	               }
-	               $ownDepartmentPublishedForAdd=$pub_own_as_add_courses;
-	              
-	               $this->set(compact('ownDepartmentPublishedForAdd'));
-              } else {
-                 $this->Session->setFlash('<span></span>'.__('The student is sectionless, 
-                 S/he should be assigned to section by department. Please advice department.', true),
-                 'default',array('class'=>'warning-box warning-message'));     
-              }
-              
-              $this->set(compact('student_section','student_section_exam_status'));
-              
-	          if (!empty($this->request->data['CourseAdd'])) 
-	          {
-	                
-	           
-	             $selected=array_sum($this->request->data['CourseAdd']['add']);
-			     
-			     if ($selected>0) {
-			
-			            $selected_courses_for_add=$this->request->data['CourseAdd']['add'];
-			            unset($this->request->data['CourseAdd']['add']);
-			            unset($this->request->data['Student']['department_id']);
-			           
-			            $add_selected_to_registration=array();
-                       		
-			            foreach ($selected_courses_for_add as $k=>$v) {
-			                    if ($v==1) {
-			                        $published_detail['published_course_id']=$k;
-			                        $add_selected_to_registration['CourseAdd'][]=
-			                        $published_detail['published_course_id'];
-			                    } 
-			             }
-			            $this->request->data['CourseAdd']=$add_selected_to_registration['CourseAdd'];
-			                  
-			            //check for duplicate entry
-			            $already_added_courses=array();
-			            $selected_courses_add=array();
-			            $count=0;
-			            
-			            foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-			                
-			                    $check=$this->CourseAdd->find('count',
-			                    array('conditions'=>array('CourseAdd.published_course_id'=>$cdv,
-			                    'CourseAdd.student_id'=>$id),'recursive'=>-1));
-			                  
-			                    // already added, unset it
-			                    if ($check>0) {
-			                       $already_added_courses[]=$cdv;
-			                   
-			                    } else {
-			                           $is_mass_add = $this->CourseAdd->PublishedCourse->field('add',
-			                           array('id'=>$cdv));
-			                           
-			                           $selected_courses_add['CourseAdd'][$count]['published_course_id']=$cdv;
-			                           if($is_mass_add==1) {
-			                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-			                            }
-			                            
-			                    		$selected_courses_add['CourseAdd'][$count]['student_id']=
-			                    		$id;
-			                    		$selected_courses_add['CourseAdd'][$count]['semester']=$semester;
-			                    		$selected_courses_add['CourseAdd'][$count]['academic_year']=
-			                    		$current_academic_year;
-			                    		if (empty($student_section['Section'][0]['year_level_id'])
-			                    		|| $student_section['Section'][0]['year_level_id']==0) {
-			                    		   $selected_courses_add['CourseAdd'][$count]['year_level_id']=0;
-			                    		} else {
-			                    		    $selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    		}
-			                    		//$selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    }
-			                    $count++;
-			            }
-			            
-			           if (count($already_added_courses)==count($this->request->data['CourseAdd'])) {
-			                  $this->Session->setFlash('<span></span>'.
-			                  __('All the selected courses has already  added. 
-			                  You do not need to add it again.', true),'default',
-			                  array('class'=>'info-box info-message'));
-			                  
-		                     //$this->redirect(array('action'=>'index'));
-		                     
-			            } else {
-			                 // unset($this->request->data);
-			                  $this->request->data['CourseAdd']=$selected_courses_add;
-			            }
-			            $this->request->data['CourseAdd']=$this->request->data['CourseAdd']['CourseAdd'];
-	                 if (!empty($this->request->data['CourseAdd'])){ 
-	                 	  //debug($this->request->data);
-	                 	  //debug($this->request->data['CourseAdd']);
-	                    if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'],
-					    array('validate'=>'first'))) {
-							     $this->Session->setFlash('<span></span>'.__('The course add has been sent to department successfully for approval.'), 'default',array('class'=>'success-box success-message'));
-							  // dont forget to add to registration table after approval
-							  
-					    } else {
-						     $this->Session->setFlash('<span></span>'.__('The course add could not be send. 
-						     Please, try again.', true),'default',
-						     array('class'=>'error-box error-message'));
-					    }
-					}
-				} else {
-				    $this->Session->setFlash('<span></span>'.__('Please select atleast one course you want to add.'),'default',array('class'=>'error-box error-message'));
-				}
-	                    //debug($this->request->data);
-	       }
-        }  
-         
-       if (!empty($this->request->data) && isset($this->request->data['add'])) {
-       
-           if (!empty($this->request->data['Search']['academicyear'])) {
-              $current_academic_year=$this->request->data['Search']['academicyear'] ;
-               $semester=$this->request->data['Search']['semester'];
-           } else {
-              $current_academic_year= $this->AcademicYear->current_academicyear(); 
-               $latestAcSemester=  ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($id,
-           $current_academic_year,1);
-       
-               $semester=$latestAcSemester['semester'];
-           
-           }    
-           debug($this->request->data);
-		   
-		   $selected=array_sum($this->request->data['CourseAdd']['add']);
-		   $student_section = $this->CourseAdd->Student->student_academic_detail(
-		   $this->request->data['Student']['id'],$current_academic_year); 
-		  
-	       
-		   if ($selected>0 ) 
-		   {
-			
-			         $selected_courses_for_add=$this->request->data['CourseAdd']['add'];
-			         unset($this->request->data['CourseAdd']['add']);
-			         unset($this->request->data['Student']['department_id']);
-			         
-			         $add_selected_to_registration=array();
-                       		
-			          foreach ($selected_courses_for_add as $k=>$v) {
-		                    if ($v==1) {
-		                        $published_detail['published_course_id']=$k;
-		                        $add_selected_to_registration['CourseAdd'][]=
-		                        $published_detail['published_course_id'];
-		                    } 
-			          }
-		             $this->request->data['CourseAdd']=$add_selected_to_registration['CourseAdd'];
-		             
-		             $already_added_courses=array();
-		             $selected_courses_add=array();
-		             $count=0;
-			            
-			          foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-			                
-	                    $check=$this->CourseAdd->find('count',array('conditions'=>
-	                    array('CourseAdd.published_course_id'=>$cdv,'CourseAdd.student_id'=>
-	                    $this->request->data['Student']['id']),'recursive'=>-1));
-	                  
-	                    // already added, unset it
-	                    if ($check>0) {
-	                       $already_added_courses[]=$cdv;
-	                   
-	                    } else {
-	                           $is_mass_add = $this->CourseAdd->PublishedCourse->field('add',
-	                           array('id'=>$cdv));
-	                           
-	                           $selected_courses_add['CourseAdd'][$count]['published_course_id']=$cdv;
-	                           if($is_mass_add==1) {
-	                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-	                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-	                            } else {
-	                              $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-	                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-	                           $selected_courses_add['CourseAdd'][$count]['egistrar_confirmed_by']=$this->Auth->user('id');
-	                           
-	                            
-	                            }
-	                            
-	                    		$selected_courses_add['CourseAdd'][$count]['student_id']=
-	                    		$this->request->data['Student']['id'];
-	                    		$selected_courses_add['CourseAdd'][$count]['semester']=$semester;
-	                    		$selected_courses_add['CourseAdd'][$count]['academic_year']=$current_academic_year;
-	                    		if (empty($student_section['Section'][0]['year_level_id'])) {
-	                    		  $selected_courses_add['CourseAdd'][$count]['year_level_id']=0;
-	                    		} else {
-	                    		  $selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-	                    		}
-	                    		
-	                    }
-			            $count++;
-			        }
-			            
-		           if (count($already_added_courses)==
-		           count($this->request->data['CourseAdd'])) {
-		                  $this->Session->setFlash('<span></span>'.__('All the selected courses has already  added. 
-		                  You do not need to add it again.', true),
-		                  'default',array('class'=>'info-box info-message'));
-		                  
-	                     //$this->redirect(array('action'=>'index'));
-	                     
-		           } else {
-		                 // unset($this->request->data);
-		                  $this->request->data['CourseAdd']=$selected_courses_add;
-		           }
-		           
-			       $this->request->data['CourseAdd']=$this->request->data['CourseAdd']['CourseAdd'];
-	               if (!empty($this->request->data['CourseAdd'])){ 
-	                   if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'],
-					    array('validate'=>'first'))) {
-							 
-							     $this->Session->setFlash('<span></span>'.
-							     __('The course add has been successful.'), 'default',
-							     array('class'=>'success-box success-message')); 
-							  
-					    } else {
-						     $this->Session->setFlash('<span></span>'.__('The course add could not be send. 
-						     Please, try again.', true),'default',
-						     array('class'=>'error-box error-message'));
-					    }
-				  }
-		      } else {
-				    $this->Session->setFlash('<span></span>'.__('Please select atleast 
-				    one course you want to add.', true),'default',
-				    array('class'=>'error-box error-message'));
-		      }
-	             
-		}
-        
-        
-        if (!empty($this->request->data) && isset($this->request->data['continue']))  {
-                 $this->__init_search_index();
-	             $options = array();
-	             $options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM graduate_lists)';
-		         $options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM senate_lists)';
-		         
-		        
-		         /*
-		          if (!empty($this->request->data['Search']['semester'])) {
-	                $options['conditions'][] = 'Student.id NOT IN (SELECT student_id FROM senate_lists)';
-	             } 
-	             */
-	             
-	             if (!empty($this->request->data['Search']['academicyear'])) {
-	                $options['conditions'][] = 'Student.id  IN (SELECT student_id FROM students_sections 
-	                where section_id IN (select id from sections where academicyear like "'.
-	                $this->request->data['Search']['academicyear'].'" ))';
-	             } 
-	           
-	             if (!empty($this->request->data['Search']['studentnumber'])) {
-	               $options['conditions']['Student.studentnumber'] = $this->request->data['Search']['studentnumber'];
-	             } 
-	             if (!empty($this->request->data['Search']['department_id']) && empty($this->request->data['Search']['studentnumber'])) {
-	               $options['conditions']['Student.department_id'] = $this->request->data['Search']['department_id'];
-	             }
-	             
-	             if (!empty($this->request->data['Search']['college_id'])) {
-	               $options['conditions']['Student.college_id'] = $this->request->data['Search']['college_id'];
-	               $options['conditions'][] = 'Student.department_id IS NULL';
-	             }
-	             
-	             $options['contain'] = array(
-	                            'CourseDrop',
-				                'Program'=>array(
-				                    'fields'=>array('id','name')
-				                
-				                 ),
-				                'ProgramType'=>array(
-				                    'fields'=>array('id','name')
-				                 ),
-				                'Department'=>array(
-				                'fields'=>array('id','name')
-				            )
-				                
-				 );
-				 
-		    $options['fields'] = array('Student.id', 'Student.full_name', 
-		    'Student.first_name', 'Student.middle_name', 'Student.last_name', 'Student.studentnumber',
-		     'Student.admissionyear', 'Student.gender','Student.full_name');
-		   
-		    $options['order'] = array('Student.full_name');
-		    //debug($options);
-		    $student_lists = $this->CourseAdd->PublishedCourse->Course->Student->find('all', $options);
-		
-	      
-	        $this->set(compact('student_lists','collegess'));
-	   
-	    }
-        if (!empty($this->college_ids)) {
-		   $colleges = $this->CourseAdd->PublishedCourse->College->find('list',array('conditions'=>
-		   array('College.id'=>$this->college_ids)));
-		   //$colleges = $this->CourseAdd->PublishedCourse->College->find('list');
-		}
-	    
-	     if (!empty($this->department_ids)) {
-		        $departments= $this->CourseAdd->PublishedCourse->Department->find('list',array('conditions'=>array('Department.id'=>$this->department_ids)));
-		      
-		
-		 }
-		$collegess = $this->CourseAdd->PublishedCourse->College->find('list',
-		array('order'=>array('College.name ASC')));
-		$this->set(compact('yearLevels', 'departments','colleges','collegess'));
-    
-    
-    
-    }
-    /*
-	function add($id=null) {
-		 $logged_user_detail = ClassRegistry::init('User')->find('first',
-                      			array(
-                      				'conditions' =>
-                      				array(
-                      					'User.id' =>$this->Auth->user('id')
-                      				),
-                      				'contain' => 
-                      				array(
-                      					'Staff',
-                      					'Student'
-                      				)
-                      			)
-         );
-	     if($id) {
-	     	     //check privilage ?
-	             $elegible_registrar_responsibility=0;
-	             if (!empty($this->department_ids)) {
-                    $elegible_registrar_responsibility=$this->CourseAdd->Student->find('count',array('conditions'=>array('Student.id'=>$id,'Student.department_id'=>$this->department_ids)));
-                 } else if (!empty($this->college_ids)) {
-                   $elegible_registrar_responsibility=$this->CourseAdd->Student->find('count',
-                   array('conditions'=>array('Student.id'=>$id,'Student.college_id'=>$this->college_ids,'Student.department_id is null')));         
-                    
-                 }
-                
-                 if ($elegible_registrar_responsibility==0) {
-                        $this->Session->setFlash('<span></span> You do not have the privilage to add coures for  the selected student. Your action is loggged and reported to the system administrators.','default',array('class'=>'error-box error-message'));
-                      
-						$details=null;
-						
-						if (isset ($logged_user_detail['Staff']) && !empty($logged_user_detail['Staff'])) {
-						  $details.=$logged_user_detail['Staff'][0]['first_name'].' '.
-						  $logged_user_detail['Staff'][0]['middle_name'].' '.
-						  $logged_user_detail['Staff'][0]['last_name'].' ('.
-						  $logged_user_detail['User']['username'].')';
-						} else if (isset ($logged_user_detail['Student']) && 
-						!empty($logged_user_detail['Student'])) {
-						$details.=$logged_user_detail['Student'][0]['first_name'].' '.
-						$logged_user_detail['Student'][0]['middle_name'].' '.
-						$logged_user_detail['Student'][0]['last_name'].' ('.
-						$logged_user_detail['User']['username'].')';
-						
-						}
-				       
-						ClassRegistry::init('AutoMessage')->sendPermissionManagementBreakAttempt(Configure::read('User.user'), '<u>'.$details.'</u> is trying to add courses for students without assigned privilage. Please give appropriate warning.'); 
-                        //$this->redirect('add');
-	                 
-                 }
-                 
-	       
-	       $current_academic_year= $this->AcademicYear->current_academicyear();
-	       $student_section_exam_status=$this->CourseAdd->Student->get_student_section(
-	       $id,$current_academic_year);
-	       
-	       $getRegistrationDeadLine=false;
-	     
-	     $latestAcSemester=  ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear(
-	   $id,$current_academic_year,1);
-	   
-	       $semester=$latestAcSemester['semester'];
-	        
-	        if(empty($student_section_exam_status)){
-	         $this->Session->setFlash('<span></span>'.__('You are sectionless. Please advice department.'),'default',array('class'=>'warning-box warning-message'));     
-	         $this->redirect('/');
-	        
-	        }
-	        if (!empty($this->department_ids)) {
-	         $year_level_id = $this->CourseAdd->YearLevel->field('name',
-	          array('id'=>$student_section_exam_status['Section']['year_level_id']));
-	          
-	        $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year,$semester,$student_section_exam_status['StudentBasicInfo']['department_id'],$year_level_id);
-	         
-	      
-	        } else if (!empty($this->college_ids)) {
-	              
-	              $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year,$semester,$student_section_exam_status['StudentBasicInfo']['college_id'],0);
-	              
-	             // $getRegistrationDeadLine=true;
-	        }
-	        if ($getRegistrationDeadLine==0 || $getRegistrationDeadLine==1) {
-	          
-	        } else {
-	                $add_start_date=$getRegistrationDeadLine;
-	                $getRegistrationDeadLine=0;
-	                
-	        }  
-	              
-	       if (!$getRegistrationDeadLine) {
-	            if(isset($add_start_date) && !empty($add_start_date)) {
-	                $this->Session->setFlash('<span></span>'.__('Course add start at '.$add_start_date
-	                .' Please come back when course add starts.', true),'default',
-	                array('class'=>'info-box info-message'));
-	              $this->redirect(array('controller'=>'courseAdds','action'=>'add'));  
-	            } else {
-	              $this->Session->setFlash('<span></span>'.__('Course add dead line is passed for students but as registrar you can maintain student adds. Beware that student should have to register for the semester and academic year before adding courses.'),'default',array('class'=>'info-box info-message'));
-	            }
-	           
-	            
-	            
-			  // $this->redirect(array('controller'=>'courseRegistrations','action'=>'index'));    
-	        }
-	        
-	        $student_section = $this->CourseAdd->Student->
-			  student_academic_detail($id,
-	        $current_academic_year);  
-	         if (empty($student_section_exam_status['Section']['year_level_id'])) {
-	              $published_detail=array('academic_year'=>$current_academic_year,
-	            'semester'=>$semester,'student_id'=>$id,
-	            'year_level_id'=>0);
-	         
-	         } else {
-	                 $published_detail=array('academic_year'=>$current_academic_year,
-	            'semester'=>$semester,'student_id'=>$id,
-	            'year_level_id'=>$student_section_exam_status['Section']['year_level_id']);
-	           
-	         }
-	         
-	            if (!empty($student_section_exam_status['Section'])) {
-	               
-	               if (!empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
-	               $ownDepartmentPublishedForAdd=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array('PublishedCourse.semester'=>$semester,
-	               'PublishedCourse.department_id'=>$student_section_exam_status['StudentBasicInfo']['department_id'],
-	               'PublishedCourse.section_id'=>$student_section_exam_status['Section']['id'],
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.add'=>1),'contain'=>array('Course')));
-	               } else if (empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
-	                  $ownDepartmentPublishedForAdd=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array('PublishedCourse.semester'=>$semester,
-	               'PublishedCourse.department_id is null ',
-	                'PublishedCourse.college_id'=>$student_section_exam_status['College']['id'],
-	               'PublishedCourse.section_id'=>$student_section_exam_status['Section']['id'],
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.add'=>1),'contain'=>array('Course')));
-	      
-	               }
-	               
-	               $pub_own_as_add_courses = array();
-	               $count=0;
-	               foreach ($ownDepartmentPublishedForAdd as $ownIndex=>$ownValue) {
-	                   $already_added = $this->CourseAdd->find('count',array('conditions'=>
-	               array('CourseAdd.student_id'=>$id,
-	               'CourseAdd.published_course_id'=>$ownValue['PublishedCourse']['id'])));
-	                   if ($already_added>0) {
-	                      $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=1;
-	                   } else {
-	                     $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=0;
-	                   }         
-	               }
-	               $ownDepartmentPublishedForAdd=$pub_own_as_add_courses;
-	              
-	               $this->set(compact('ownDepartmentPublishedForAdd'));
-	            } else {
-	                 $this->Session->setFlash('<span></span>'.__('The student is sectionless, S/he should be assigned to section by department. Please advice department.'),'default',array('class'=>'warning-box warning-message'));     
-	            }
-	            $this->set(compact('student_section','student_section_exam_status'));
-	            if (!empty($this->request->data)) {
-	                
-	             $selected=array_sum($this->request->data['CourseAdd']['add']);
-			     
-			     if ($selected>0) {
-			
-			            $selected_courses_for_add=$this->request->data['CourseAdd']['add'];
-			            unset($this->request->data['CourseAdd']['add']);
-			            unset($this->request->data['Student']['department_id']);
-			           
-			            $add_selected_to_registration=array();
-                       		
-			            foreach ($selected_courses_for_add as $k=>$v) {
-			                    if ($v==1) {
-			                        $published_detail['published_course_id']=$k;
-			                        $add_selected_to_registration['CourseAdd'][]=$published_detail['published_course_id'];
-			                    } 
-			             }
-			            $this->request->data['CourseAdd']=$add_selected_to_registration['CourseAdd'];
-			                        //debug($this->request->data);
-			                        //check for duplicate entry
-			            $already_added_courses=array();
-			            $selected_courses_add=array();
-			            $count=0;
-			            
-			            foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-			                
-			                    $check=$this->CourseAdd->find('count',
-			                    array('conditions'=>array('CourseAdd.published_course_id'=>$cdv,
-			                    'CourseAdd.student_id'=>$id),'recursive'=>-1));
-			                  
-			                    // already added, unset it
-			                    if ($check>0) {
-			                       $already_added_courses[]=$cdv;
-			                   
-			                    } else {
-			                           $is_mass_add = $this->CourseAdd->PublishedCourse->field('add',
-			                           array('id'=>$cdv));
-			                           
-			                           $selected_courses_add['CourseAdd'][$count]['published_course_id']=$cdv;
-			                           if($is_mass_add==1) {
-			                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-			                            }
-			                            
-			                    		$selected_courses_add['CourseAdd'][$count]['student_id']=
-			                    		$id;
-			                    		$selected_courses_add['CourseAdd'][$count]['semester']=$semester;
-			                    		$selected_courses_add['CourseAdd'][$count]['academic_year']=$current_academic_year;
-			                    		if (empty($student_section['Section'][0]['year_level_id'])
-			                    		|| $student_section['Section'][0]['year_level_id']==0) {
-			                    		   $selected_courses_add['CourseAdd'][$count]['year_level_id']=0;
-			                    		} else {
-			                    		    $selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    		}
-			                    		//$selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    }
-			                    $count++;
-			            }
-			            
-			           if (count($already_added_courses)==count($this->request->data['CourseAdd'])) {
-			                  $this->Session->setFlash('<span></span>'.__('All the selected courses has already  added. You do not need to add it again.'),'default',array('class'=>'info-box info-message'));
-			                  
-		                     //$this->redirect(array('action'=>'index'));
-		                     
-			            } else {
-			                 // unset($this->request->data);
-			                  $this->request->data['CourseAdd']=$selected_courses_add;
-			            }
-			            $this->request->data['CourseAdd']=$this->request->data['CourseAdd']['CourseAdd'];
-	                 if (!empty($this->request->data['CourseAdd'])){ 
-	                 	  //debug($this->request->data);
-	                 	  //debug($this->request->data['CourseAdd']);
-	                    if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'],
-					    array('validate'=>'first'))) {
-							     $this->Session->setFlash('<span></span>'.__('The course add has been sent to department successfully for approval.'), 'default',array('class'=>'success-box success-message'));
-							  // dont forget to add to registration table after approval
-							  
-					    } else {
-						     $this->Session->setFlash('<span></span>'.__('The course add could not be send. Please, try again.'),
-								     'default',array('class'=>'error-box error-message'));
-					    }
-					}
-				} else {
-				    $this->Session->setFlash('<span></span>'.__('Please select atleast one course you want to add.'),
-								     'default',array('class'=>'error-box error-message'));
-				}
-	                    //debug($this->request->data);
-	       }
-	        
-	        
-	        
-	    }
-	   
-		if (!empty($this->request->data) && isset($this->request->data['add'])) {
-		          $current_academic_year= $this->AcademicYear->current_academicyear();
-		         $selected=array_sum($this->request->data['CourseAdd']['add']);
-		           $student_section = $this->CourseAdd->Student->
-			  student_academic_detail($this->request->data['Student']['id'],
-	        $current_academic_year); 
-			     $latestAcSemester=  ClassRegistry::init('CourseRegistration')
-			     ->getLastestStudentSemesterAndAcademicYear(
-			     $this->request->data['Student']['id'],$current_academic_year,
-			     1);
-			     
-	            $semester=$latestAcSemester['semester'];
-	       
-			     if ($selected>0) {
-			
-			            $selected_courses_for_add=$this->request->data['CourseAdd']['add'];
-			            unset($this->request->data['CourseAdd']['add']);
-			            unset($this->request->data['Student']['department_id']);
-			           
-			            $add_selected_to_registration=array();
-                       		
-			            foreach ($selected_courses_for_add as $k=>$v) {
-			                    if ($v==1) {
-			                        $published_detail['published_course_id']=$k;
-			                        $add_selected_to_registration['CourseAdd'][]=$published_detail['published_course_id'];
-			                    } 
-			             }
-			            $this->request->data['CourseAdd']=$add_selected_to_registration['CourseAdd'];
-			                        //debug($this->request->data);
-			                        //check for duplicate entry
-			            $already_added_courses=array();
-			            $selected_courses_add=array();
-			            $count=0;
-			            
-			            foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-			                
-			                    $check=$this->CourseAdd->find('count',array('conditions'=>array('CourseAdd.published_course_id'=>$cdv,'CourseAdd.student_id'=>$this->request->data['Student']['id']),'recursive'=>-1));
-			                  
-			                    // already added, unset it
-			                    if ($check>0) {
-			                       $already_added_courses[]=$cdv;
-			                   
-			                    } else {
-			                           $is_mass_add = $this->CourseAdd->PublishedCourse->field('add',
-			                           array('id'=>$cdv));
-			                           
-			                           $selected_courses_add['CourseAdd'][$count]['published_course_id']=$cdv;
-			                           if($is_mass_add==1) {
-			                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-			                            } else {
-			                              $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['egistrar_confirmed_by']=$this->Auth->user('id');
-			                           
-			                            
-			                            }
-			                            
-			                    		$selected_courses_add['CourseAdd'][$count]['student_id']=
-			                    		$this->request->data['Student']['id'];
-			                    		$selected_courses_add['CourseAdd'][$count]['semester']=$semester;
-			                    		$selected_courses_add['CourseAdd'][$count]['academic_year']=$current_academic_year;
-			                    		if (empty($student_section['Section'][0]['year_level_id'])) {
-			                    		  $selected_courses_add['CourseAdd'][$count]['year_level_id']=0;
-			                    		} else {
-			                    		  $selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    		}
-			                    		
-			                    }
-			                    $count++;
-			            }
-			            
-			           if (count($already_added_courses)==count($this->request->data['CourseAdd'])) {
-			                  $this->Session->setFlash('<span></span>'.__('All the selected courses has already  added. You do not need to add it again.'),'default',array('class'=>'info-box info-message'));
-			                  
-		                     //$this->redirect(array('action'=>'index'));
-		                     
-			            } else {
-			                 // unset($this->request->data);
-			                  $this->request->data['CourseAdd']=$selected_courses_add;
-			            }
-			            $this->request->data['CourseAdd']=$this->request->data['CourseAdd']['CourseAdd'];
-	                 if (!empty($this->request->data['CourseAdd'])){ 
-	                   if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'],
-					    array('validate'=>'first'))) {
-							 
-							     $this->Session->setFlash('<span></span>'.__('The course add has been successful.'), 'default',array('class'=>'success-box success-message')); 
-							  
-					    } else {
-						     $this->Session->setFlash('<span></span>'.__('The course add could not be send. Please, try again.'),
-								     'default',array('class'=>'error-box error-message'));
-					    }
-					}
-				} else {
-				    $this->Session->setFlash('<span></span>'.__('Please select atleast one course you want to add.'),
-								     'default',array('class'=>'error-box error-message'));
-				}
-	             
-		}
-		
-	   if (!empty($this->request->data) && isset($this->request->data['continue'])) {
-	            
-	             if (!empty($this->request->data['Search']['studentnumber'])) {
-                       $college_ids=array(); 
-                       $department_ids=array();
-	                   if (!empty($this->request->data['Search']['college_id'])) {
-	                       $college_ids=$this->request->data['Student']['college_id'];
-	                   } else if (!empty($this->college_ids)) {
-	                       $college_ids=$this->college_ids;
-	                   } else if (!empty($this->request->data['Search']['department_id'])) {
-	                      $department_ids=$this->request->data['Search']['department_id'];
-	                   } else if (!empty($this->department_ids)) {
-	                      $department_ids=$this->department_ids;
-	                   }
-	                   
-	                   if (!empty($college_ids)) {
-	                         $student_lists=$this->CourseAdd->PublishedCourse->
-	                         Course->Student->find('all',
-                             array('conditions'=>array(
-                             'Student.department_id is null',
-                             'Student.college_id'=>$college_ids,
-                             'Student.studentnumber'=>trim($this->request->data['Search']['studentnumber']),
-                             'Student.id NOT IN (select student_id from graduate_lists)'),
-				                'contain'=>array('CourseDrop',
-				                'Program'=>array('fields'=>array('id','name')),
-				                'ProgramType'=>array('fields'=>array('id','name')),
-				                'Department'=>array('fields'=>array('id','name'))),
-				                'fields'=>array('Student.id','Student.studentnumber',
-				                'Student.full_name'),'order'=>'Student.full_name')); 
-	             
-	                   } else if (!empty($department_ids)) {
-	                       $student_lists=$this->CourseAdd->PublishedCourse->
-	                         Course->Student->find('all',
-                             array('conditions'=>array(
-                             'Student.department_id'=>$department_ids,
-                            
-                             'Student.studentnumber'=>trim($this->request->data['Search']['studentnumber']),
-                             'Student.id NOT IN (select student_id from graduate_lists)'),
-				                'contain'=>array('CourseDrop',
-				                'Program'=>array('fields'=>array('id','name')),
-				                'ProgramType'=>array('fields'=>array('id','name')),
-				                'Department'=>array('fields'=>array('id','name'))),
-				                'fields'=>array('Student.id','Student.studentnumber',
-				                'Student.full_name'),'order'=>'Student.full_name')); 
-	                       
-	                   }
-	                      
-	               } elseif (!empty($this->request->data['Search']['department_id'])) {
-	                   $student_lists=$this->CourseAdd->PublishedCourse->Course->Student->find('all',
-                             array('conditions'=>array('Student.department_id'=>$this->request->data['Search']['department_id'],'Student.id NOT IN (select student_id from graduate_lists)'),
-				                'contain'=>array('CourseDrop','Program'=>array('fields'=>array('id','name')),'ProgramType'=>array('fields'=>array('id','name')),'Department'=>array('fields'=>array('id','name'))),'fields'=>array('Student.id','Student.studentnumber','Student.full_name'),'order'=>'Student.full_name')); 
-	                
-	                }  elseif (!empty($this->request->data['Search']['college_id'])) {
-	                   $student_lists=$this->CourseAdd->PublishedCourse->Course->Student->find('all',
-                             array('conditions'=>array(
-                             'Student.department_id is null',
-                             'Student.college_id'=>$this->request->data['Search']['college_id'],
-                             'Student.id NOT IN (select student_id from graduate_lists)'),
-				                'contain'=>array('CourseDrop','Program'=>array('fields'=>array('id','name')),'ProgramType'=>array('fields'=>array('id','name')),'Department'=>array('fields'=>array('id','name'))),'fields'=>array('Student.id','Student.studentnumber','Student.full_name'),'order'=>'Student.full_name')); 
-	                    
-	                }
-	                
-	        
-	      
-	        $this->set(compact('student_lists','collegess'));
-	   
-	   }
-	   if (empty($this->request->data)) {
-                   
-                $current_academic_year= $this->AcademicYear->current_academicyear();
-			    $semester=ClassRegistry::init('CourseRegistration')->latestCourseRegistrationSemester(
-			   $current_academic_year);
-				
-	             $publishedCourses=$this->CourseAdd->PublishedCourse->find('all',
-			 array('conditions'=>array(
-			 'PublishedCourse.academic_year'=>$current_academic_year,
-			 'PublishedCourse.add'=>1,
-			 'PublishedCourse.department_id'=>$this->department_ids,
-			 'PublishedCourse.semester'=>$semester),
-			 'contain'=>array('Course'=>array('Prerequisite',
-			 'fields'=>array('Course.id','Course.course_title','Course.course_code','Course.course_code_title')))));
-			
-			 $this->set(compact('publishedCourses'));
-		
-				
-			
-        }
-		if (!empty($this->college_ids)) {
-		   $colleges = $this->CourseAdd->PublishedCourse->College->find('list',array('conditions'=>
-		   array('College.id'=>$this->college_ids)));
-		   //$colleges = $this->CourseAdd->PublishedCourse->College->find('list');
-		}
-	    
-	     if (!empty($this->department_ids)) {
-		        $departments= $this->CourseAdd->PublishedCourse->Department->find('list',array('conditions'=>array('Department.id'=>$this->department_ids)));
-		        //$departments = array();
-		
-		 }
-		$collegess = $this->CourseAdd->PublishedCourse->College->find('list');
-		$this->set(compact('yearLevels', 'departments','colleges','collegess'));
-	}
-    */
-	
-	public function approve_adds() {
-	     $flag=false;
-	     if (!empty($this->request->data) && isset($this->request->data['approverejectadd'])) {
-	     	foreach ($this->request->data['CourseAdd'] as $k=>&$v) {
-	               	    $maxLoad=$this->CourseAdd->Student->calculateStudentLoad(
-			                  $v['student_id'],$v['semester'], $v['academic_year']);
-	               	    //todo read maximum load for course add from general settings
-	               	    $allowedMaximum=ClassRegistry::init('AcademicCalendar')->maximumCreditPerSemester($v['student_id']);
-	               	    if($maxLoad < $allowedMaximum ){
 
-			                    if ($this->role_id == ROLE_DEPARTMENT || $this->role_id == ROLE_COLLEGE ) {
-			                         if ($v['department_approval'] == '') {
-			                            unset($this->request->data['CourseAdd'][$k]);
-			                         } else {
-			                             $v['department_approved_by']=$this->Auth->user('full_name');
-			                         }
-			                    } else if ($this->role_id == ROLE_REGISTRAR) {
-			                          if ($v['registrar_confirmation'] == '') {
-			                            unset($this->request->data['CourseAdd'][$k]);
-			                         } else {
-			                             $v['registrar_confirmed_by']=$this->Auth->user('full_name');
-			                         }
-			                    }
-	                   } else {
-	                   		unset($this->request->data['CourseAdd'][$k]);
-	                   }
-	                   
-	                }
-	                $this->set($this->request->data);
-	               
-	                if (!empty($this->request->data['CourseAdd'])) {
-					    if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'],
-					    array('validate'=>'first'))) {
-					        if ($this->role_id == ROLE_DEPARTMENT) {
-					          
-							     $this->Session->setFlash('<span></span>'.__('The course add has been approved and send to registrar for confirmation.'), 'default',array('class'=>'success-box success-message'));
-					        } else if ($this->role_id == ROLE_REGISTRAR ) {
-					        
-					           
-							     $this->Session->setFlash('<span></span>'.__('The course add has been confirmed.'), 'default',array('class'=>'success-box success-message'));
-					        }
-							     $flag=true;
-							
-							   // $this->redirect(array('action'=>'approve_drops'));
-					    } else {
-						     $this->Session->setFlash('<span></span>'.__('The course add approve could not be saved. Please, try again.'),
-								     'default',array('class'=>'error-box error-message'));
-					    }
-					
-					} else {
-					    if ($this->role_id == ROLE_DEPARTMENT) {
-					    $this->Session->setFlash('<span></span>'.__('The course add approval could not be saved. You have not approved any of the listed requests.'),
-								     'default',array('class'=>'error-box error-message'));
-					    } else if ($this->role_id == ROLE_REGISTRAR) {
-					       $this->Session->setFlash('<span></span>'.__('The course add confirmation  could not be saved. You have not confirmed any of the listed requests.'),
-								     'default',array('class'=>'error-box error-message'));
-					    }
-					}
-	            
-	     }
-	        //read from session 
-	     // Function to load/save search criteria.
-               
-        if ($this->Session->read('search_data')) {
-                       $this->request->data['getaddsection']=true;
-                       $this->request->data['Student']=$this->Session->read('search_data');
-                       $this->set('hide_search',true);
-                      
-        } 
-        
-	     if (!empty($this->request->data) && isset($this->request->data['getaddsection'])) {
-			
-			$everythingfine=false;
-			switch($this->request->data) {
-			       
-			        case empty($this->request->data['Student']['semester']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the semester you want to approve add requests.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			        
-			         case empty($this->request->data['Student']['program_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program you want to approve course add request.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			         case empty($this->request->data['Student']['program_type_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program type you want to approve course add.'),'default',array('class'=>'error-box error-message'));  
-			         break;  
-			         default:
-			         $everythingfine=true;
-			                
-			}
-			if ($everythingfine) {
-			    
-			        $section_organized_published_course=array();
-			        $department_id=null;
-			        
-			        if (!empty($this->request->data['Student']['department_id'])) {
-			            $department_id=$this->request->data['Student']['department_id'];
-			            
-			        } else {
-			            $department_id=$this->department_id;
-			        }
-			        
-			        $program_type_id=$this->AcademicYear->equivalent_program_type($this->request->data['Student']['program_type_id']);
-				  
-			        if (!empty($this->request->data['Student']['year_level_id'])) {     
-			        $sections=$this->CourseAdd->Student->Section->find('list',array('conditions'=>array(
-			        'Section.department_id'=>$department_id,
-			        'Section.year_level_id'=>$this->request->data['Student']['year_level_id'],'Section.program_id'=>$this->request->data['Student']['program_id'],'Section.program_type_id'=>$program_type_id,
-			        'Section.archive'=>0,
-			        )));
-			        } else {
-			          $sections=$this->CourseAdd->Student->Section->find('list',array('conditions'=>array(
-			        'Section.department_id'=>$department_id,'Section.program_id'=>$this->request->data['Student']['program_id'],'Section.program_type_id'=>$program_type_id,
-			        'Section.archive'=>0,
-			        )));
-			        
-			        }
-			       
-			        // query according their roles
-			        $this->CourseAdd->Student->bindModel(array('hasMany'=>array('StudentsSection')));
-			        if ($this->role_id == ROLE_REGISTRAR) {
-			        
-			        $courseAdds = $this->CourseAdd->find('all',array('conditions'=>array(
-			        'Student.department_id'=>$this->request->data['Student']['department_id'],
-			      
-			        'Student.program_id'=>$this->request->data['Student']['program_id'],
-			        'Student.program_type_id'=>$program_type_id,
-			        'CourseAdd.semester'=>$this->request->data['Student']['semester'],
-			        'CourseAdd.academic_year like'=>$this->request->data['Student']['academic_year'].'%',
-			        'CourseAdd.department_approval=1',
-			        'CourseAdd.registrar_confirmed_by is null',
-			        'Student.id NOT IN (select student_id from graduate_lists)'),
-			        'contain'=>array('PublishedCourse'=>array('Course'=>array(
-			        'Prerequisite',
-			        'fields'=>array('credit','id','course_detail_hours','course_title',
-			        'course_code')),'fields'=>array('PublishedCourse.id')),
-			        'Student'=>array(
-			              
-			              'StudentsSection'=>array('conditions'=>array('StudentsSection.archive=0')),
-			              'CourseRegistration'=>array(
-			                   'ExamGrade',
-			                   'PublishedCourse'=>array('Course'=>array('Prerequisite','fields'=>array('credit','id','course_detail_hours','course_title',
-			        'course_code')),'fields'=>array('PublishedCourse.id')),
-			                   'conditions'=>array(
-			                     
-			                      'CourseRegistration.semester'=>$this->request->data['Student']['semester'],
-			                      'CourseRegistration.academic_year like'=>
-			                      $this->request->data['Student']['academic_year'].'%'
-			              ),
-			              'fields'=>array('id','published_course_id')
-			            )
-			                     ,'fields'=>array('id','full_name')
-			                )
-			             )
-			          )
-			        );
-			        
-			        
-			     
-			        } else {
-			        //Invistage reassigment of variable while there is a containable after find all \
-			        // which we expect to be override but distrbuing the code.
-			       //$courseAdds = $this->CourseAdd->find('all');
-			        //debug($courseAdds);
-			     
-			       if (!empty($this->request->data['Student']['year_level_id'])) {
-			            $year_level_id=$this->request->data['Student']['year_level_id'];
-			       } else {
-			            $year_level_id = $this->CourseAdd->YearLevel->find('list',
-			            array('conditions'=>array('YearLevel.department_id'=>$this->department_id)));
-			       }
-			     
-			        $courseAdds = $this->CourseAdd->find('all',array('conditions'=>array(
-			        'Student.department_id'=>$department_id,
-			        'CourseAdd.year_level_id'=>$year_level_id,
-			        'Student.program_id'=>$this->request->data['Student']['program_id'],
-			        'Student.program_type_id'=>$program_type_id,
-			        'CourseAdd.semester'=>$this->request->data['Student']['semester'],
-			        'CourseAdd.academic_year like'=>$this->request->data['Student']['academic_year'].'%',
-			        
-			        "OR"=>array('CourseAdd.department_approved_by is null',
-			        'CourseAdd.department_approved_by'=>array('')),
-			        'Student.id NOT IN (select student_id from graduate_lists)'),
-			        'contain'=>array('PublishedCourse'=>array('Course'=>array(
-			        'Prerequisite',
-			        'fields'=>array('credit','id','course_detail_hours','course_title',
-			        'course_code')),'fields'=>array('PublishedCourse.id')),
-			        'Student'=>array(
-			              
-			              'StudentsSection'=>array('conditions'=>array('StudentsSection.archive=0')),
-			              'CourseRegistration'=>array(
-			                   'ExamGrade',
-			                   'PublishedCourse'=>array('Course'=>array('Prerequisite','fields'=>array('credit','id','course_detail_hours','course_title',
-			        'course_code')),'fields'=>array('PublishedCourse.id')),
-			                   'conditions'=>array(
-			                     
-			                      'CourseRegistration.semester'=>$this->request->data['Student']['semester'],
-			                      'CourseRegistration.academic_year like'=>
-			                      $this->request->data['Student']['academic_year'].'%'
-			              ),
-			              'fields'=>array('id','published_course_id')
-			            )
-			                     ,'fields'=>array('id','full_name')
-			                )
-			             )
-			          )
-			        );
-			        
-			        
-			      
-			      }
-			      
-			        if (empty($courseAdds)) {
-			             if ($this->role_id == ROLE_REGISTRAR) {
-			              $this->Session->setFlash('<span></span> '.__('No add request  needs confirmation in the given  criteria.'),'default',array('class'=>'info-box info-message'));  
-			            } else if ($this->role_id == ROLE_DEPARTMENT) {
-			                $this->Session->setFlash('<span></span> '.__('No add request needs approval in the given criteria.'),'default',array('class'=>'info-box info-message'));
-			                //$this->redirect(array'')
-			            }
-			        
-			        } else {
-			             $this->__init_search();
-			            
-			             foreach ($courseAdds as $pk=>&$pv) {
-			                
-			                if (array_key_exists(
-			                $pv['Student']['StudentsSection'][0]['section_id']
-			                ,$sections)) {
-			                  
-			                  $pv['Student']['max_load']=$this->CourseAdd->Student->calculateStudentLoad(
-			                  $pv['Student']['id'],$this->request->data['Student']['semester'], $this->request->data['Student']['academic_year']);
-			                 
-			                  $section_organized_published_course[$pv['Student']['StudentsSection'][0]['section_id']][]=$pv;
-			                }
-			                
-			           }
-			          
-			           
-			           //$section_organized_published_course=$this->CourseAdd->reformatApprovalRequest($courseAdds);
-			           $this->set('hide_search',true);
-			           $this->set('coursesss',$section_organized_published_course);
-			           $this->set(compact('sections'));
-			        
-			        }  
-			      
-			        $program_name=$this->CourseAdd->Student->Program->field('Program.name',array('Program.id'=>$this->request->data['Student']['program_id']));
-			        $program_type_name=$this->CourseAdd->Student->ProgramType->field('ProgramType.name',array('ProgramType.id'=>$this->request->data['Student']['program_type_id']));
-			        $academic_year=$this->request->data['Student']['academic_year'];
-			        $semester=$this->request->data['Student']['semester'];
-			        $department_name=$this->CourseAdd->Student->Department->field('Department.name',array('Department.id'=>$department_id));
-			       
-			        $this->set(compact('sections','year_level_id','program_name','program_type_name',
-			     'academic_year','semester','department_name'));
-			
-		   }
-	   }
-	  
-	   if ($this->role_id == ROLE_REGISTRAR) {
-	       $department_ids=array();
-	       $college_ids = array();
-	       
-	       if (!empty($this->department_ids)) {
-	        $departments= $this->CourseAdd->PublishedCourse->Department->find('list',array('conditions'=>array(
-		'Department.id'=>$this->department_ids))); 
-		    } else if (!empty($this->college_ids)) {
-		       $departments= $this->CourseAdd->PublishedCourse->Department->find('list',array('conditions'=>array(
-		'Department.college_id'=>$this->college_ids))); 
-		    }
-		
-	   } else if($this->role_id == ROLE_COLLEGE) {
-            	 $departments= $this->CourseAdd->PublishedCourse->Department->find('list',
-            	        array('conditions'=>array('Department.college_id'=>$this->college_id)));	   
-	            $courseAdds=$this->CourseAdd->courseAddRequestWaitingApproval($this->department_ids);  
-	            
-	            
-	            
-	             $courseAdds=$this->CourseAdd->courseAddRequestWaitingApproval(null,0,$this->college_id,1);
-	              $this->set('coursesss',$this->CourseAdd->reformatApprovalRequest(
-			 $courseAdds,
-			 null,$this->AcademicYear->current_academicyear(),$this->college_id));
-	            
-	   } 	
-	    if ($this->role_id == ROLE_REGISTRAR) {
-	     
-		    $yearLevels=$this->CourseAdd->YearLevel->distinct_year_level();
-		    $this->set(compact('yearLevels'));
-		    
-			$courseAdds=$this->CourseAdd->courseAddRequestWaitingApproval($this->department_ids,1,null,1,$this->program_id,
-			$this->program_type_id);
-			
-			
-			if (empty($courseAdds) && !$flag) {
-			    $this->Session->setFlash('<span></span> '.__('No add request requests in the system that needs confirmation.'),'default',array('class'=>'info-box info-message'));  
-			} else {
-			 $this->set('coursesss',$this->CourseAdd->reformatApprovalRequest($courseAdds,
-			 $this->department_ids,$this->AcademicYear->current_academicyear()));
-			}      
-		    
-		} else if ($this->role_id == ROLE_DEPARTMENT) {
-		     $courseAdds=$this->CourseAdd->courseAddRequestWaitingApproval($this->department_id,2);  
-		    
-			if (empty($courseAdds) && !$flag) {
-			    $this->Session->setFlash('<span></span> '.__('No add request in the system that needs approval.'),'default',array('class'=>'info-box info-message'));  
-			} else {
-			 $this->set('coursesss',$this->CourseAdd->reformatApprovalRequest(
-			 $courseAdds,
-			 $this->department_id,$this->AcademicYear->current_academicyear()));
-			}      
-		     $yearLevels = $this->CourseAdd->YearLevel->find('list',array('conditions'=>array(
-		     'YearLevel.department_id'=>$this->department_id),'fields'=>array('id','name')));
-		      $this->set(compact('yearLevels'));
-		} else {
-            $yearLevels = $this->CourseAdd->YearLevel->find('list');
-            $this->set(compact('yearLevels'));
-		
-		}
-	   
-		$programTypes=$this->CourseAdd->PublishedCourse->ProgramType->find('list');
-		$programs=$this->CourseAdd->PublishedCourse->Program->find('list');
-	    $this->set(compact('departments','programTypes','programs'));
-	}
-	
-	function delete($id = null) {
-		if (!$id) {
-			$this->Session->setFlash(__('Invalid id for course add'));
-			return $this->redirect(array('action'=>'index'));
-		}
-		if ($this->CourseAdd->delete($id)) {
-			$this->Session->setFlash(__('Course add deleted'));
-			return $this->redirect(array('action'=>'index'));
-		}
-		$this->Session->setFlash(__('Course add was not deleted'));
-		return $this->redirect(array('action' => 'index'));
-	}
-	/*
-	function mass_add () {
-	  
-	    //get list of students and registered courses 
-	    if (!empty($this->request->data) && isset($this->request->data['continue'])) {
-	        
-	       	$everythingfine=false;
-		    switch($this->request->data) {
-		    
-			        case empty($this->request->data['Student']['department_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select department you want to add courses for mass students.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			        case empty($this->request->data['Student']['academic_year']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select academic year you  want to add  courses for mass students.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			          case empty($this->request->data['Student']['year_level_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select year level you  want to add  courses for mass students.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			        case empty($this->request->data['Student']['program_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program you want to add courses for mass students. Please, try again.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			         case empty($this->request->data['Student']['program_type_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program type you want to add courses for mass students. Please, try again.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			        
-			         default:
-			         $everythingfine=true;
-			                
-		    }
-	       // everthing is selected, reterive from the data list of published coures for the selected criteria
-	      if ($everythingfine) {
-	         $this->__init_search();
-	         $program_type_id=$this->AcademicYear->equivalent_program_type(
-	         $this->request->data['Student']['program_type_id']);
-	         
-	         //debug($this->request->data['Student']['semester']);
-	         $published_courses=$this->CourseAdd->PublishedCourse->find('all',
-	         array('fields'=>array('id','section_id','semester','academic_year','year_level_id'),
-	         'conditions'=>array('PublishedCourse.department_id'=>$this->request->data['Student']['department_id'],
-	         'PublishedCourse.program_id'=>$this->request->data['Student']['program_id'],
-	         'PublishedCourse.program_type_id'=>$program_type_id,
-	         'PublishedCourse.add'=>1,
-	         'PublishedCourse.semester'=>$this->request->data['Student']['semester'],
-	         'PublishedCourse.academic_year like '=>$this->request->data['Student']['academic_year'].'%'
-	         ),
-	         'contain'=>array('Course'=>array('id','course_title','course_code','lecture_hours',
-	         'tutorial_hours','credit'))));
-	         //'PublishedCourse.id NOT IN (select published_course_id from course_adds where published_course_id is not null)
-	         
-	         $program=$this->CourseAdd->PublishedCourse->Program->field('name',array('id'=>$this->request->data['Student']['program_id']));
-	         $programType=$this->CourseAdd->PublishedCourse->ProgramType->field('name',array('id'=>$this->request->data['Student']['program_type_id']));
-	        if(empty($published_courses)) {
-	              $this->Session->setFlash('<span></span>'.__('There is no published courses 
-	              who need mass add for the selected criteria.', true),
-	              'default',array('class'=>'error-box error-message'));
-	        } else {
-	             $section_ids=array();
-	             $published_course_ids = array();
-	             foreach ($published_courses as $pkk=>$pvv) {
-	              if ($this->CourseAdd->ExamGrade->
-	              is_grade_submitted($pvv['PublishedCourse']['id'])==0) {
-	                   $section_ids[]=$pvv['PublishedCourse']['section_id'];
-	                   $published_course_ids[]=$pvv['PublishedCourse']['id'];
-	               }
-	             }
-	            $published_courses=$this->CourseAdd->PublishedCourse->find('all',
-	         array('fields'=>array('id','section_id','semester','academic_year','year_level_id'),
-	         'conditions'=>array('PublishedCourse.department_id'=>$this->request->data['Student']['department_id'],
-	         'PublishedCourse.program_id'=>$this->request->data['Student']['program_id'],
-	         'PublishedCourse.add'=>1,
-	         'PublishedCourse.section_id'=>$section_ids,
-	         'PublishedCourse.semester'=>$this->request->data['Student']['semester'],
-	         'PublishedCourse.academic_year like '=>$this->request->data['Student']['academic_year'].'%'
-	         ),
-	         'contain'=>array('Course'=>array('id','course_title','course_code','lecture_hours',
-	         'tutorial_hours','credit'))));
-	         
-	         
-	             if(!empty($section_ids)) {
-	           
-	              $list_of_students_in_active_section=$this->CourseAdd->PublishedCourse->Section->StudentsSection->find('all',
-	              array('conditions'=>array('StudentsSection.section_id'=>$section_ids,
-	              'StudentsSection.archive'=>0)));
-	             
-	              $student_index=array();
-	              $student_section_index = array();
-	              foreach($list_of_students_in_active_section as $index=>$student){
-	                    $course_add=$this->CourseAdd->find('count',array('conditions'=>
-	                    array('CourseAdd.student_id'=>$student['StudentsSection']['student_id'],
-	                    'CourseAdd.published_course_id'=>$published_course_ids)));
-	                    if ($course_add==0) {
-	                        $student_index[]=$student['StudentsSection']['student_id'];
-	                        $student_section_index[$student['StudentsSection']['student_id']]=$student['StudentsSection']['section_id'];
-	                    }
-	              }
-	             
-	              $students=$this->CourseAdd->Student->find('all',
-	              array('conditions'=>array('Student.department_id'=>$this->request->data['Student']['department_id'],
-	              'Student.id'=>$student_index,'Student.program_type_id'=>$program_type_id,'Student.program_id'=>$this->request->data['Student']['program_id'],
-	              'Student.id NOT IN (select student_id from graduate_lists)'),'fields'=>array('id','studentnumber','full_name'),'contain'=>array()));
-	              
-	              $sections=$this->CourseAdd->Student->Section->find('list',array('conditions'=>array('Section.id'=>$section_ids)));
-	              //list of students organized by section.
-	              $section_organized_students=array();
-                    foreach ($section_ids as $id=>$section_id) {
-                     
-                          foreach($students as $st_index=>$studentdetail){
-                                   
-                                  if(in_array($studentdetail['Student']['id'],
-                                  $student_index)){
-                                    if ($section_id == $student_section_index[$studentdetail['Student']['id']]) {      
-                                        $section_organized_students[$section_id][]=
-                                        $studentdetail['Student'];
-                                    }
-                                }
-                          }         
-                     
-                   }
-	             
-	            }
-	            
-	            if (empty($section_organized_students)) {
-		        $this->Session->setFlash('<span></span>'.__('There is no section who need mass add for the selected criteria.'),'default',array('class'=>'error-box error-message'));
-		        } else {
-		        
-		        
-		        }
-	            $this->set(compact('section_organized_students','published_courses','sections',
-	            
-	            'program','programType'));
-	            
-	          
-	        }
-	        
-	      } 
-	    }
-	     
-	      // drop the selected courses
-	    if (!empty($this->request->data) && isset($this->request->data['massadd'])) {
-	          
-	           //check for duplicate entry
-	                $already_added_courses=array();
-	                $selected_courses_add=array();
-	                unset($this->request->data['Student']);
-	                $count=0;
-	                foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-	                       
-	                        $check=$this->CourseAdd->find('count',array('conditions'=>$cdv,'recursive'=>-1));
-	                      
-	                        // already added, unset it
-	                        if ($check>0) {
-	                           $already_added_courses[]=$cdv['published_course_id'];
-	                       
-	                        } else {
-	                            $selected_courses_add['CourseAdd'][$count]=$cdv;
-	                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-	                            $selected_courses_add['CourseAdd'][$count]['reason']='Published as add';
-	                            $selected_courses_add['CourseAdd'][$count]['department_approved_by']='Published as add';
-	                            $selected_courses_add['CourseAdd'][$count]['registrar_confirmed_by']=$this->Auth->user('id');
-	                            $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-	                            $count++;
-	                        }
-	                }
-	                
-		           if (count($already_added_courses)==count($this->request->data['CourseAdd'])) {
-		                  $this->Session->setFlash('<span></span>'.__('All the selected courses has already  added for the selected sections. You do not need to add it again'),'default',array('class'=>'error-box error-message'));
-	                     $this->redirect(array('action'=>'index'));
-		            } else {
-		                  unset($this->request->data);
-		                  $this->request->data=$already_added_courses;
-		            }
-			       //saveAll
-			       $this->set($this->request->data);
-			    
-			           if ($this->CourseAdd->saveAll($selected_courses_add['CourseAdd'],
-			           array('validate'=>'first'))) {
-				                $this->Session->setFlash('<span></span>'.__('The course add has been saved'),'default',
-				                array('class'=>'success-box success-message'));
-				                $this->Session->delete('search_data');
-				                // save to course registration table
-				              
-				                $this->redirect(array('action' => 'index'));
-			           } else {
-				                $this->Session->setFlash('<span></span>'.__('The course add could not be saved. Please, try again.'),
-				                'default',array('class'=>'error-box error-message'));
-			           }
-	        
-	    }
-	    
-	     if ($this->role_id == ROLE_REGISTRAR) {
-	        $year_level_find=$this->CourseAdd->YearLevel->find('all',
-		   array('fields'=>array('DISTINCT YearLevel.name','YearLevel.id'),
-		  'order'=>'YearLevel.name asc','group'=>'YearLevel.name','recursive'=>-1));
-		    $extract=Set::extract('/YearLevel/name', $year_level_find);
-		    $another=Set::extract('/YearLevel/id',$year_level_find);
-		    $combined=array_combine($another, $extract);
-		    $yearLevels=$combined;
-		    $this->set(compact('yearLevels'));
-		} else if ($this->role_id == ROLE_DEPARTMENT) {
-		     $yearLevels = $this->CourseAdd->YearLevel->find('list',array('conditions'=>array(
-		     'YearLevel.department_id'=>$this->department_id)));
-		      $this->set(compact('yearLevels'));
-		} else {
-            $yearLevels = $this->CourseAdd->YearLevel->find('list');
-            $this->set(compact('yearLevels'));
-		
-		}
-        if (!empty($this->department_ids)) {
-        $departments= $this->CourseAdd->PublishedCourse->Department->find('list',
-        array('conditions'=>array(
-		'Department.id'=>$this->department_ids)));
-		$this->set(compact('departments'));  
-		} else if (!empty($this->college_ids)) {
-		  $colleges= $this->CourseAdd->PublishedCourse->College->find('list',
-        array('conditions'=>array(
-		'College.id'=>$this->college_ids)));
-		$this->set(compact('colleges'));
-		}
-		$programTypes=$this->CourseAdd->PublishedCourse->ProgramType->find('list');
-		$programs=$this->CourseAdd->PublishedCourse->Program->find('list');
-	    $this->set(compact('departments','programTypes','programs'));
-	}
-	*/
-	
-	/**
-	*add courses via student 
-	* student_add_courses
-	*/
-	function student_add_courses() {
-	      
-	       $current_academic_year= $this->AcademicYear->current_academicyear();
-	       $student_section_exam_status=$this->CourseAdd->Student->get_student_section(
-	       $this->student_id,$current_academic_year);
-	       $studentDetails=$this->CourseAdd->Student->find('first',array('conditions'=>array('Student.id'=>$this->student_id),'recursive'=>-1));
-	       $getRegistrationDeadLine=false;$latestAcSemester=ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($this->student_id,$current_academic_year,1);
-            $semester=$latestAcSemester['semester']; 
-                     
-	        if(empty($student_section_exam_status)){
-	         $this->Session->setFlash('<span></span>'.__('You are sectionless. Please advice department.'),'default',array('class'=>'warning-box warning-message'));     
-	         $this->redirect('/');
-	        
-	        }
-	        if (!empty($this->department_id)) {
-	         $year_level_id = $this->CourseAdd->YearLevel->field('name',
-	          array('id'=>$student_section_exam_status['Section']['year_level_id']));
-	          
-	        $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year,$semester,$this->department_id,$year_level_id,$studentDetails['Student']['program_id'],$studentDetails['Student']['program_type_id']);
-	         
-	        
-	        } else if (!empty($this->college_id)) {
-	         
-	          $getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year,$semester,$this->college_id,0,$studentDetails['Student']['program_id'],$studentDetails['Student']['program_type_id']);
-	        
-	          
-	        }
-	        
-	          if ($getRegistrationDeadLine==0 || $getRegistrationDeadLine==1) {
-	          
-	          } else {
-	                $add_start_date=$getRegistrationDeadLine;
-	                $getRegistrationDeadLine=0;
-	                
-	          } 
-	       if (!$getRegistrationDeadLine) {
-	            if (isset($add_start_date) && !empty($add_start_date)) {
-	              $this->Session->setFlash('<span></span>'.__('Course add start date is '.$add_start_date.'. You can not add courses now.'),'default',array('class'=>'info-box info-message'));
-	            } else {
-	              $this->Session->setFlash('<span></span>'.__('Course Add deadline passed. You can not add courses.'),'default',array('class'=>'info-box info-message'));
-	            }
-	            
-			   $this->redirect(array('controller'=>'courseRegistrations','action'=>'index'));    
-	        } else {
-	             $student_section = $this->CourseAdd->Student->
-			  student_academic_detail($this->student_id,
-	        $current_academic_year);  
-	            
-	            $published_detail=array('academic_year'=>$current_academic_year,
-	            'semester'=>$semester,'student_id'=>$this->student_id,
-	            'year_level_id'=>$student_section_exam_status['Section']['year_level_id']);
-	            
-	            if (!empty( $student_section_exam_status['Section'])) {
-	              
-	               $ownDepartmentPublishedForAdd=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array(
-	               'PublishedCourse.semester'=>$semester,
-	               'PublishedCourse.department_id'=>$this->department_id,
-	               'PublishedCourse.section_id'=>$student_section_exam_status['Section']['id'],
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.add'=>1),
-	               'contain'=>array('Course')));
-	              
-	               $pub_own_as_add_courses = array();
-	               $count=0;
-	               foreach ($ownDepartmentPublishedForAdd as $ownIndex=>$ownValue) {
-	                   $already_added = $this->CourseAdd->find('count',array('conditions'=>
-	               array('CourseAdd.student_id'=>$this->student_id,
-	               'CourseAdd.published_course_id'=>$ownValue['PublishedCourse']['id'])));
-	                   if ($already_added>0) {
-	                      $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=1;
-	                   } else {
-	                     $pub_own_as_add_courses[$count]=$ownValue;
-	                      $pub_own_as_add_courses[$count]['already_added']=0;
-	                   }         
-	               }
-	               $ownDepartmentPublishedForAdd=$pub_own_as_add_courses;
-	              
-	               $this->set(compact('ownDepartmentPublishedForAdd'));
-	            } else {
-	                 $this->Session->setFlash('<span></span>'.__('You are sectionless. Please advice department.'),'default',array('class'=>'warning-box warning-message'));     
-	            }
-	            $this->set(compact('student_section','student_section_exam_status'));
-	            if (!empty($this->request->data)) {
-	                
-	             $selected=array_sum($this->request->data['CourseAdd']['add']);
-			     
-			     if ($selected>0) {
-			
-			            $selected_courses_for_add=$this->request->data['CourseAdd']['add'];
-			            unset($this->request->data['CourseAdd']['add']);
-			            unset($this->request->data['Student']['department_id']);
-			           
-			            $add_selected_to_registration=array();
-                       		
-			            foreach ($selected_courses_for_add 
-			            as $k=>$v) {
-			                    if ($v==1) {
-			                        $published_detail['published_course_id']=$k;
-			                        $add_selected_to_registration['CourseAdd'][]=$published_detail['published_course_id'];
-			                    } 
-			             }
-			            $this->request->data['CourseAdd']=$add_selected_to_registration['CourseAdd'];
-			                        //debug($this->request->data);
-			                        //check for duplicate entry
-			            $already_added_courses=array();
-			            $selected_courses_add=array();
-			            $count=0;
-			            $currentLoadToAdd=0;
-			            foreach ($this->request->data['CourseAdd'] as $cdd=>$cdv) {
-			                $courseDetailCredit=$this->CourseAdd->find('first',array('conditions'=>array('CourseAdd.published_course_id'=>$cdv),'contain'=>array('Course')));
-			                    $check=$this->CourseAdd->find('count',array('conditions'=>array('CourseAdd.published_course_id'=>$cdv,'CourseAdd.student_id'=>$this->student_id),'recursive'=>-1));
-			                  
-			                    // already added, unset it
-			                    if ($check>0) {
-			                       $already_added_courses[]=$cdv;
-			                   
-			                    } else {
-			                          $currentLoadToAdd+=$courseDetailCredit['Course']['credit'];
-			                  
-			                           $is_mass_add = $this->CourseAdd->PublishedCourse->field('add',
-			                           array('id'=>$cdv));
-			                           
-			                           $selected_courses_add['CourseAdd'][$count]['published_course_id']=$cdv;
-			                           if($is_mass_add==1) {
-			                            $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-			                           $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-			                            }
-			                            
-			                    		$selected_courses_add['CourseAdd'][$count]['student_id']=$this->student_id;
-			                    		$selected_courses_add['CourseAdd'][$count]['semester']=$semester;
-			                    		$selected_courses_add['CourseAdd'][$count]['academic_year']=$current_academic_year;
-			                    		if (empty($student_section['Section'][0]['year_level_id'])
-			                    		|| $student_section['Section'][0]['year_level_id']==0) {
-			                    		   $selected_courses_add['CourseAdd'][$count]['year_level_id']=0;
-			                    		} else {
-			                    		    $selected_courses_add['CourseAdd'][$count]['year_level_id']=$student_section['Section'][0]['year_level_id'];
-			                    		}
-			                    		
-			                    }
-			                    $count++;
-			            }
-			            
-			           if (count($already_added_courses)==count($this->request->data['CourseAdd'])) {
-			                  $this->Session->setFlash('<span></span>'.__('All the selected courses has already  added. You do not need to add it again.'),'default',array('class'=>'info-box info-message'));
-			                  
-		                     $this->redirect(array('action'=>'index'));
-		                     
-			            } else {
-			                 // unset($this->request->data);
-			                  $this->request->data['CourseAdd']=$selected_courses_add;
-			            }
-			            $this->request->data['CourseAdd']=$this->request->data['CourseAdd']['CourseAdd'];
-	                 if (!empty($this->request->data['CourseAdd'])){ 
-	                 	  //debug($this->request->data);
-	                 	//check if the add request is more than the allowed course per semester
-	                    $maxLoad=($currentLoadToAdd+$this->CourseAdd->Student->calculateStudentLoad($this->student_id,$semester, $current_academic_year));	
-	                    $allowedMaximum=ClassRegistry::init('AcademicCalendar')->maximumCreditPerSemester($this->student_id);
-	                    if($maxLoad>$allowedMaximum){ 
-			                if ($this->CourseAdd->saveAll(
-			                $this->request->data['CourseAdd'],
-							array('validate'=>'first'))) {
-									 $this->Session->setFlash('<span></span>'.__('The course add has been sent to department successfully for approval.'), 'default',array('class'=>'success-box success-message'));
-								  // dont forget to add to registration table after approval
-								  $this->redirect(array('action'=>'index'));
-							} else {
-								 $this->Session->setFlash('<span></span>'.__('The course add could not be send. Please, try again.'),
-										 'default',array('class'=>'error-box error-message'));
-							}
-					    } else {
-					       $this->Session->setFlash('<span></span>'.__('The maximum course load allowed per semester is '.$allowedMaximum.'. Please reduce the number of courses you would like to take and try again.'),'default',array('class'=>'error-box error-message'));
-					    }
-					}
-				} else {
-				    $this->Session->setFlash('<span></span>'.__('Please select atleast one course you want to add.'),'default',array('class'=>'error-box error-message'));
-				}
-	                    //debug($this->request->data);
-	            }
-	      }           
-	    // $departments= $this->CourseAdd->PublishedCourse->Department->find('list');
-	     $colleges = $this->CourseAdd->PublishedCourse->College->find('list');
-	     $this->set(compact('colleges'));
-	  
-	}
-	//get_published_add_courses
-	function get_published_add_courses($section_id=null,$student_id=null,$academicYearSemester=null) {
-	       $this->layout='ajax';
-	       if (!empty($academicYearSemester)) {
-	          // $current_academic_year= $this->AcademicYear->current_academicyear();
-	           $academicYearSemesterArray = explode(",", $academicYearSemester);
-	          
-	           $academicYear=str_replace("-", "/", $academicYearSemesterArray[0]);
-	           $current_academic_year=$academicYear;
-	           $section_semester=$academicYearSemesterArray[1];
-	       } else {
-	           $current_academic_year= $this->AcademicYear->current_academicyear(); 
-	        
-	           if (!empty($student_id)) {
-	               $latestAcSemester=ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear(
-	               $student_id,$current_academic_year);
-	           } else {
-	                $latestAcSemester=ClassRegistry::init('CourseRegistration')->
-	                getLastestStudentSemesterAndAcademicYear($this->student_id,$current_academic_year);
-	          
-	           }
-	           $section_semester = ClassRegistry::init('CourseRegistration')->
-	           latest_semester_of_section ($section_id,$current_academic_year);
-	          
-	           if ($section_semester==2) {
-	             $section_semester=$latestAcSemester['semester'];
-	           }  
-	          
-	       }
-	      
-	       
-	      
-	       
-	       /*$otherAdds=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array('PublishedCourse.semester'=>$semester,
-	             
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               'PublishedCourse.department_id'=>$this->request->data['Student']['department_id']),
-	               'contain'=>array('Course'=>array('fields'=>array('course_code','credit','id','course_title')))));
-	               */
-	        if (!empty($student_id)) {
-	        $student_section_id = $this->CourseAdd->Student->StudentsSection->field('section_id',
-	        array('student_id'=>$student_id,'archive'=>0));
-	        } else {
-	            $student_section_id = $this->CourseAdd->Student->StudentsSection->field('section_id',
-	        array('student_id'=>$this->student_id,'archive'=>0));
-	       
-	        }
-	        if($student_section_id==$section_id) {
-	           // exclude mass add 
-	            $otherpublished=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array(
-	               
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               
-	               'PublishedCourse.semester '=>$section_semester,
-	               'PublishedCourse.add=0',
-	               'PublishedCourse.section_id'=>$section_id),
-	               'contain'=>array('Course'=>array('fields'=>array('course_code','credit','id','course_title')))));
-	    
-	        } else {
-                $otherpublished=$this->CourseAdd->PublishedCourse->find('all',
-	               array('conditions'=>array(
-	               
-	               'PublishedCourse.academic_year LIKE '=>$current_academic_year.'%',
-	               
-	               'PublishedCourse.semester '=>$section_semester,
-	               'PublishedCourse.drop=0',
-	               'PublishedCourse.section_id'=>$section_id),
-	               'contain'=>array('Course'=>array('fields'=>array('course_code','credit','id','course_title')))));
-	       }
-	       if (!empty($student_id)) {
-	        $otherAdds=$this->__exclude_already_added($otherpublished,$student_id);        
-	       } else {
-	          $otherAdds=$this->__exclude_already_added($otherpublished,$this->student_id);
-	       }
-	       $this->set(compact('otherAdds'));
-	       if (!empty($student_id)) {
-	         $this->set('student_id',$student_id);
-	       } else {
-	         $this->set('student_id',$this->student_id);
-	       }
-	       
-	         
-	}
-	
-	function __exclude_already_added ($otherAdds,$student_id=null) {
-	            $pub_own_as_add_courses = array();
-	            $count=0;
-	         
-	            foreach ($otherAdds 
-	            as $ownIndex=>$ownValue) {
-	              if(isset($student_id) && !empty($student_id)){
-	               $already_added = $this->CourseAdd->find('count',array('conditions'=>
-	               array(
-	               'CourseAdd.student_id'=>$student_id,
-	               //'CourseAdd.registrar_confirmation'=>1,
-	               //'CourseAdd.department_approval'=>1,
-	               'CourseAdd.published_course_id'=>$ownValue['PublishedCourse']['id'])));
-	               
-	                  } else {
-	                  $already_added = $this->CourseAdd->find('count',array('conditions'=>
-	               array(
-	               'CourseAdd.student_id'=>$this->student_id,
-	               //'CourseAdd.registrar_confirmation'=>1,
-	               //'CourseAdd.department_approval'=>1,
-	               'CourseAdd.published_course_id'=>$ownValue['PublishedCourse']['id'])));
-	               
-	                  }
-	                  if (!empty($ownValue['Course']['id'])) {
-	                  $already_taken_course = ClassRegistry::init('CourseDrop')->course_taken($student_id,$ownValue['Course']['id']);
-	                   }
-	        		if($ownValue['Course']['id']==9440){
-	        		debug($ownValue);
-	                  debug($already_taken_course);
-	                  
-	                  }
-	                   /**
-						   *1 -exclude from add 
-						   *2 -exclude from add
-						   *3 -allow add 
-						   *4 - prerequist failed.
-	       			 */
-	                
-	                  if (
-	                  $already_taken_course == 1 
-	                  || $already_taken_course==4 
-	                  || $already_taken_course == 2 
-	                  ) {
-	                      
-	        if($already_added>0 ){
-	      $pub_own_as_add_courses[$count]=$ownValue;
-	                      
-	      $pub_own_as_add_courses[$count]['already_added']=0;
-	      } else {
-	        $pub_own_as_add_courses[$count]=$ownValue;
-	                      
-	      $pub_own_as_add_courses[$count]['already_added']=1;
-	      }
-	                      if ($already_taken_course==4) {
-	                        $pub_own_as_add_courses[$count]['prerequiste_failed']=1;
-	                      }
-	                  } else {
-	                     
-	                       $pub_own_as_add_courses[$count]=$ownValue;
-	                       $pub_own_as_add_courses[$count]['already_added']=0;
-	         
-	                  }
-	                  $count++;         
-	           }
-	           return $pub_own_as_add_courses;
-	}
-	
-	/**
-	*The authentication key is regenerated every time a form is evaluated with requireAuth.
-	*This means that if a user submits a form with a key that has already been used, 
-	*the form submission will be considered invalid.There are several cases in 
-	*which this could occur, including but not limited to using multiple browser windows, 
-	*using the Back button to return to a previous page, browser caching, proxy caching, 
-	*and more. While you may be tempted to write off these problems as user error, 
-	*you should resist the temptation and plan on handling invalid form submissions gracefully.
-	*
-	*/
-	function invalid () {
-	  $this->cakeError('youSuck');
-	}
-	
-	function __init_search_index() {
-        // We create a search_data session variable when we fill any criteria 
-        // in the search form.
-        if(!empty($this->request->data['Search'])){
-               
-                    $search_session = $this->request->data['Search'];
-                   // Session variable 'search_data'
-                    $this->Session->write('search_data_index', $search_session);
-                
-        } else {
+	public function add($id = null)
+	{
+		$logged_user_detail = ClassRegistry::init('User')->find('first', array('conditions' => array('User.id' => $this->Auth->user('id')), 'contain' => array('Staff', 'Student')));
 
-        	$search_session = $this->Session->read('search_data_index');
-        	$this->request->data['Search'] = $search_session;
-        } 
+		$hide_search = false;
 
-    }
-    
-    function cancel_mass_add () { 
-          
-	      // Function to load/save search criteria.
-        //   $this->Session->delete('search_data');
-        if ($this->Session->read('search_data') && !isset($this->request->data['getsection'])) {
-                       $this->request->data['getsection']=true;
-                       $this->request->data['Student']=$this->Session->read('search_data');
-                       $this->set('hide_search',true);
-                      
-        }
-        
-        
-	    if (!empty($this->request->data) && isset($this->request->data['cancelmassadd'])) {
-	         
-	          $one_is_selected=0;
-	          $selected_published_courses=array();
-	          foreach ($this->request->data['PublishedCourse'] as $section_id=>$publishedcourse) {
-	               foreach($publishedcourse as $p_id=>$selected){ 
-	                    if ($selected==1) {
-	                         $one_is_selected++;
-	                        // break 2;
-	                        $selected_published_courses[]=$p_id;
-	                    }
-	                }
-	          }
-	        
-	          //check if checked.
-	          if ($one_is_selected) {
-	          
-	                if(!empty($selected_published_courses)) {
-	                     //foreach publish course
-	                    
-	                      $grade_submitted_pub_count = 0;
-	                      $add_for_delete['add']=array();
-	                      foreach ($selected_published_courses as $key=>$pid) {
-	                      	   $is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted($pid);
-	                      	   //check again if grade is not submitted then allow cancellation.
-	                      	   if (!$is_grade_submitted) { 
-	                          	  // $tmp=$this->CourseAdd->PublishedCourse->getStudentsTakingPublishedCourse($pid);
-	                          	  $add_for_delete['add'][]=$pid;
-	                           } else {
-	                             $grade_submitted_pub_count++;
-	                           }
-                         }
-                         
-                         
-                      if (count($selected_published_courses) !=$grade_submitted_pub_count) {  
-                        
-				            if (!empty($add_for_delete['add'])) {
-				               if($this->CourseAdd->deleteAll(array('CourseAdd.published_course_id'=>$add_for_delete['add']), false)) {
-							   }
-				            }
-				            
-				            if (!empty($add_for_delete['add'])) {
-				                 $this->Session->setFlash('<span></span>'.__('Course registration is cancelled for selected courses.'), 'default', array('class' => 'success-message success-box'));
-							     
-				            }
-		     		  } else {
-		                          $this->Session->setFlash('<span></span>'.
-		                          __('You can not cancel the mass add  
-		                           grade has already submitted.', true), 
-		                          'default', array('class' => 'info-message 
-		                          info-box'));
-				      
-				      }  
-				       // $this->redirect(array('action'=>'index'));
-				      
-	               }
-	              
-	          } else {
-	                  $this->Session->setFlash('<span></span> '.__('Please 
-	                  select courses you want to cancel the mass add.', true),
-	                  'default',array('class'=>'error-box error-message')); 
-	          
-	          }
-	        
-	   }
-	  if (!empty($this->request->data) && isset($this->request->data['getsection'])) {
-			$this->Session->delete('search_data');
-		
-			$everythingfine=false;
-			switch($this->request->data) {
-			        case empty($this->request->data['Student']['academic_year']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the academic year you want to cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			        case empty($this->request->data['Student']['semester']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the semester you want to cancel  course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			         case empty($this->request->data['Student']['department_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the department you want to cancel  course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			         case empty($this->request->data['Student']['year_level_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the year level you want cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			         case empty($this->request->data['Student']['program_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program you want to cancel courses registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			         case empty($this->request->data['Student']['program_type_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program type you want to cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;  
-			         default:
-			         $everythingfine=true;
-			                
-			}
-			if ($everythingfine) {
-			        // yearlevel map for the selected department
-			       // debug($this->request->data['Student']['year_level_id']);
-			        $this->__init_search();
-			        $yearLevelId=$this->CourseAdd->PublishedCourse->YearLevel->field('id',
-			       array('YearLevel.department_id'=>$this->request->data['Student']['department_id'],
-			       'YearLevel.name'=>$this->request->data['Student']['year_level_id']));
-			       
-			        $sections=$this->CourseAdd->PublishedCourse->Section->find('list',array('conditions'=>array(
-			        'Section.department_id'=>$this->request->data['Student']['department_id'],
-			        'Section.year_level_id'=>$yearLevelId,
-			        'Section.program_id'=>$this->request->data['Student']['program_id'],
-			        'Section.program_type_id'=>$this->request->data['Student']['program_type_id']
-			        
-			        )));
-			    
-			      $listOfPublishedCourses=$this->CourseAdd->PublishedCourse->find('all',array('conditions'=>array(
-			        'PublishedCourse.department_id'=>$this->request->data['Student']['department_id'],
-			        'PublishedCourse.year_level_id'=>$yearLevelId,
-			        'PublishedCourse.add'=>1,
-			        'PublishedCourse.program_id'=>$this->request->data['Student']['program_id'],
-			        'PublishedCourse.program_type_id'=>$this->request->data['Student']['program_type_id'],
-			        'PublishedCourse.semester'=>$this->request->data['Student']['semester'],
-			            "OR"=>array(
-			                
-			                 'PublishedCourse.id IN (select published_course_id from course_adds)'
-			            ),
-			        ),'fields'=>array('id','section_id'),
-			        'contain'=>array('Section'=>array('fields'=>array('id','name')),'Course'=>array('fields'=>array('id','course_title','course_code',
-			        'lecture_hours','tutorial_hours','credit')))));
-			      
-			       $organized_published_course_by_section=array();
-			       $publish_courses_list_ids=array();
-			     
-			       $publish_counter=0;
-			       $grade_submitted_counter=0;
-			       foreach($listOfPublishedCourses as $lp=>$lv){
-			             if (isset($lv['PublishedCourse']['section_id']) && 
-			             !empty($lv['PublishedCourse']['section_id'])) {  
-			              $is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted(
-			              $lv['PublishedCourse']['id']);
-			              if ($is_grade_submitted) { 
-			                //put a flag and disabled the check box for selection 
-			                 $organized_published_course_by_section[$lv['PublishedCourse']['section_id']]
-			                 [$publish_counter]=$lv;
-			                 
-			                  $organized_published_course_by_section
-			                  [$lv['PublishedCourse']['section_id']][$publish_counter]['grade_submitted']=1;
-			                 
-			                 $publish_courses_list_ids[$publish_counter]=$lv['PublishedCourse']['id'];
-			                 $grade_submitted_counter++;
-			             } else {
-			             
-			               $organized_published_course_by_section[$lv['PublishedCourse']['section_id']][
-			               $publish_counter]=$lv;
-			                 $publish_courses_list_ids[]=$lv['PublishedCourse']['id'];
-			                  $organized_published_course_by_section
-			                  [$lv['PublishedCourse']['section_id']][$publish_counter]['grade_submitted']=0;
-			             }
-			             
-			            }
-			            $publish_counter++;
-			        }
-			      
-			       
-			        $publishedCourseAdd = ClassRegistry::
-	    init('CourseAdd')->find('all',array('conditions'=>array(
-			        'CourseAdd.published_course_id'=>$publish_courses_list_ids,
-			        'CourseAdd.published_course_id IN (select published_course_id 
-			        from course_adds)',
-			        'CourseAdd.id NOT IN (select course_add_id from exam_grades where course_add_id is not null)'
-			        
-			        ),
-			        'contain'=>array('ExamGrade','PublishedCourse'=>array('Course','Section'))));
-			     
-			        
-			       
-			        if (empty($publishedCourseAdd) ) {
-			              $this->Session->setFlash('<span></span> '.
-			              __('No result is found. 
-			              Either grade is submitted or there is no mass add in 
-			              the selected criteria.', true),'default',array('class'=>'info-box info-message'));  
-			        
-			        } else {
-			          
-			            $published_course_ids=array();
-			         
-			           $this->set('hide_search',true);
-			          
-			          
-			           $this->set(compact('sections','listOfPublishedCourses','organized_published_course_by_section'));
-			         
-			        
-			        }
-			        
-			        $year_level_id=$this->request->data['Student']['year_level_id'];
-			        $program_name=$this->CourseAdd->PublishedCourse->Program->field('Program.name',array('Program.id'=>$this->request->data['Student']['program_id']));
-			        $program_type_name=$this->CourseAdd->PublishedCourse->ProgramType->field('ProgramType.name',array('ProgramType.id'=>$this->request->data['Student']['program_type_id']));
-			        $academic_year=$this->request->data['Student']['academic_year'];
-			        $semester=$this->request->data['Student']['semester'];
-			        $department_name=$this->CourseAdd->PublishedCourse->Department->field(
-			        'Department.name',array('Department.id'=>$this->request->data['Student']['department_id']));
-			        
-			       
-			        $this->set(compact('sections','year_level_id','program_name','program_type_name',
-			     'academic_year','semester','department_name','publish_counter','grade_submitted_counter'));  
-			      
+		$collegess = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.active' => 1), 'order' => array('College.name ASC')));
+		$departments = array();
+
+		if (isset($id) && !empty($id)) {
 			
-		   }
-	 }
-	   if ( $this->role_id == ROLE_REGISTRAR) {
-	    
-		   $yearLevels =$this->CourseAdd->YearLevel->distinct_year_level();
-		    $programs=$this->CourseAdd->Student->Program->find('list',
-             array('conditions'=>array('Program.id'=>$this->program_id)));
-		    $departments=$this->CourseAdd->Student->Department->find('list',
-          array('conditions'=>array('Department.id'=>$this->department_ids)));
-             $this->set(compact('departments','yearLevels','programs'));
-           
-		
-		} else if ($this->role_id == ROLE_COLLEGE) { 
-		     $yearLevels =$this->CourseAdd->YearLevel->distinct_year_level();
-		    $programs=$this->CourseAdd->Student->Program->find('list');
-		    $departments=$this->CourseAdd->Student->Department->find('list',
-          array('conditions'=>array('Department.college_id'=>$this->department_id)));
-             $this->set(compact('departments','yearLevels','programs'));
-             
-		} else {
-		   $departments=$this->CourseAdd->Department->find('list',array('conditions'=>
-		   array('Department.id'=>$this->department_id)));
-		   $yearLevels=$this->CourseAdd->YearLevel->find('list',array('conditions'=>
-		   array('YearLevel.department_id'=>$this->department_id)));
-		   $programs=$this->CourseAdd->Student->Program->find('list');
-		  $this->set(compact('departments','yearLevels','programs'));
-		}
-		$programTypes=$this->CourseAdd->Student->ProgramType->find('list');
-		$this->set(compact('programTypes'));
-	        
-    }
-    
-     function mass_add () { 
-          
-	      // Function to load/save search criteria.
-       // $this->Session->delete('search_data');       
-        if ($this->Session->read('search_data') && !isset($this->request->data['getsection'])) {
-                       $this->request->data['getsection']=true;
-                       $this->request->data['Student']=$this->Session->read('search_data');
-                       $this->set('hide_search',true);
-                      
-        }
-        
-        
-	    if (!empty($this->request->data) && isset($this->request->data['massadd'])) {
-	         
-	          $one_is_selected=false;
-	          $selected_published_courses=array();
-	          $section_allowed_mass_add = array();
-	          foreach ($this->request->data['PublishedCourse'] as $section_id=>$publishedcourse) {
-	              // $section_counter=0;
-	               foreach($publishedcourse as $p_id=>$selected){ 
-	                    if ($selected==1) {
-	                         $one_is_selected=true;
-	                        // break 2;
-	                        
-	                    $selected_published_courses[$section_id][]=$p_id;
-	                    }
-	                }
-	          }
-	    debug($selected_published_courses);
-	     //check if checked.
-	    if ($one_is_selected) {
-	         
-	         if(!empty($selected_published_courses)) {
-	              $selected_courses_add=array();
-	              $count=0;
-	              $totalStudentAlreadyAdded=0;
-	              foreach ($selected_published_courses 
-	              as $section_id=>$pid) {
-	     //dont forget to turn on archive to 0
-	                           $list_of_students_in_active_section=$this->CourseAdd->PublishedCourse->
-	                           Section->StudentsSection->find('all',
-	              array('conditions'=>array('StudentsSection.section_id'=>$section_id,
-	              'StudentsSection.archive'=>0),'recursive'=>-1));	
-	                
-	                 if (!empty($list_of_students_in_active_section)) {
-	                        $criteria=$this->Session->read('search_data');
-	                      
-		$year_level_id=$this->CourseAdd->PublishedCourse->YearLevel->field('id',
-		array('YearLevel.department_id'=>$criteria['department_id'],'YearLevel.name'=>$criteria['year_level_id']));
-		debug($year_level_id);
-			      debug(count($list_of_students_in_active_section));
-	foreach ($list_of_students_in_active_section as $k=>$value) {
-	        foreach ($pid as $pk=>$pvalue) {
-	        debug($criteria);
-	        debug($year_level_id);
-	        debug($pvalue);
-			$check=$this->CourseAdd->find('count',array('conditions'=>
-			array('CourseAdd.student_id'=>$value['StudentsSection']['student_id'],
-			'CourseAdd.academic_year'=>$criteria['academic_year'],
-			'CourseAdd.semester'=>$criteria['semester'],
-			'CourseAdd.year_level_id'=>$year_level_id,
-			'CourseAdd.published_course_id'=>$pvalue,
-			),
-			'recursive'=>-1)
-			);
-                            $listThePrerequistCourse= $this->CourseAdd->PublishedCourse->find('first',
-	            array('conditions'=>array('PublishedCourse.id'=>$pvalue),'contain'=>array('Course'=>array(
-	            'Prerequisite'=>array('id','prerequisite_course_id','co_requisite'),
-	            'fields'=>array('Course.id','Course.course_code','Course.course_title','Course.lecture_hours',
-	            'Course.tutorial_hours','Course.credit')))));
-	                         
-	                         $checkForPrerequiste=$this->CourseAdd->courseHasPrerequistAndFullFilled(
-	                         $listThePrerequistCourse,
-	                         $value['StudentsSection']['student_id']);
-	                        
-	                         
-	                         //course taken as registred courses in given semester and 
-	                         // academic year 
-	                         
-	                         $checkForRegistration= ClassRegistry::init('CourseRegistration')->courseRegistered(
-	                         $criteria['semester'],$criteria['academic_year'],
-	                         $value['StudentsSection']['student_id']);
-	                         //4 dismissed
-	                         $passed_or_failed=$this->CourseAdd->Student->StudentExamStatus->get_student_exam_status( $value['StudentsSection']['student_id'],$criteria['academic_year']);
-			               
-                            // first time and fullfilled prequisite, and course not registred
-                           
-                            if($checkForPrerequiste==false){
-                            	debug($pp++);
-                            	 debug($listThePrerequistCourse);
-	                         
-                            }
-                            debug($checkForPrerequiste);
-                            debug($checkForRegistration);
-                            debug($check);
-                           
-                            if ($check==0 && $checkForPrerequiste==true && $checkForRegistration == 0) {
-                              if($passed_or_failed!=4){
-                                $selected_courses_add['CourseAdd'][$count]['semester']=$criteria['semester'];
-                                $selected_courses_add['CourseAdd'][$count]['academic_year']=$criteria['academic_year'];
-                                $selected_courses_add['CourseAdd'][$count]['year_level_id']=$year_level_id;
-                                 $selected_courses_add['CourseAdd'][$count]['published_course_id']=$pvalue;
-                                  $selected_courses_add['CourseAdd'][$count]['student_id']=$value['StudentsSection']['student_id'];
-                                $selected_courses_add['CourseAdd'][$count]['department_approval']=1;
-                                $selected_courses_add['CourseAdd'][$count]['reason']='Published as add';
-                                $selected_courses_add['CourseAdd'][$count]['department_approved_by']='Published as add';
-                                $selected_courses_add['CourseAdd'][$count]['registrar_confirmed_by']=$this->Auth->user('id');
-                                $selected_courses_add['CourseAdd'][$count]['registrar_confirmation']=1;
-                                $count++;
-                            	}
-                            } else{
-                            //nothing 
-                            $totalStudentAlreadyAdded++;
-                            }
-	                     } //publishe course 
-	                    }
-	                 }
-                  } 
-                   debug($count);
-                   debug($pp);
-                  //check and add course as mass add   
-                  if(isset($selected_courses_add['CourseAdd']) && count($selected_courses_add['CourseAdd'])>0) {
-                      if ($this->CourseAdd->saveAll($selected_courses_add['CourseAdd'],array('validate'=>'first'))) {
-				                $this->Session->setFlash('<span></span>'.
-				                __('The course add has been saved'),'default',
-				                array('class'=>'success-box success-message'));
-				                $this->Session->delete('search_data');
-				                // save to course registration table
-				              
-				                $this->redirect(array('action' => 'index'));
-			           } else {
-				                $this->Session->setFlash('<span></span>'.__('The course add could not be saved. Please, try again.'),
-				                'default',array('class'=>'error-box error-message'));
-			           } 
-			      } else {
-			       $this->Session->setFlash('<span></span>'.__('The mass add for '.$totalStudentAlreadyAdded.' student(s) has already approved earlier and currently we couldnt find more students for approval. '),'default',array('class'=>'info-box info-message'));
-			      }   
-	          }    
-	     } else {
-	       $this->Session->setFlash('<span></span> '.__('Please select courses 
-	       you want to cancel/delete.', true),
-	         'default',array('class'=>'error-box error-message')); 
-	          
-	     }
-	        
-	   }
-	  if (!empty($this->request->data) && isset($this->request->data['getsection'])) {
-			$this->Session->delete('search_data');
-			$everythingfine=false;
-			switch($this->request->data) {
-			        case empty($this->request->data['Student']['academic_year']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the academic year you want to cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			        case empty($this->request->data['Student']['semester']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the semester you want to cancel  course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			         case empty($this->request->data['Student']['department_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the department you want to cancel  course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break; 
-			         case empty($this->request->data['Student']['year_level_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the year level you want cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			         case empty($this->request->data['Student']['program_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program you want to cancel courses registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;    
-			         case empty($this->request->data['Student']['program_type_id']) :
-			         $this->Session->setFlash('<span></span> '.__('Please select the program type you want to cancel course registration.'),'default',array('class'=>'error-box error-message'));  
-			         break;  
-			         default:
-			         $everythingfine=true;
-			                
-			}
-			if ($everythingfine) {
-	// yearlevel map for the selected department
-			$this->__init_search();
-			$program_type_id=$this->AcademicYear->equivalent_program_type(
-			$this->request->data['Student']['program_type_id']);
-            $yearLevelId=$this->CourseAdd->PublishedCourse->YearLevel->field('id',array('YearLevel.department_id'=>$this->request->data['Student']['department_id'],'YearLevel.name'=>$this->request->data['Student']['year_level_id']));
-			$sections=$this->CourseAdd->PublishedCourse->Section->find('list',array('conditions'=>array('Section.department_id'=>$this->request->data['Student']['department_id'],
-			'Section.year_level_id'=>$yearLevelId,
-			'Section.program_id'=>$this->request->data['Student']['program_id'],
-			'Section.program_type_id'=>$program_type_id)));
+			$hide_search = true;
 
-		$listOfPublishedCourses=$this->CourseAdd->PublishedCourse->find('all',array('conditions'=>array(
-		'PublishedCourse.department_id'=>$this->request->data['Student']['department_id'],
-		'PublishedCourse.year_level_id'=>$yearLevelId,
-		'PublishedCourse.add'=>1,
-		'PublishedCourse.program_id'=>$this->request->data['Student']['program_id'],
-		'PublishedCourse.program_type_id'=>$this->request->data['Student']['program_type_id'],
-		'PublishedCourse.semester'=>$this->request->data['Student']['semester'],
-		'PublishedCourse.academic_year like '=>$this->request->data['Student']['academic_year'].'%'),'fields'=>array('id','section_id'),
-		'contain'=>array('Section'=>array('fields'=>array('id','name')),'Course'=>array('fields'=>array('id','course_title','course_code',
-		'lecture_hours','tutorial_hours','credit')))));
-			    
-			if(empty($listOfPublishedCourses)) {
-$this->Session->setFlash('<span></span>'.__('There is no published courses which need mass add for the selected criteria.', true),
-'default',array('class'=>'error-box error-message'));
-			} else {
+			$this->__init_search_index();
 
-			}
-			$organized_published_course_by_section=array();
-			$publish_courses_list_ids=array();
-			$counter=0;
-			$totalAddedCourse=0;
-			
-			foreach($listOfPublishedCourses 
-			as $lp=>$lv){
-			 if (isset($lv['PublishedCourse']['section_id']) && !empty($lv['PublishedCourse']['section_id'])) {  
-			
-			  $is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted(
-			  $lv['PublishedCourse']['id']);
-			  if ($is_grade_submitted) { 
-				//put a flag and disabled the check box for selection 
-$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]=$lv;
-$organized_published_course_by_section
-[$lv['PublishedCourse']['section_id']][$counter]['grade_submitted']=true;
-$publish_courses_list_ids[$counter]=$lv['PublishedCourse']['id'];
-			 } else {
-$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]=$lv;
-$publish_courses_list_ids[]=$lv['PublishedCourse']['id'];
-$organized_published_course_by_section
-[$lv['PublishedCourse']['section_id']][$counter]['grade_submitted']=false;
-			 }
-			}
-			$counter++;
-		  }
-		$this->set(compact('sections',
-		'listOfPublishedCourses',
-		'organized_published_course_by_section'));
-		$year_level_id=$this->request->data['Student']['year_level_id'];
-	    $program_name=$this->CourseAdd->PublishedCourse->Program->field('Program.name',array('Program.id'=>$this->request->data['Student']['program_id']));
-		$program_type_name=$this->CourseAdd->PublishedCourse->ProgramType->field('ProgramType.name',array('ProgramType.id'=>$this->request->data['Student']['program_type_id']));
-		$academic_year=$this->request->data['Student']['academic_year'];
-	    $semester=$this->request->data['Student']['semester'];
-	    $department_name=$this->CourseAdd->PublishedCourse->Department->field(
-	    'Department.name',array('Department.id'=>$this->request->data['Student']['department_id']));
-		$this->set(compact('sections',
-		'year_level_id','program_name',
-		'program_type_name',
-		'academic_year','semester',
-		'department_name'));  
-		}
-	   }
-	   if ( $this->role_id == ROLE_REGISTRAR) {
-	    
-		   $yearLevels =$this->CourseAdd->YearLevel->distinct_year_level();
-		    $programs=$this->CourseAdd->Student->Program->find('list',
-             array('conditions'=>array('Program.id'=>$this->program_id)));
-		    $departments=$this->CourseAdd->Student->Department->find('list',
-          array('conditions'=>array('Department.id'=>$this->department_ids)));
-             $this->set(compact('departments','yearLevels','programs'));
-           
-		
-		} else if ($this->role_id == ROLE_COLLEGE) { 
-		     $yearLevels =$this->CourseAdd->YearLevel->distinct_year_level();
-		    $programs=$this->CourseAdd->Student->Program->find('list');
-		    $departments=$this->CourseAdd->Student->Department->find('list',
-          array('conditions'=>array('Department.college_id'=>$this->department_id)));
-             $this->set(compact('departments','yearLevels','programs'));
-             
-		} else {
-		   $departments=$this->CourseAdd->Department->find('list',array('conditions'=>
-		   array('Department.id'=>$this->department_id)));
-		   $yearLevels=$this->CourseAdd->YearLevel->find('list',array('conditions'=>
-		   array('YearLevel.department_id'=>$this->department_id)));
-		   $programs=$this->CourseAdd->Student->Program->find('list');
-		  $this->set(compact('departments','yearLevels','programs'));
-		}
-		$programTypes=$this->CourseAdd->Student->ProgramType->find('list');
-		$this->set(compact('programTypes'));
-	        
-    }
+			$department_ids = array();
+			$college_ids = array();
+			$everyThingOk = false;
+			$selectedStudent = array();
 
-	 public function cancel_course_add() {
-			if($this->role_id==ROLE_REGISTRAR || ROLE_REGISTRAR==$this->Session->read('Auth.User')['Role']['parent_id']){
-				$this->__cancel_course_add();
+			if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !empty($this->department_ids)) {
+				$department_ids = $this->department_ids;
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !empty($this->college_ids)) {
+				$college_ids = $this->college_ids;
 			} 
-	 }
-     
-	  private function __cancel_course_add($selected = null) {
+
+			if (!empty($department_ids)) {
+
+				$selectedStudent = $this->CourseAdd->Student->get_student_section($id);
+				//debug($selectedStudent);
+
+				if (empty($selectedStudent)) {
+					$this->Flash->error('Student ID Not found.');
+				} else if (!in_array($selectedStudent['StudentBasicInfo']['department_id'], $department_ids) || !in_array($selectedStudent['StudentBasicInfo']['program_id'], $this->program_ids) || !in_array($selectedStudent['StudentBasicInfo']['program_type_id'], $this->program_type_ids)) {
+					$this->Flash->error('You don\'t have the privilage to Add course add for ' . $selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ').');
+					ClassRegistry::init('AutoMessage')->sendPermissionManagementBreakAttempt(Configure::read('User.user'), '<u>' . $this->Session->read('Auth.User')['full_name'] . '</u> is trying to add courses for ' . $selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ') without assigned privilage. Please give appropriate warning.');
+					$selectedStudent = array();
+				} else {
+					if ($selectedStudent['StudentBasicInfo']['graduated']) {
+						$this->Flash->error($selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ') is graduated Student.');
+						$everyThingOk = false;
+						$selectedStudent = array();
+					} else {
+						$everyThingOk = true;
+					}
+				}
+			} else if (!empty($college_ids)) {
+
+				$selectedStudent = $this->CourseAdd->Student->get_student_section($id);
+
+				if (empty($selectedStudent)) {
+					$this->Flash->error('Student ID Not found.');
+				} else if (!in_array($selectedStudent['StudentBasicInfo']['college_id'], $college_ids) || !in_array($selectedStudent['StudentBasicInfo']['program_id'], $this->program_ids) || !in_array($selectedStudent['StudentBasicInfo']['program_type_id'], $this->program_type_ids)) {
+					$this->Flash->error('You don\'t have the privilage to add a course for ' . $selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ').');
+					ClassRegistry::init('AutoMessage')->sendPermissionManagementBreakAttempt(Configure::read('User.user'), '<u>' . $this->Session->read('Auth.User')['full_name'] . '</u> is trying to add courses for ' . $selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ') without assigned privilage. Please give appropriate warning.');
+					$selectedStudent = array();
+				} else {
+					if ($selectedStudent['StudentBasicInfo']['graduated']) {
+						$this->Flash->error($selectedStudent['StudentBasicInfo']['full_name'] . ' (' . $selectedStudent['StudentBasicInfo']['studentnumber'] . ') is graduated Student. You can\'t add courses.');
+						$everyThingOk = false;
+						$selectedStudent = array();
+					} else {
+						$everyThingOk = true;
+					}
+				}
+			}
+
+			if (!empty($selectedStudent)) {
+				//debug($selectedStudent);
+			}
+
+			if (!$everyThingOk) {
+				$this->redirect('add');
+			} else {
+
+				//debug($selectedStudent);
+
+				$system_current_acy_and_semester = $this->AcademicYear->current_acy_and_semester();
+				//debug($system_current_acy_and_semester['academic_year']);
+				//debug($system_current_acy_and_semester['semester']);
+
+				if (!empty($this->request->data['Search']['academicyear'])) {
+					$current_academic_year = $this->request->data['Search']['academicyear'];
+					$semester = $this->request->data['Search']['semester'];
+				} else {
+
+					/* $current_academic_year = $this->AcademicYear->current_academicyear();
+					$latestAcSemester =  ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($id, $current_academic_year, 1);
+					$semester = $latestAcSemester['semester']; */
+
+					$current_academic_year = $system_current_acy_and_semester['academic_year'];
+					$semester = $system_current_acy_and_semester['semester'];
+					$this->Flash->warning('You are required to select academic year');
+					$this->redirect('/');
+				}
+
+				$student_section_exam_status = $this->CourseAdd->Student->get_student_section($id, $current_academic_year);
+
+				//debug($student_section_exam_status);
+
+				$getRegistrationDeadLine = false;
+
+				if (empty($student_section_exam_status['Section'])) {
+					$this->Flash->warning('The selected student is section-less. Please advise his/her department to assign him/her a section for '.$current_academic_year. ' ACY.');
+					$this->redirect('/');
+				}
+
+				$year_level_id = '';
+
+				if (!empty($this->department_ids)) {
+					$year_level_id = $this->CourseAdd->YearLevel->field('name', array('id' => $student_section_exam_status['Section']['year_level_id']));
+					$getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year, $semester, $student_section_exam_status['StudentBasicInfo']['department_id'], $year_level_id);
+				} else if (!empty($this->college_ids)) {
+					$getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year, $semester, $student_section_exam_status['StudentBasicInfo']['college_id'], 0);
+				}
+
+				if ($getRegistrationDeadLine == 0 || $getRegistrationDeadLine == 1) {
+
+				} else {
+					$add_start_date = $getRegistrationDeadLine;
+					$getRegistrationDeadLine = 0;
+				}
+
+				if (!$getRegistrationDeadLine) {
+					if (0 && isset($add_start_date) && !empty($add_start_date)) {
+						$this->Flash->info('Course add start date is at ' . $add_start_date . ' Please come back when course add starts.');
+						$this->redirect(array('controller' => 'courseAdds', 'action' => 'add'));
+					} else {
+						debug($getRegistrationDeadLine);
+						$this->Flash->info('Course add dead line is passed for students but as registrar you can maintain student adds. Beware that student should have to register for  the semester and academic year before adding courses.');
+					}
+				}
+
+				$student_section = $this->CourseAdd->Student->student_academic_detail($id, $current_academic_year);
+
+				if (empty($student_section_exam_status['Section']['year_level_id'])) {
+					
+					$published_detail = array(
+						'academic_year' => $current_academic_year, 
+						'semester' => $semester, 
+						'student_id' => $id, 
+						'OR' => array(
+							'year_level_id = 0', 
+							'year_level_id = ""', 
+							'year_level_id IS NULL'
+						)
+					);
+
+				} else {
+					$published_detail = array(
+						'academic_year' => $current_academic_year,
+						'semester' => $semester, 
+						'student_id' => $id, 
+						'year_level_id' => $student_section_exam_status['Section']['year_level_id']
+					);
+				}
+
+				if (!empty($student_section_exam_status['Section'])) {
+
+					/* if (!empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
+						
+						$ownDepartmentPublishedForAdd = $this->CourseAdd->PublishedCourse->find('all', array(
+							'conditions' => array(
+								'PublishedCourse.semester' => $semester,
+								'PublishedCourse.department_id' => $student_section_exam_status['StudentBasicInfo']['department_id'],
+								'PublishedCourse.section_id' => $student_section_exam_status['Section']['id'],
+								'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+								'PublishedCourse.add' => 1
+							), 
+							'contain' => array('Course')
+						));
+
+					} else if (empty($student_section_exam_status['StudentBasicInfo']['department_id'])) {
+						
+						$ownDepartmentPublishedForAdd = $this->CourseAdd->PublishedCourse->find('all', array(
+							'conditions' => array(
+								'PublishedCourse.semester' => $semester,
+								'PublishedCourse.department_id is null ',
+								'PublishedCourse.college_id' => $student_section_exam_status['College']['id'],
+								'PublishedCourse.section_id' => $student_section_exam_status['Section']['id'],
+								'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+								'PublishedCourse.add' => 1
+							), 
+							'contain' => array('Course')
+						));
+					}
+
+					$pub_own_as_add_courses = array();
+					$count = 0;
+
+
+					if (isset($ownDepartmentPublishedForAdd) && !empty($ownDepartmentPublishedForAdd)) {
+						
+						foreach ($ownDepartmentPublishedForAdd as $ownIndex => $ownValue) {
+							
+							$already_added = $this->CourseAdd->find('count', array(
+								'conditions' => array(
+									'CourseAdd.student_id' => $id,
+									'CourseAdd.published_course_id' => $ownValue['PublishedCourse']['id']
+								)
+							));
+
+							if ($already_added > 0) {
+								$pub_own_as_add_courses[$count] = $ownValue;
+								$pub_own_as_add_courses[$count]['already_added'] = 1;
+							} else {
+								$pub_own_as_add_courses[$count] = $ownValue;
+								$pub_own_as_add_courses[$count]['already_added'] = 0;
+							}
+						}
+					}
+
+					$ownDepartmentPublishedForAdd = $pub_own_as_add_courses;
+
+					$this->set(compact('ownDepartmentPublishedForAdd')); */
+
+					$collegess = $this->CourseAdd->PublishedCourse->College->find('list', array(
+						'conditions' => array(
+							'OR' => array(
+								'College.campus_id' => $student_section_exam_status['College']['campus_id'],
+								'College.stream' => $student_section_exam_status['College']['stream'],
+							),
+							'College.active' => 1
+						),
+						'order' => array('College.campus_id ASC', 'College.name ASC')
+					));
+
+					//debug($student_section_exam_status);
+
+					if (isset($student_section_exam_status['College']['stream']) && $student_section_exam_status['College']['stream']) {
+						$collegess = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.active' => 1, 'College.stream' => $student_section_exam_status['College']['stream'], 'OR' => array('College.campus_id' => $student_section_exam_status['College']['campus_id'], 'College.id' => Configure::read('only_stream_based_colleges_pre_social_natural')))));
+					}
+
+					if (!is_null($student_section_exam_status['College']['id']) && is_null($student_section_exam_status['StudentBasicInfo']['department_id']) &&  in_array($student_section_exam_status['StudentBasicInfo']['college_id'], Configure::read('only_stream_based_colleges_pre_social_natural'))) {
+						$collegess = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.id' => Configure::read('only_stream_based_colleges_pre_social_natural'), 'College.active' => 1)));
+					}
+
+				} else {
+					$this->Flash->warning('The student is sectionless,  S/he should be assigned to section by department. Please advice department.');
+				}
+
+				$this->set(compact('student_section', 'student_section_exam_status'));
+				$this->set('year_level_id', $year_level_id);
+			}
+
+			if (!empty($this->request->data['CourseAdd'])) {
+
+				$selected = array_sum($this->request->data['CourseAdd']['add']);
+
+				if ($selected > 0) {
+
+					$selected_courses_for_add = $this->request->data['CourseAdd']['add'];
+					
+					unset($this->request->data['CourseAdd']['add']);
+					unset($this->request->data['Student']['department_id']);
+
+					$add_selected_to_registration = array();
+
+					if (!empty($selected_courses_for_add)) {
+						foreach ($selected_courses_for_add as $k => $v) {
+							if ($v == 1) {
+								$published_detail['published_course_id'] = $k;
+								$add_selected_to_registration['CourseAdd'][] = $published_detail['published_course_id'];
+							}
+						}
+					}
+
+					$this->request->data['CourseAdd'] = $add_selected_to_registration['CourseAdd'];
+
+					//check for duplicate entry
+					$already_added_courses = array();
+					$selected_courses_add = array();
+					$count = 0;
+
+					if (!empty($this->request->data['CourseAdd'])) {
+
+						foreach ($this->request->data['CourseAdd'] as $cdd => $cdv) {
+
+							$check = $this->CourseAdd->find('count', array(
+								'conditions' => array(
+									'CourseAdd.published_course_id' => $cdv,
+									'CourseAdd.student_id' => $id
+								), 'recursive' => -1
+							));
+
+							// already added, unset it
+							if ($check > 0) {
+								$already_added_courses[] = $cdv;
+							} else {
+
+								$publishedCourseDetail = $this->CourseAdd->PublishedCourse->find('first', array('conditions' => array('PublishedCourse.id' => $cdv), 'contain' => array())); 
+								//debug($publishedCourseDetail);
+
+								$is_mass_add = $this->CourseAdd->PublishedCourse->field('add', array('id' => $cdv));
+
+								$selected_courses_add['CourseAdd'][$count]['published_course_id'] = $cdv;
+
+								if ($is_mass_add == 1) {
+									$selected_courses_add['CourseAdd'][$count]['department_approval'] = 1;
+									$selected_courses_add['CourseAdd'][$count]['registrar_confirmation'] = 1;
+								}
+
+								$selected_courses_add['CourseAdd'][$count]['student_id'] = $id;
+								$selected_courses_add['CourseAdd'][$count]['semester'] = $semester;
+								$selected_courses_add['CourseAdd'][$count]['academic_year'] = $current_academic_year;
+								
+								if (empty($student_section['Section'][0]['year_level_id']) || $student_section['Section'][0]['year_level_id'] == 0) {
+									$selected_courses_add['CourseAdd'][$count]['year_level_id'] = 0;
+								} else {
+									$selected_courses_add['CourseAdd'][$count]['year_level_id'] = $student_section['Section'][0]['year_level_id'];
+								}
+
+								$check_registered =  ClassRegistry::init('CourseRegistration')->find('first', array(
+									'conditions' => array(
+										'CourseRegistration.academic_year' => $publishedCourseDetail['PublishedCourse']['academic_year'],
+										'CourseRegistration.student_id' => $id,
+										'CourseRegistration.semester' => $publishedCourseDetail['PublishedCourse']['semester'],
+									),
+									'contain' => array(),
+									'order' => array('CourseRegistration.academic_year' => 'DESC', 'CourseRegistration.semester' => 'DESC', 'CourseRegistration.id' => 'DESC'),
+								));
+
+								//debug($check_registered);
+
+								if (!empty($check_registered)) {
+									//debug($check_registered['CourseRegistration']['created']);
+									$selected_courses_add['CourseAdd'][$count]['created'] = $check_registered['CourseRegistration']['created'];
+									$selected_courses_add['CourseAdd'][$count]['modified'] = $check_registered['CourseRegistration']['created'];
+								} else {
+
+									$current_acy_and_semester = $this->AcademicYear->current_acy_and_semester();
+									//debug($current_acy_and_semester);
+
+									if ($current_acy_and_semester['academic_year'] == $publishedCourseDetail['PublishedCourse']['academic_year'] && $current_acy_and_semester['semester'] == $publishedCourseDetail['PublishedCourse']['semester']) {
+										$selected_courses_add['CourseAdd'][$count]['created'] = date('Y-m-d h:i:s');
+										$selected_courses_add['CourseAdd'][$count]['modified'] = date('Y-m-d h:i:s');
+									} else {
+										$selected_courses_add['CourseAdd'][$count]['created'] = $this->AcademicYear->getAcademicYearBegainingDate($publishedCourseDetail['PublishedCourse']['academic_year'], $publishedCourseDetail['PublishedCourse']['semester']);
+										$selected_courses_add['CourseAdd'][$count]['modified'] = $this->AcademicYear->getAcademicYearBegainingDate($publishedCourseDetail['PublishedCourse']['academic_year'], $publishedCourseDetail['PublishedCourse']['semester']);
+									}
+								}
+							}
+
+							$count++;
+						}
+					}
+
+					$already_added_courses_for_the_semester = $this->CourseAdd->find('count', array(
+						'conditions' => array(
+							'CourseAdd.academic_year' => $current_academic_year,
+							'CourseAdd.semester' => $semester,
+							'CourseAdd.student_id' => $id
+						)
+					));
+
+					//debug($already_added_courses_for_the_semester);
+
+					if (count($already_added_courses) == count($this->request->data['CourseAdd'])) {
+						$this->Flash->info('All the selected courses are already added. You do not need to add it again.');
+						//$this->redirect(array('action'=>'index'));
+					} else if (is_numeric(MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) && MAXIMUM_COURSES_TO_ADD_PER_SEMESTER > 0 && (($already_added_courses_for_the_semester > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) || (($already_added_courses_for_the_semester + count($this->request->data['CourseAdd'])) > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER))) {
+						$this->Flash->warning('You can\'t add more than ' . MAXIMUM_COURSES_TO_ADD_PER_SEMESTER . ' courses per semester for the selected student. Cancel one or more courses if not approved/rejected by the department or uncheck some from your selection and try again.');
+						$this->redirect(array('action' => 'add'));
+					} else if (is_numeric(MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) && MAXIMUM_COURSES_TO_ADD_PER_SEMESTER > 0 && count($this->request->data['CourseAdd']) > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) {
+						$this->Flash->warning('You can\'t add more than ' . MAXIMUM_COURSES_TO_ADD_PER_SEMESTER . ' courses per semester for the selected student. Uncheck one or more courses from your selection and try again.');
+						$this->redirect(array('action' => 'add'));
+					} else {
+						// unset($this->request->data);
+						$this->request->data['CourseAdd'] = $selected_courses_add;
+					}
+
+					$this->request->data['CourseAdd'] = $this->request->data['CourseAdd']['CourseAdd'];
+
+					if (!empty($this->request->data['CourseAdd'])) {
+						//debug($this->request->data);
+						//debug($this->request->data['CourseAdd']);
+						if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'], array('validate' => 'first'))) {
+							$this->Flash->success('The course add has successful and sent to department for approval.');
+							// dont forget to add to registration table after approval
+							$this->redirect('add');
+						} else {
+							$this->Flash->error('The course add could not be saved. Please, try again.');
+						}
+					}
+				} else {
+					$this->Flash->error('Please select atleast one course you want to add.');
+				}
+
+				//debug($this->request->data);
+			}
+		}
+
+		if (!empty($this->request->data) && isset($this->request->data['add'])) {
+			if (!empty($this->request->data['Search']['academicyear'])) {
+				$current_academic_year = $this->request->data['Search']['academicyear'];
+				$semester = $this->request->data['Search']['semester'];
+			} else {
+				$current_academic_year = $this->AcademicYear->current_academicyear();
+				$latestAcSemester =  ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($id, $current_academic_year, 1);
+				$semester = $latestAcSemester['semester'];
+				
+
+				$latestRegistration = ClassRegistry::init('CourseRegistration')->find('first', array(
+					'conditions' => array(
+						'CourseRegistration.student_id' => $id
+					),
+					'fields' => array(
+						'CourseRegistration.semester', 
+						'CourseRegistration.academic_year'
+					), 
+					'order' => array('CourseRegistration.academic_year' => 'DESC', 'CourseRegistration.semester' => 'DESC', 'CourseRegistration.id' => 'DESC'),
+					'recursive' => -1
+				));
+
+				//debug($latestRegistration);
+			}
+
+			//debug($this->request->data);
+
+			$selected = array_sum($this->request->data['CourseAdd']['add']);
+			$student_section = $this->CourseAdd->Student->student_academic_detail($this->request->data['Student']['id'], $current_academic_year);
+
+			if ($selected > 0 && isset($this->request->data['addSelected'])) {
+
+				$selected_courses_for_add = $this->request->data['CourseAdd']['add'];
+
+				unset($this->request->data['CourseAdd']['add']);
+				unset($this->request->data['Student']['department_id']);
+
+				$add_selected_to_registration = array();
+
+				if (!empty($selected_courses_for_add)) {
+					foreach ($selected_courses_for_add as $k => $v) {
+						if ($v == 1) {
+							$published_detail['published_course_id'] = $k;
+							$add_selected_to_registration['CourseAdd'][] = $published_detail['published_course_id'];
+						}
+					}
+				}
+
+				$this->request->data['CourseAdd'] = $add_selected_to_registration['CourseAdd'];
+
+				$already_added_courses = array();
+				$selected_courses_add = array();
+				$count = 0;
+
+				if (!empty($this->request->data['CourseAdd'])) {
+
+					foreach ($this->request->data['CourseAdd'] as $cdd => $cdv) {
+
+						$check = $this->CourseAdd->find('count', array(
+							'conditions' => array(
+								'CourseAdd.published_course_id' => $cdv, 
+								'CourseAdd.student_id' => $this->request->data['Student']['id']
+							), 
+							'recursive' => -1
+						));
+
+						// already added, unset it
+						if ($check > 0) {
+							$already_added_courses[] = $cdv;
+						} else {
+							$is_mass_add = $this->CourseAdd->PublishedCourse->field('add', array('id' => $cdv));
+							$selected_courses_add['CourseAdd'][$count]['published_course_id'] = $cdv;
+
+							if ($is_mass_add == 1) {
+								$selected_courses_add['CourseAdd'][$count]['department_approval'] = 1;
+								$selected_courses_add['CourseAdd'][$count]['registrar_confirmation'] = 1;
+							} else {
+								$selected_courses_add['CourseAdd'][$count]['department_approval'] = 1;
+								$selected_courses_add['CourseAdd'][$count]['registrar_confirmation'] = 1;
+								$selected_courses_add['CourseAdd'][$count]['egistrar_confirmed_by'] = $this->Auth->user('id');
+							}
+
+							$selected_courses_add['CourseAdd'][$count]['student_id'] = $this->request->data['Student']['id'];
+							$selected_courses_add['CourseAdd'][$count]['semester'] = $semester;
+							$selected_courses_add['CourseAdd'][$count]['academic_year'] = $current_academic_year;
+							
+							if (empty($student_section['Section'][0]['year_level_id'])) {
+								$selected_courses_add['CourseAdd'][$count]['year_level_id'] = 0;
+							} else {
+								$selected_courses_add['CourseAdd'][$count]['year_level_id'] = $student_section['Section'][0]['year_level_id'];
+							}
+						}
+
+						$count++;
+					}
+				}
+
+				if (count($already_added_courses) == count($this->request->data['CourseAdd'])) {
+					$this->Flash->info('All the selected courses were already added. You do not need to add it again.');
+					unset($this->request->data['CourseAdd']);
+					if ($this->Session->check('search_data_index')) {
+						$this->Session->delete('search_data_index');
+					}
+					$this->redirect(array('action'=>'index'));
+				} else {
+					// unset($this->request->data);
+					$this->request->data['CourseAdd'] = $selected_courses_add;
+				}
+
+				$this->request->data['CourseAdd'] = $this->request->data['CourseAdd']['CourseAdd'];
+
+				if (!empty($this->request->data['CourseAdd'])) {
+					if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'], array('validate' => 'first'))) {
+						$this->Flash->success('The course add has been successful and sent to department for approval. Please don\'t forget to confirm again after department approval is done by the department.');
+						unset($this->request->data['CourseAdd']);
+						if ($this->Session->check('search_data_index')) {
+							$this->Session->delete('search_data_index');
+						}
+						$this->redirect(array('action'=> 'index'));
+					} else {
+						$this->Flash->error('The course add could not be saved. Please, try again.');
+					}
+				}
+
+			} else {
+				$this->Flash->error('Please select atleast one course you want to add.');
+			}
+		}
+
+		$department_ids = array();
+		$college_ids = array();
+		$yearLevels = array();
+
+		if (!empty($this->department_ids)) {
+			$departments = $this->CourseAdd->PublishedCourse->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+			if (!empty($departments)) {
+				$department_ids = array_keys($departments);
+				//$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level_based_on_role($this->Session->read('Auth.User')['role_id'], null , $department_ids);
+			}
+		} else if (!empty($this->college_ids)) {
+			$colleges = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+			if (!empty($colleges)) {
+				$college_ids = array_keys($colleges);
+				//$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level_based_on_role($this->Session->read('Auth.User')['role_id'], $college_ids);
+			}
+		} else {
+			//$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level();
+		}
+
+		if (isset($this->request->data['Search']['college_id']) && !empty($this->request->data['Search']['college_id'])) {
+			$departments = $this->CourseAdd->PublishedCourse->Department->find('list', array('conditions' => array('Department.college_id' => $this->request->data['Search']['college_id'], 'Department.active' => 1)));
+		}
+
+
+		if (!empty($this->request->data) && isset($this->request->data['continue'])) {
+			
+			//debug($this->request->data);
+			
+			$this->__init_search_index();
+
+			$options = array();
+			$program_ids = array();
+			$program_type_ids = array();
+			$studentnumber = '';
+			$department_name = '';
+			$college_name = '';
+
+			$student_lists = array();
+			
+			if (!empty($this->request->data['Search']['program_id'])) {
+				$program_ids[] = $this->request->data['Search']['program_id'];
+			} else {
+				$program_ids = $this->program_id;
+			}
+
+			if (!empty($this->request->data['Search']['program_type_id'])) {
+				$program_type_ids = $this->__getEquivalentProgramTypes($this->request->data['Search']['program_type_id']);
+			} else {
+				$program_type_ids = $this->program_type_id;
+			}
+
+			//debug($program_type_ids);
+			//debug($yearLevels);
+
+			if (!empty($this->request->data['Search']['year_level_name'])) {
+				$year_level_name = $this->request->data['Search']['year_level_name'];
+			} else {
+				$year_level_name = '1st';
+			}
+
+			if (!empty($this->request->data['Search']['academicyear'])) {
+				$acadamic_year = $this->request->data['Search']['academicyear'];
+			} else {
+				$acadamic_year = $this->AcademicYear->current_academicyear();
+			}
+			
+			if (!empty($this->request->data['Search']['semester'])) {
+				$semester = $this->request->data['Search']['semester'];
+			} else {
+				$semester = 'I';
+			}
+
+			if (!empty($this->request->data['Search']['department_id'])) {
+				$department_ids = array();
+				$department_name = $this->CourseAdd->Student->Department->field('Department.name', array('Department.id' => $this->request->data['Search']['department_id']));
+				$department_ids[] = $this->request->data['Search']['department_id'];
+			}
+
+			if (!empty($this->request->data['Search']['college_id'])) {
+				$college_ids = array();
+				$college_name = $this->CourseAdd->Student->College->field('College.name', array('College.id' => $this->request->data['Search']['college_id']));
+				$college_ids[] = $this->request->data['Search']['college_id'];
+			}
+
+			if (!empty($this->request->data['Search']['studentnumber'])) {
+				$studentnumber = $this->request->data['Search']['studentnumber'];
+			}
+
+			if (!empty($department_ids)) {
+				$student_lists = ClassRegistry::init('StudentExamStatus')->getRegisteredStudentListForAddDrop($acadamic_year, $semester, $program_ids, $program_type_ids, $department_ids, $year_level_name, $freshman = 0, $studentnumber);
+			} else if (!empty($college_ids)) {
+				$student_lists = ClassRegistry::init('StudentExamStatus')->getRegisteredStudentListForAddDrop($acadamic_year, $semester, $program_ids, $program_type_ids, $college_ids, $year_level_name = '', $freshman = 1, $studentnumber);
+			}
+
+			if (empty($student_lists)) {
+				$this->Flash->info('There is no  ' . (!empty($department_name) ? $year_level_name . ' year ' .  $department_name . ' department'  : $college_name . ' freshman ') . ' student who is registered for '  . $acadamic_year . ' academic year, ' . $semester . ' semester to process course add.');
+				$hide_search = true;
+			}
+
+			$this->set(compact('student_lists', 'collegess', 'yearLevels'));
+		}
+
+		if (!empty($this->department_ids)) {
+			$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, $this->department_ids, array(), 1);
+		}
+
+		if (isset($this->request->data['Search']['college_id']) && !empty($this->request->data['Search']['college_id'])) {
+			$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, array(), $this->request->data['Search']['college_id'], 1);
+		}
+
+		$this->set(compact('yearLevels', 'departments', 'colleges', 'collegess', 'hide_search'));
+	}
+
+	public function approve_adds()
+	{
+
+		$flag = false;
+
+		$current_acy = $this->AcademicYear->current_academicyear();
+
+		if (is_numeric(ACY_BACK_COURSE_ADD_DROP_APPROVAL) && ACY_BACK_COURSE_ADD_DROP_APPROVAL) {
+			$ac_yearsAddDrop = $this->AcademicYear->academicYearInArray(((explode('/', $current_acy)[0]) - ACY_BACK_COURSE_ADD_DROP_APPROVAL), (explode('/', $current_acy)[0]));
+		} else {
+			$ac_yearsAddDrop[$current_acy] = $current_acy;
+		}
+
+		//debug($ac_yearsAddDrop);
+
+		$ac_yearsAddDropForDropDown = $ac_yearsAddDrop;
+		$ac_yearsAddDrop = array_keys($ac_yearsAddDrop);
+		$acy_ranges_by_comma_quoted = "'" . implode ( "', '", $ac_yearsAddDrop ) . "'";
+
+
+		if (!empty($this->request->data['CourseAdd']) && isset($this->request->data['approverejectadd'])) {
+
+			$requestedAddRequestCount =  count($this->request->data['CourseAdd']);
+			$alreadyAdddedCount = 0;
+			$alreadyProcessedCount = 0;
+			$aboveMaxCreditPerSemesterCount = 0;
+			$noRegistrationOnTheSemesterCount = 0;
+
+			$autoRejectedRequests = 0;
+			$acceptedRequests = 0;
+			$rejectedRequests = 0;
+			$processedRequests = 0;
+
+
+			//debug($this->request->data['CourseAdd']);
+			
+			
+			foreach ($this->request->data['CourseAdd'] as $k => &$v) {
+
+				$alreadyAddded = $this->CourseAdd->find('count', array(
+					'conditions' => array(
+						'CourseAdd.student_id' => $v['student_id'],
+						'CourseAdd.published_course_id' => $v['published_course_id'],
+						'CourseAdd.registrar_confirmation = 1',
+					)
+				));
+
+				if (!$alreadyAddded) {
+
+					if ($this->role_id == ROLE_DEPARTMENT || $this->role_id == ROLE_COLLEGE) {
+						
+						if ($v['department_approval'] == '') {
+							unset($this->request->data['CourseAdd'][$k]);
+							//continue;
+						} else if ($v['auto_rejected'] == 1) {
+							$autoRejectedRequests++;
+						} else if ($v['department_approval'] == 1) {
+							$acceptedRequests++;
+							$processedRequests++;
+						} else if ($v['department_approval'] == 0) {
+							$rejectedRequests++;
+							$processedRequests++;
+						}
+
+						$already_processed = $this->CourseAdd->find('count', array(
+							'conditions' => array(
+								'CourseAdd.student_id' => $v['student_id'],
+								'CourseAdd.published_course_id' => $v['published_course_id'],
+								'OR' => array(
+									'CourseAdd.department_approval = 1',
+									'CourseAdd.department_approval = 0',
+								)
+							)
+						));
+		
+						if ($already_processed) {
+							$alreadyProcessedCount++;
+							unset($this->request->data['CourseAdd'][$k]);
+							//continue;
+						}
+
+					} else if ($this->role_id == ROLE_REGISTRAR) {
+
+						if ($v['registrar_confirmation'] == '') {
+							unset($this->request->data['CourseAdd'][$k]);
+							//continue;
+						} else if ($v['auto_rejected'] == 1) {
+							$autoRejectedRequests++;
+						} else if ($v['registrar_confirmation'] == 1) {
+							$acceptedRequests++;
+							$processedRequests++;
+						} else if ($v['registrar_confirmation'] == 0) {
+							$rejectedRequests++;
+							$processedRequests++;
+						}
+
+						$already_processed = $this->CourseAdd->find('count', array(
+							'conditions' => array(
+								'CourseAdd.student_id' => $v['student_id'],
+								'CourseAdd.published_course_id' => $v['published_course_id'],
+								'OR' => array(
+									'CourseAdd.registrar_confirmation = 1',
+									'CourseAdd.registrar_confirmation = 0',
+								)
+							)
+						));
+		
+						if ($already_processed) {
+							$alreadyProcessedCount++;
+							unset($this->request->data['CourseAdd'][$k]);
+							//continue;
+						}
+					}
+
+					//debug($v);
+
+					//debug($v['student_id']);
+
+					$maxLoad = $this->CourseAdd->Student->calculateStudentLoad($v['student_id'], $v['semester'], $v['academic_year']);
+					//todo read maximum load for course add from general settings
+					//debug($maxLoad);
+
+					$allowedMaximum = ClassRegistry::init('AcademicCalendar')->maximumCreditPerSemester($v['student_id']);
+					//debug($allowedMaximum);
+
+					if (is_numeric($maxLoad) && $maxLoad > 0) {
+						// TODO: check max load + current Add < allowed credit for semester
+						if ($maxLoad <= $allowedMaximum || (($this->role_id == ROLE_REGISTRAR && ($maxLoad + $v['credit']) > $allowedMaximum && $v['department_approval'] == 1))) {
+							if ($this->role_id == ROLE_DEPARTMENT || $this->role_id == ROLE_COLLEGE) {
+								if ($v['department_approval'] == '') {
+									unset($this->request->data['CourseAdd'][$k]);
+								} else {
+									$v['department_approved_by'] = $this->Auth->user('id');
+									$v['modified'] = date('Y-m-d H:i:s');
+								}
+							} else if ($this->role_id == ROLE_REGISTRAR) {
+								if ($v['registrar_confirmation'] == '') {
+									unset($this->request->data['CourseAdd'][$k]);
+								} else {
+									$v['registrar_confirmed_by'] = $this->Auth->user('id');
+									$v['modified'] = date('Y-m-d H:i:s');
+								}
+							}
+						} else if (($maxLoad + $v['credit']) > $allowedMaximum) {
+							$aboveMaxCreditPerSemesterCount++;
+							//unset($this->request->data['CourseAdd'][$k]);
+						} 
+					} else {
+						// Max Load = 0, there is no registratiom
+						$noRegistrationOnTheSemesterCount++;
+						//unset($this->request->data['CourseAdd'][$k]);
+					}
+				} else {
+					$alreadyAdddedCount++;
+					unset($this->request->data['CourseAdd'][$k]);
+				}
+			}
+
+			//debug($this->request->data['CourseAdd']);
+			//$this->set($this->request->data);
+
+			if (!empty($this->request->data['CourseAdd']) && isset($this->request->data['approverejectadd'])) {
+				//debug($this->request->data['CourseAdd']);
+				if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'], array('validate' => 'first'))) {
+					if ($requestedAddRequestCount == $processedRequests) {
+						$this->Flash->success('All of the selected (' . $requestedAddRequestCount . ') course add ' . ($processedRequests <= 1 ? 'request is' : 'requests are' ) . ' ' . ($this->role_id == ROLE_DEPARTMENT ? ' approved successfully and sent to registrar for confirmation' : ' confirmed successfully') . '.');
+					} else {
+						$this->Flash->success('Out of ' . $requestedAddRequestCount . ' available course add ' . ($requestedAddRequestCount <= 1 ? 'request' : 'requests' ) . ', ' . $acceptedRequests . ' add ' . ($acceptedRequests <= 1 ? 'request is' : 'requests are' ) . ' ' . ($this->role_id == ROLE_DEPARTMENT ? ' approved successfully and sent to registrar for confirmation' . ($rejectedRequests ? ' and ' . $rejectedRequests . ' add ' . ($rejectedRequests == 1 ? 'request is rejected' : 'requests are rejected' ) : '') . '.' : ' confirmed successfully' . ($rejectedRequests ? ' and ' . $rejectedRequests . ' add ' . ($rejectedRequests == 1 ? 'request is rejected' : 'requests are rejected' ) : '') . '.') . ($autoRejectedRequests ? ' Auto rejected: ' . $autoRejectedRequests . ' requests. (Over Credit: ' . $aboveMaxCreditPerSemesterCount . ', With No Registration: ' . $noRegistrationOnTheSemesterCount . ')' : '') .'');
+					}
+					$flag = true;
+					$this->redirect(array('action'=>'approve_adds'));
+				} else {
+					$this->Flash->error('Could not ' . ($this->role_id == ROLE_REGISTRAR ? 'confirm' : 'approve') . ' ' . $requestedAddRequestCount . ' available course add ' . ($requestedAddRequestCount <= 1 ? 'request' : 'requests' ) . '. Please, try again.');
+				}
+			} else {
+				$this->Flash->error('Could not ' . ($this->role_id == ROLE_REGISTRAR ? 'confirm' : 'approve') . ' ' . $requestedAddRequestCount . ' available course add ' . ($requestedAddRequestCount <= 1 ? 'request' : 'requests' ) . '. Please try again.');
+			}
+		}
+
+		//read from session 
+		// Function to load/save search criteria.
+
+		/* if ($this->Session->read('search_data')) {
+			$this->request->data['getaddsection'] = true;
+			//$this->request->data['Student'] = $this->Session->read('search_data');
+			$this->set('hide_search', true);
+		} */
+
+		if (!empty($this->request->data) && isset($this->request->data['getaddsection'])) {
+			$everythingfine = false;
+			switch ($this->request->data) {
+				case empty($this->request->data['Student']['semester']):
+					$this->Flash->error('Please select the semester you want to approve add requests.');
+					break;
+				case empty($this->request->data['Student']['program_id']):
+					$this->Flash->error('Please select the program you want to approve course add request.');
+					break;
+				case empty($this->request->data['Student']['program_type_id']):
+					$this->Flash->error('Please select the program type you want to approve course add.');
+					break;
+				default:
+					$everythingfine = true;
+			}
+
+			if ($everythingfine) {
+
+				$section_organized_published_course = array();
+				$department_id = null;
+
+				if (!empty($this->request->data['Student']['department_id'])) {
+					$department_id = $this->request->data['Student']['department_id'];
+				} else {
+					if ($this->role_id == ROLE_DEPARTMENT) {
+						$department_id = $this->department_id;
+					} else if ($this->role_id == ROLE_REGISTRAR && !empty($this->department_ids)) {
+						$department_id = $this->department_ids;
+					}
+				}
+
+				$program_type_id = $this->AcademicYear->equivalent_program_type($this->request->data['Student']['program_type_id']);
+
+				if (!empty($this->request->data['Student']['year_level_id'])) {
+					$sections = $this->CourseAdd->Student->Section->find('list', array(
+						'conditions' => array(
+							'Section.department_id' => $department_id,
+							'Section.year_level_id' => $this->request->data['Student']['year_level_id'], 
+							'Section.program_id' => $this->request->data['Student']['program_id'], 
+							'Section.program_type_id' => $program_type_id,
+							'Section.archive' => 0,
+						),
+						'order' => array(
+							'Section.academicyear DESC', 
+							'Section.name ASC',
+							'Section.year_level_id DESC',
+						),
+					));
+				} else {
+					$sections = $this->CourseAdd->Student->Section->find('list', array(
+						'conditions' => array(
+							'Section.department_id' => $department_id, 
+							'Section.program_id' => $this->request->data['Student']['program_id'], 
+							'Section.program_type_id' => $program_type_id,
+							'Section.archive' => 0,
+						),
+						'order' => array(
+							'Section.academicyear DESC', 
+							'Section.name ASC',
+							'Section.year_level_id DESC',
+						),
+					));
+				}
+
+				// query according their roles
+				$this->CourseAdd->Student->bindModel(array('hasMany' => array('StudentsSection')));
+
+				if ($this->role_id == ROLE_REGISTRAR) {
+					$courseAdds = $this->CourseAdd->find('all', array(
+						'conditions' => array(
+							'Student.department_id' => $this->request->data['Student']['department_id'],
+							'Student.program_id' => $this->request->data['Student']['program_id'],
+							'Student.program_type_id' => $program_type_id,
+							'CourseAdd.semester' => $this->request->data['Student']['semester'],
+							'CourseAdd.academic_year like' => $this->request->data['Student']['academic_year'] . '%',
+							//'CourseAdd.academic_year IN (' . $acy_ranges_by_comma_quoted . ')',
+							'CourseAdd.department_approval = 1',
+							'CourseAdd.registrar_confirmed_by is null',
+							'Student.graduated' => 0,
+							'PublishedCourse.section_id is not null',
+							'PublishedCourse.course_id is not null',
+							'PublishedCourse.drop' => 0
+						),
+						'contain' => array(
+							'PublishedCourse' => array(
+								'Course' => array(
+									'Prerequisite',
+									'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+									'fields' => array('id', 'credit', 'course_detail_hours', 'course_title', 'course_code')
+								), 
+								'Section' => array(
+									'Department' => array('id', 'name', 'type', 'college_id'),
+									'College' => array('id', 'name', 'type', 'stream', 'campus_id'),
+									'Program' => array('id', 'name'),
+									'ProgramType' => array('id', 'name'),
+									'YearLevel' => array('id', 'name'),
+									'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+									'fields' => array('id', 'name'),
+								),
+								'fields' => array('PublishedCourse.id')
+							),
+							'Student' => array(
+								'StudentsSection' => array(
+									'conditions' => array(
+										'StudentsSection.archive = 0'
+									)
+								),
+								'CourseRegistration' => array(
+									'ExamGrade',
+									'PublishedCourse' => array(
+										'Course' => array(
+											'Prerequisite',
+											'fields' => array('credit', 'id', 'course_detail_hours', 'course_title', 'course_code')
+										),
+										'Program' => array('id', 'name'),
+										'ProgramType' => array('id', 'name'),
+										'fields' => array('PublishedCourse.id')
+									),
+									'conditions' => array(
+										'CourseRegistration.semester' => $this->request->data['Student']['semester'],
+										'CourseRegistration.academic_year like' => $this->request->data['Student']['academic_year'] . '%'
+									),
+									'fields' => array('id', 'published_course_id')
+								),
+								'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+								'fields' => array('Student.id', 'Student.full_name', 'Student.gender', 'Student.studentnumber', 'Student.graduated', 'Student.academicyear'),
+								'order' => array('Student.academicyear' => 'DESC', 'Student.studentnumber' => 'ASC',  'Student.id' => 'ASC', 'Student.full_name' => 'ASC'),
+							)
+						)
+					));
+				} else {
+
+					//Invistage reassigment of variable while there is a containable after find all which we expect to be override but distrbuing the code.
+					//$courseAdds = $this->CourseAdd->find('all');
+					//debug($courseAdds);
+
+					if (!empty($this->request->data['Student']['year_level_id'])) {
+						$year_level_id = $this->request->data['Student']['year_level_id'];
+					} else {
+						$year_level_id = $this->CourseAdd->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
+					}
+
+					$courseAdds = $this->CourseAdd->find('all', array(
+						'conditions' => array(
+							'Student.department_id' => $department_id,
+							'CourseAdd.year_level_id' => $year_level_id,
+							'Student.program_id' => $this->request->data['Student']['program_id'],
+							'Student.program_type_id' => $program_type_id,
+							'CourseAdd.semester' => $this->request->data['Student']['semester'],
+							'CourseAdd.academic_year like' => $this->request->data['Student']['academic_year'] . '%',
+							//'CourseAdd.academic_year IN (' . $acy_ranges_by_comma_quoted . ')',
+							"OR" => array(
+								'CourseAdd.department_approved_by is null',
+								'CourseAdd.department_approved_by = ""'
+							),
+							'Student.graduated' => 0,
+							'PublishedCourse.section_id is not null',
+							'PublishedCourse.course_id is not null',
+							'PublishedCourse.drop' => 0
+							//'Student.id NOT IN (select student_id from graduate_lists)'
+						),
+						'contain' => array(
+							'PublishedCourse' => array(
+								'Course' => array(
+									'Prerequisite',
+									'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+									'fields' => array('id', 'credit', 'course_detail_hours', 'course_title', 'course_code')
+								), 
+								'Section' => array(
+									'Department' => array('id', 'name', 'type', 'college_id'),
+									'College' => array('id', 'name', 'type', 'stream', 'campus_id'),
+									'Program' => array('id', 'name'),
+									'ProgramType' => array('id', 'name'),
+									'YearLevel' => array('id', 'name'),
+									'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+									'fields' => array('id', 'name'),
+								),
+								'fields' => array('PublishedCourse.id')
+							),
+							'Student' => array(
+								'StudentsSection' => array(
+									'conditions' => array(
+										'StudentsSection.archive = 0'
+									)
+								),
+								'CourseRegistration' => array(
+									'ExamGrade',
+									'PublishedCourse' => array(
+										'Course' => array(
+											'Prerequisite',
+											'fields' => array('id', 'credit', 'course_detail_hours', 'course_title', 'course_code')
+										),
+										'Program' => array('id', 'name'),
+										'ProgramType' => array('id', 'name'),
+										'fields' => array('PublishedCourse.id')
+									),
+									'conditions' => array(
+										'CourseRegistration.semester' => $this->request->data['Student']['semester'],
+										'CourseRegistration.academic_year like' => $this->request->data['Student']['academic_year'] . '%'
+									),
+									'fields' => array('id', 'published_course_id')
+								),
+								'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+								'fields' => array('Student.id', 'Student.full_name', 'Student.gender', 'Student.studentnumber', 'Student.graduated', 'Student.academicyear'),
+								'order' => array('Student.academicyear' => 'DESC', 'Student.studentnumber' => 'ASC',  'Student.id' => 'ASC', 'Student.full_name' => 'ASC'),
+							)
+						)
+					));
+				}
+
+				if (empty($courseAdds)) {
+					$this->Flash->info('No add request found ' . (isset($this->request->data['Student']['academic_year'])  ? $this->request->data['Student']['academic_year'] . ' ACY ' . (isset($this->request->data['Student']['semester']) ? ' ' . $this->request->data['Student']['semester'] . ' semester'  : '')  : 'in the given criteria' ). ' that needs your ' . ($this->role_id == ROLE_REGISTRAR ? 'confirmation' : 'approval') . '.');
+				} else {
+
+					$this->__init_search();
+
+					/* if (!empty($courseAdds)) {
+						foreach ($courseAdds as $pk => &$pv) {
+							if (array_key_exists($pv['Student']['StudentsSection'][0]['section_id'], $sections)) {
+								//$pv['Student']['max_load'] = $this->CourseAdd->Student->calculateStudentLoad($pv['Student']['id'], $this->request->data['Student']['semester'], $this->request->data['Student']['academic_year']);
+								$section_organized_published_course[$pv['Student']['StudentsSection'][0]['section_id']][] = $pv;
+							}
+						}
+					} */
+
+					$section_organized_published_course = $this->CourseAdd->reformatApprovalRequest($courseAdds);
+
+					$this->set('hide_search', true);
+					$this->set('coursesss', $section_organized_published_course);
+					$this->set(compact('sections'));
+				}
+
+				$program_name = $this->CourseAdd->Student->Program->field('Program.name', array('Program.id' => $this->request->data['Student']['program_id']));
+				$program_type_name = $this->CourseAdd->Student->ProgramType->field('ProgramType.name', array('ProgramType.id' => $this->request->data['Student']['program_type_id']));
+				$academic_year = $this->request->data['Student']['academic_year'];
+				$semester = $this->request->data['Student']['semester'];
+				$department_name = $this->CourseAdd->Student->Department->field('Department.name', array('Department.id' => $department_id));
+
+				$this->set(compact(
+					'sections',
+					'year_level_id',
+					'program_name',
+					'program_type_name',
+					'academic_year',
+					'semester',
+					'department_name'
+				));
+			}
+		}
+
+		if (isset($this->request->data['Student']['academic_year']) && !empty($this->request->data['Student']['academic_year'])) {
+			$acYear = $this->request->data['Student']['academic_year'];
+		} else {
+			$acYear = $this->AcademicYear->current_academicyear();
+		}
+
+		$programTypes = $this->CourseAdd->PublishedCourse->ProgramType->find('list');
+		$programs = $this->CourseAdd->PublishedCourse->Program->find('list');
+
+		if ($this->role_id == ROLE_REGISTRAR) {
+			
+			$department_ids = array();
+			$college_ids = array();
+
+			if (!empty($this->department_ids)) {
+				$departments = $this->CourseAdd->PublishedCourse->Department->find('list', array(
+					'conditions' => array(
+						'Department.id' => $this->department_ids,
+						'Department.active' => 1
+					)
+				));
+			} else if (!empty($this->college_ids)) {
+				$departments = $this->CourseAdd->PublishedCourse->Department->find('list', array(
+					'conditions' => array(
+						'Department.college_id' => $this->college_ids,
+						'Department.active' => 1
+					)
+				));
+			}
+
+			$programTypes = $this->CourseAdd->PublishedCourse->ProgramType->find('list', array('conditions' => array('ProgramType.id' => $this->program_type_id)));
+			$programs = $this->CourseAdd->PublishedCourse->Program->find('list', array('conditions' => array('Program.id' => $this->program_id)));
+
+		} else if ($this->role_id == ROLE_COLLEGE) {
+
+			$departments = $this->CourseAdd->PublishedCourse->Department->find('list', array(
+				'conditions' => array(
+					'Department.college_id' => $this->college_id,
+					'Department.active' => 1
+				)
+			));
+
+			$courseAdds = $this->CourseAdd->courseAddRequestWaitingApproval(null, 0, $this->college_id, 1, null, null, $ac_yearsAddDrop);
+
+			if (empty($courseAdds) && !$flag) {
+				$this->Flash->info('No add request requests found that needs your approval.');
+			} else {
+				$this->set('coursesss', $this->CourseAdd->reformatApprovalRequest($courseAdds, null, $acYear, $this->college_id));
+			}
+		}
+
+		if ($this->role_id == ROLE_REGISTRAR) {
+
+			$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level();
+			$this->set(compact('yearLevels'));
+
+			$courseAdds = $this->CourseAdd->courseAddRequestWaitingApproval($this->department_ids, 1, null, 1, $this->program_id, $this->program_type_id, $ac_yearsAddDrop);
+
+			if (empty($courseAdds) && !$flag) {
+				$this->Flash->info('No add request request found that needs your confirmation.');
+			} else {
+				$this->set('coursesss', $this->CourseAdd->reformatApprovalRequest($courseAdds, $this->department_ids, $acYear));
+			}
+
+		} else if ($this->role_id == ROLE_DEPARTMENT) {
+
+			$courseAdds = $this->CourseAdd->courseAddRequestWaitingApproval($this->department_id, 2, null, 0, null, null, $ac_yearsAddDrop);
+			//debug($courseAdds);
+
+			if (empty($courseAdds) && !$flag) {
+				$this->Flash->info('No add request in the system that needs approval.');
+			} else {
+				$this->set('coursesss', $this->CourseAdd->reformatApprovalRequest($courseAdds, $this->department_id, $acYear));
+			}
+
+			$yearLevels = $this->CourseAdd->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
+			$this->set(compact('yearLevels'));
+
+		} else {
+			$yearLevels = $this->CourseAdd->YearLevel->find('list');
+			$this->set(compact('yearLevels'));
+		}
+
+		$this->set(compact('departments', 'programTypes', 'programs'));
+	}
+
+	function delete($id = null)
+	{
+		if (!$id) {
+			$this->Flash->error('Invalid Course Add ID');
+			return $this->redirect(array('action' => 'index'));
+		}
+
+		$this->CourseAdd->id = $id;
+
+		if (!$this->CourseAdd->exists()) {
+			$this->Flash->error('Invalid Course Add ID');
+			return $this->redirect(array('action' => 'index'));
+		}
+
+		$courseAddDetails = $this->CourseAdd->find('first', array(
+			'conditions' => array('CourseAdd.id' => $id),
+			'contain' => array(
+				'PublishedCourse' => array(
+					'Course' => array(
+						'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+					),
+				),
+				'ExamGrade',
+				'ExamResult.course_add=1',
+				'YearLevel' => array('fields' => array('id', 'name')),
+				'Student' => array(
+					'fields' => array('id', 'full_name', 'gender', 'studentnumber', 'college_id', 'department_id', 'program_id', 'program_type_id', 'graduated', 'academicyear', 'admissionyear'),
+					'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+				),
+			),
+			'recursive' => -1
+		));
+
+		//debug($courseAddDetails);
+
+		$deletion_allowed = false;
+		$error_message = '';
+
+		$course_name = (isset($courseAddDetails['PublishedCourse']['Course']['id']) && !empty($courseAddDetails['PublishedCourse']['Course']['course_code_title']) ? $courseAddDetails['PublishedCourse']['Course']['course_code_title'] : '');
+		$student_full_name = (isset($courseAddDetails['Student']['id']) && !empty($courseAddDetails['Student']['id']) ? $courseAddDetails['Student']['full_name'] . ' (' . $courseAddDetails['Student']['studentnumber'] . ')' : '');
+
+		if ((isset($courseAddDetails['ExamResult']) && !empty($courseAddDetails['ExamResult'])) || (isset($courseAddDetails['ExamGrade']) && !empty($courseAddDetails['ExamGrade']))) {
+			//debug('Course Add is associated with Exam Result or Exam Grade.');
+			$error_message .= ' This course add is associated with exam result or exam grade.';
+			$deletion_allowed = false;
+		} else {
+
+
+			if (empty($course_name)) {
+				//debug(' Coudn\'t load Course Title for the Published Course.');
+				$error_message .= ' Coudn\'t load course title for the published course.';
+				$deletion_allowed = false;
+
+				if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+					$deletion_allowed = true;
+				}
+			}
+
+			if ((isset($courseAddDetails['CourseAdd']['registrar_confirmation']) && !empty($courseAddDetails['CourseAdd']['registrar_confirmation'])) || (isset($courseAddDetails['CourseAdd']['department_approval']) && !empty($courseAddDetails['CourseAdd']['department_approval']))) {
+				//debug('Course Add is approved by either Registrar or Departmnt.');
+				$error_message .= ' This course add is approved by either Registrar or Departmnt.';
+				$deletion_allowed = false;
+
+				if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR) {
+					$deletion_allowed = true;
+				}
+			}
+	
+			if (!isset($courseAddDetails['PublishedCourse']) || (isset($courseAddDetails['PublishedCourse']) && empty($courseAddDetails['PublishedCourse']))) {
+				//debug('Course Add have is no longer associated to PublishedCourse (PublishedCourse ID not found)');
+				$error_message .= ' This course add is no longer associated to a published course (PublishedCourse ID not found).';
+				$deletion_allowed = true;
+			}
+	
+			if (isset($courseAddDetails['PublishedCourse']['id']) && !isset($courseAddDetails['PublishedCourse']['Course']['id'])) {
+				//debug('Course Add is no longer associated to Published Course (Course ID not found)');
+				$error_message .= ' This course add is no longer associated to a published course (Course ID not found).';
+				$deletion_allowed = true;
+			}
+			
+	
+			if (isset($courseAddDetails['CourseAdd']['auto_rejected']) && !empty($courseAddDetails['CourseAdd']['auto_rejected'])) {
+				//debug('Course Add is from Auto Rejected Request.');
+				$error_message .= ' This course add is from auto rejected request.';
+				$deletion_allowed = false;
+			}
+
+			if (isset($courseAddDetails['CourseAdd']['cron_job']) && !empty($courseAddDetails['CourseAdd']['cron_job'])) {
+				//debug('Course Add is from Cron Job.');
+				$error_message .= ' This course add is from cron job.';
+				$deletion_allowed = false;
+			}
+
+			if (isset($courseAddDetails['Student']['graduated']) && $courseAddDetails['Student']['graduated']) {
+				//debug((!empty($student_full_name) ? $student_full_name : 'The selected student') . ' is Graduated Student.');
+				$error_message .= (!empty($student_full_name) ? $student_full_name : 'The selected student') . ' is Graduated Student.';
+				$deletion_allowed = false;
+			}
+		}
+
+		if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !empty($courseAddDetails['Student']['id'])) {
+			if (!empty($this->department_ids) && !empty($courseAddDetails['Student']['department_id']) && !in_array($courseAddDetails['Student']['department_id'], $this->department_ids)) {
+				//$error_message .= 'You are not authorized to drop courses for '. (!empty($student_full_name) ? $student_full_name : 'the selected student');
+				$error_message .= 'You are not authorized to cancel course adds for the selected student.';
+				$deletion_allowed = false;
+			} if (!empty($this->college_ids) && !empty($courseAddDetails['Student']['college_id']) && !in_array($courseAddDetails['Student']['college_id'], $this->college_ids)) {
+				//$error_message .= 'You are not authorized to cancel course adds for '. (!empty($student_full_name) ? $student_full_name : 'the selected student');
+				$error_message .= 'You are not authorized to cancel course adds for the selected student.';
+				$deletion_allowed = false;
+			}
+		}
+
+
+		if ($this->Session->read('Auth.User')['role_id'] == ROLE_STUDENT && !empty($courseAddDetails['Student']['id']) && $this->student_id !== $courseAddDetails['Student']['id']) {
+			$error_message .= 'You are not authorized to cancel course adds for '. (!empty($student_full_name) ? $student_full_name : 'the selected student');
+			$error_message .= 'You are not authorized to cancel course adds for other student. Don\'t try this again, your action is logged and reported.';
+		}
+
+		//exit();
+		//$this->request->allowMethod('post', 'delete');
+
+		if ($this->Session->read('Auth.User')['role_id'] == ROLE_STUDENT && empty($error_message)) {
+			if ($this->CourseAdd->delete($id)) {
+				$this->Flash->success('Course add cancellation successfull'. (!empty($course_name) ? ' for '. $course_name . '.' : '.'));
+				//return $this->redirect(array('action' => 'index'));
+				$this->redirect(Router::url($this->referer(), true));
+			}
+		} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $deletion_allowed) {
+			if ($this->CourseAdd->delete($id)) {
+				$this->Flash->success('Course add cancellation is successfull for '. (!empty($student_full_name) ? $student_full_name : 'the selected student') . (!empty($course_name) ? ' for '. $course_name . '.' : '.') . (!empty($error_message) ? ' With the following additional alerts: ' . $error_message : ''));
+				//return $this->redirect(array('action' => 'index'));
+				$this->redirect(Router::url($this->referer(), true));
+			}
+		} 
+
+		$this->Flash->error('Course add was not cancelled.' . (!empty($error_message) ? $error_message :  ' It is associated to Exam Grades.'));
+		//return $this->redirect(array('action' => 'index'));
+		$this->redirect(Router::url($this->referer(), true));
+	}
+
+	function student_add_courses()
+	{
+
+		$current_academic_year = $this->AcademicYear->current_academicyear();
+
+		$student_section_exam_status = $this->CourseAdd->Student->get_student_section($this->student_id, $current_academic_year);
+
+		$studentDetails = $this->CourseAdd->Student->find('first', array('conditions' => array('Student.id' => $this->student_id), 'recursive' => -1));
+		$getRegistrationDeadLine = false;
+
+		$latestAcSemester = ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($this->student_id, $current_academic_year, 1);
+		
+		$latest_academic_year = $latestAcSemester['academic_year'];
+		$latestSemester = $semester = $latestAcSemester['semester'];
+
+		$current_section_id = (!empty($student_section_exam_status['Section']['id']) ? $student_section_exam_status['Section']['id'] : '');
+		
+		/* debug($latest_academic_year);
+		debug($studentDetails);
+		debug($latestAcSemester);
+		debug($student_section_exam_status);
+		debug($current_section_id); */
+
+		if (empty($student_section_exam_status)) {
+			$this->Flash->warning('You are not assiged to any section for ' . (isset($latest_academic_year) && !empty($latest_academic_year) ? $latest_academic_year : $this->AcademicYear->current_academicyear()). ' academic year. Communicate your department and make sure you have a proper section assignment in ' .(isset($latest_academic_year) && !empty($latest_academic_year) ? $latest_academic_year : $this->AcademicYear->current_academicyear()). ' before trying to register or add courses.');
+			$this->redirect(array('controller' => 'students', 'action' => 'student_academic_profile', $this->student_id));
+			// $student_active_section_ac_year = 0;
+			// $this->redirect('/');
+		} else {
+			if (isset($student_section_exam_status['Section']) && !$student_section_exam_status['Section']['archive'] && !$student_section_exam_status['Section']['StudentsSection']['archive']) {
+				$current_academic_year = $latest_academic_year = $student_active_section_ac_year = $student_section_exam_status['Section']['academicyear'];
+				$latestAcSemester = ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($this->student_id, $current_academic_year, 1);
+				$latestSemester = $semester = $latestAcSemester['semester'];
+				$current_section_id = $student_section_exam_status['Section']['id'];
+			}
+		}
+
+		$check_for_registration = ClassRegistry::init('CourseRegistration')->find('count', array('conditions' => array('CourseRegistration.student_id' => $this->student_id, 'CourseRegistration.academic_year' => $current_academic_year, 'CourseRegistration.semester' => $semester, 'CourseRegistration.section_id' => $current_section_id)));
+		//debug($check_for_registration);
+
+		if (!$check_for_registration) {
+			$this->Flash->info('You can\'t add courses for ' . ($latestSemester == 'I' ? '1st' : ($latestSemester == 'II' ? '2nd' : '3rd'))  . ' semester of ' . $latest_academic_year . ' academic year.  You have to register first for at least one course from '. $student_section_exam_status['Section']['name'].' section.');
+			$this->redirect(array('controller' => 'students', 'action' => 'student_academic_profile', $this->student_id));
+			/* $student_active_section_ac_year = 0;
+			$this->redirect('/'); */
+		} 
+
+		$year_level_name = '';
+
+		if (!empty($this->department_id)) {
+			$year_level_name = $year_level_id = $this->CourseAdd->YearLevel->field('name', array('id' => $student_section_exam_status['Section']['year_level_id']));
+			$getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year, $semester, $this->department_id, $year_level_id, $studentDetails['Student']['program_id'], $studentDetails['Student']['program_type_id']);
+		} else if (!empty($this->college_id)) {
+			$getRegistrationDeadLine =  ClassRegistry::init('CourseRegistration')->AcademicCalendar->check_add_date_end($current_academic_year, $semester, 'pre_'. $this->college_id, 0, $studentDetails['Student']['program_id'], $studentDetails['Student']['program_type_id']);
+		}
+
+		//debug($getRegistrationDeadLine);
+
+		$this->set(compact('student_section_exam_status', 'current_academic_year', 'student_active_section_ac_year', 'year_level_name'));
+
+		/* if ($getRegistrationDeadLine == 0 || $getRegistrationDeadLine == 1) {
+
+		} else {
+			$add_start_date = $getRegistrationDeadLine;
+			$getRegistrationDeadLine = 0;
+		} */
+
+
+		if ($getRegistrationDeadLine != 1) {
+
+			$add_start_date = $getRegistrationDeadLine;
+
+			if (!empty($add_start_date) && $this->__isDate($add_start_date)) {
+				$this->Flash->info('Course add will start on ' . (date('M d, Y', strtotime($add_start_date))) . '  for ' . ($latestSemester == 'I' ? '1st' : ($latestSemester == 'II' ? '2nd' : '3rd'))  . ' semester of ' . $latest_academic_year . ' academic year. Please come back and add courses on the date specified.');
+			} else if (!$getRegistrationDeadLine) {
+				$this->Flash->default('Course add start and end date is not defined for ' . ($latestSemester == 'I' ? '1st' : ($latestSemester == 'II' ? '2nd' : '3rd'))  . ' semester of ' . $latest_academic_year . ' academic year. You can <a href="'.BASE_URL_HTTPS.'pages/academic_calender" target="_blank">check Academic Calendar here</a> and come back later when it is defined.', array('params' => array('type' => 'Info', 'class' => 'info-box info-message'), 'escape' => false));
+			} else {
+				$deadlinepassed = true;
+				$this->set(compact('deadlinepassed'));
+				$this->Flash->warning('Course add deadline is passed for ' . ($latestSemester == 'I' ? '1st' : ($latestSemester == 'II' ? '2nd' : '3rd'))  . ' semester of ' . $latest_academic_year . ' academic year. Please advise the registrar.');
+			}
+
+			/* if (isset($add_start_date) && !empty($add_start_date)) {
+				$this->Flash->info('Course add start date is on ' . (date('M d, Y', strtotime($add_start_date))) . '. You can not add courses now, please come back later on the date specified.');
+			} else {
+				$this->Flash->info('Course Add deadline passed. You can not add courses now, please consult the registrar.');
+			} */
+
+			// don't forget to uncomment this after checking, Neway
+			$this->redirect(array('controller' => 'courseRegistrations', 'action' => 'index', (str_replace('/', '-', $latest_academic_year)), $latestSemester));
+
+		} else {
+
+			$student_section = $this->CourseAdd->Student->student_academic_detail($this->student_id, $current_academic_year);
+			
+			//debug($student_section);
+			//debug($studentDetails['Student']['department_id']);
+
+			//exit();
+
+			if (!is_null($studentDetails['Student']['department_id']) && $studentDetails['Student']['department_id']) {
+				$published_detail = array(
+					'academic_year' => $current_academic_year,
+					'semester' => $semester, 
+					'student_id' => $this->student_id,
+					'year_level_id' => $student_section_exam_status['Section']['year_level_id']
+				);
+			} else {
+				$published_detail = array(
+					'academic_year' => $current_academic_year,
+					'semester' => $semester, 
+					'student_id' => $this->student_id,
+					'OR' => array(
+						'year_level_id IS NULL',
+						'year_level_id = ""',
+						'year_level_id = 0',
+					)
+				);
+			}
+
+			if (!empty($student_section_exam_status['Section'])) {
+
+				$ownDepartmentPublishedForAdd = array();
+
+				if (!is_null($studentDetails['Student']['department_id']) && $studentDetails['Student']['department_id']) {
+					$ownDepartmentPublishedForAdd = $this->CourseAdd->PublishedCourse->find('all', array(
+						'conditions' => array(
+							'PublishedCourse.semester' => $semester,
+							'PublishedCourse.department_id' => $this->department_id,
+							'PublishedCourse.section_id' => $student_section_exam_status['Section']['id'],
+							'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+							'PublishedCourse.add' => 1,
+							'PublishedCourse.section_id is not null',
+							'PublishedCourse.course_id is not null',
+							'PublishedCourse.drop' => 0
+						),
+						'contain' => array('Course')
+					));
+				} else {
+					$ownDepartmentPublishedForAdd = $this->CourseAdd->PublishedCourse->find('all', array(
+						'conditions' => array(
+							'PublishedCourse.semester' => $semester,
+							'PublishedCourse.college_id' => $this->college_id,
+							'PublishedCourse.section_id' => $student_section_exam_status['Section']['id'],
+							'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+							'PublishedCourse.add' => 1,
+							'PublishedCourse.section_id is not null',
+							'PublishedCourse.course_id is not null',
+							'PublishedCourse.drop' => 0
+						),
+						'contain' => array('Course')
+					));
+				} 
+
+				$pub_own_as_add_courses = array();
+				$count = 0;
+
+				if (!empty($ownDepartmentPublishedForAdd)) {
+					foreach ($ownDepartmentPublishedForAdd as $ownIndex => $ownValue) {
+						
+						$already_added = $this->CourseAdd->find('count', array(
+							'conditions' => array(
+								'CourseAdd.student_id' => $this->student_id,
+								'CourseAdd.published_course_id' => $ownValue['PublishedCourse']['id']
+							)
+						));
+
+						if ($already_added > 0) {
+							$pub_own_as_add_courses[$count] = $ownValue;
+							$pub_own_as_add_courses[$count]['already_added'] = 1;
+						} else {
+							$pub_own_as_add_courses[$count] = $ownValue;
+							$pub_own_as_add_courses[$count]['already_added'] = 0;
+						}
+					}
+
+					$ownDepartmentPublishedForAdd = $pub_own_as_add_courses;
+
+					$this->set(compact('ownDepartmentPublishedForAdd'));
+				}
+
+				//$ownDepartmentPublishedForAdd = $pub_own_as_add_courses;
+				//$this->set(compact('ownDepartmentPublishedForAdd'));
+
+			} else {
+				$this->Flash->warning('You are not assiged to any section for ' . (isset($latest_academic_year) && !empty($latest_academic_year) ? $latest_academic_year : $this->AcademicYear->current_academicyear()). ' academic year. Communicate your department and make sure you have a proper section assignment in ' .(isset($latest_academic_year) && !empty($latest_academic_year) ? $latest_academic_year : $this->AcademicYear->current_academicyear()). ' before trying to register or add courses.');
+				$this->redirect(array('controller' => 'students', 'action' => 'student_academic_profile', $this->student_id));
+				//$this->redirect('/');
+			}
+
+			$this->set(compact('student_section', 'student_section_exam_status'));
+
+			if (!empty($this->request->data)) {
+
+				$selected = array_sum($this->request->data['CourseAdd']['add']);
+
+				if ($selected > 0) {
+
+					$selected_courses_for_add = $this->request->data['CourseAdd']['add'];
+					
+					unset($this->request->data['CourseAdd']['add']);
+					unset($this->request->data['Student']['department_id']);
+
+					$add_selected_to_registration = array();
+
+					if (isset($selected_courses_for_add) && !empty($selected_courses_for_add)) {
+						foreach ($selected_courses_for_add as $k => $v) {
+							if ($v == 1) {
+								$published_detail['published_course_id'] = $k;
+								$add_selected_to_registration['CourseAdd'][] = $published_detail['published_course_id'];
+							}
+						}
+					}
+
+					$this->request->data['CourseAdd'] = $add_selected_to_registration['CourseAdd'];
+					//debug($this->request->data);
+					//check for duplicate entry
+
+					$already_added_courses = array();
+					$selected_courses_add = array();
+					$count = 0;
+					$currentLoadToAdd = 0;
+
+					if (!empty($this->request->data['CourseAdd']) && isset($this->request->data['addSelected'])) {
+
+						foreach ($this->request->data['CourseAdd'] as $cdd => $cdv) {
+
+							$courseDetailCredit = $this->CourseAdd->find('first', array(
+								'conditions' => array(
+									'CourseAdd.published_course_id' => $cdv,
+								), 
+								'contain' => array(
+									'PublishedCourse' => array(
+										'Course' => array('id', 'course_title', 'credit')
+									)
+								)
+							));
+							
+							$check = $this->CourseAdd->find('count', array(
+								'conditions' => array(
+									'CourseAdd.published_course_id' => $cdv, 
+									'CourseAdd.student_id' => $this->student_id
+								), 
+								'recursive' => -1
+							));
+
+							// already added, unset it
+
+							if ($check > 0) {
+								$already_added_courses[] = $cdv;
+							} else {
+
+
+								//debug($courseDetailCredit);
+
+								$currentLoadToAdd += $courseDetailCredit['PublishedCourse']['Course']['credit'];
+
+								$is_mass_add = $this->CourseAdd->PublishedCourse->field('add', array('id' => $cdv));
+
+								$selected_courses_add['CourseAdd'][$count]['published_course_id'] = $cdv;
+
+								if ($is_mass_add == 1) {
+									$selected_courses_add['CourseAdd'][$count]['department_approval'] = 1;
+									$selected_courses_add['CourseAdd'][$count]['registrar_confirmation'] = 1;
+								}
+
+								$selected_courses_add['CourseAdd'][$count]['student_id'] = $this->student_id;
+								$selected_courses_add['CourseAdd'][$count]['semester'] = $semester;
+								$selected_courses_add['CourseAdd'][$count]['academic_year'] = $current_academic_year;
+
+								if (empty($student_section['Section'][0]['year_level_id']) || $student_section['Section'][0]['year_level_id'] == 0) {
+									$selected_courses_add['CourseAdd'][$count]['year_level_id'] = 0;
+								} else {
+									$selected_courses_add['CourseAdd'][$count]['year_level_id'] = $student_section['Section'][0]['year_level_id'];
+								}
+							}
+							$count++;
+						}
+					}
+
+					$already_added_courses_for_the_semester = $this->CourseAdd->find('count', array(
+						'conditions' => array(
+							'CourseAdd.academic_year' => $current_academic_year,
+							'CourseAdd.semester' => $semester,
+							'CourseAdd.student_id' => $this->student_id
+						)
+					));
+
+					//debug($already_added_courses_for_the_semester);
+
+					if (count($already_added_courses) == count($this->request->data['CourseAdd'])) {
+						$this->Flash->info('All the selected courses were already added. You do not need to add it again.');
+						$this->redirect(array('action' => 'index'));
+					} else if (is_numeric(MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) && MAXIMUM_COURSES_TO_ADD_PER_SEMESTER > 0 && (($already_added_courses_for_the_semester > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) || (($already_added_courses_for_the_semester + count($this->request->data['CourseAdd'])) > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER))) {
+						$this->Flash->warning('You can\'t add more than ' . MAXIMUM_COURSES_TO_ADD_PER_SEMESTER . ' courses per semester. Uncheck some from your selection or you can cancel previous requested not approved course add requests and try again.');
+						$this->redirect(array('action' => 'student_add_courses'));
+					} else if (is_numeric(MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) && MAXIMUM_COURSES_TO_ADD_PER_SEMESTER > 0 && count($this->request->data['CourseAdd']) > MAXIMUM_COURSES_TO_ADD_PER_SEMESTER) {
+						$this->Flash->warning('You can\'t add more than ' . MAXIMUM_COURSES_TO_ADD_PER_SEMESTER . ' courses per semester, uncheck one or more courses from your selection and try again.');
+						$this->redirect(array('action' => 'student_add_courses'));
+					} else {
+						// unset($this->request->data);
+						$this->request->data['CourseAdd'] = $selected_courses_add;
+					}
+
+					$this->request->data['CourseAdd'] = $this->request->data['CourseAdd']['CourseAdd'];
+
+					if (!empty($this->request->data['CourseAdd'])) {
+						//debug($this->request->data);
+						//check if the add request is more than the allowed course per semester
+						$maxLoad = ($currentLoadToAdd + $this->CourseAdd->Student->calculateStudentLoad($this->student_id, $semester, $current_academic_year));
+						$allowedMaximum = ClassRegistry::init('AcademicCalendar')->maximumCreditPerSemester($this->student_id);
+
+						if ($maxLoad < $allowedMaximum) {
+							if ($this->CourseAdd->saveAll($this->request->data['CourseAdd'], array('validate' => 'first'))) {
+								$this->Flash->success('The course add has been successfull and sent to department for approval.');
+								$this->redirect(array('action' => 'index'));
+							} else {
+								$this->Flash->error('The course add could not be saved. Please, try again.');
+							}
+						} else {
+							$this->Flash->error('The maximum course load allowed per semester is ' . $allowedMaximum . '. Please reduce the number of courses you would like to take and try again.');
+						}
+					}
+				} else {
+					$this->Flash->error('Please select atleast one course you want to add.');
+				}
+				//debug($this->request->data);
+			}
+		}
+
+		// $departments= $this->CourseAdd->PublishedCourse->Department->find('list', array('conditions' => array('Department.active' => 1)));
+		$colleges = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.active' => 1)));
+		$departments = array();
+
+		if (isset($student_section_exam_status['College']['stream']) && $student_section_exam_status['College']['stream']) {
+			$colleges = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.active' => 1, 'College.stream' => $student_section_exam_status['College']['stream'], 'OR' => array('College.campus_id' => $student_section_exam_status['College']['campus_id'], 'College.id' => Configure::read('only_stream_based_colleges_pre_social_natural')))));
+		}
+
+		if (!is_null($studentDetails['Student']['college_id']) && is_null($studentDetails['Student']['department_id']) &&  in_array($studentDetails['Student']['college_id'], Configure::read('only_stream_based_colleges_pre_social_natural'))) {
+			$colleges = $this->CourseAdd->PublishedCourse->College->find('list', array('conditions' => array('College.id' => Configure::read('only_stream_based_colleges_pre_social_natural'), 'College.active' => 1)));
+		}
+		
+		$this->set(compact('colleges', 'departments'));
+	}
+
+	function get_published_add_courses($section_id = null, $student_id = null, $academicYearSemester = null)
+	{
+		$this->layout = 'ajax';
+
+		if (!empty($academicYearSemester)) {
+			// $current_academic_year = $this->AcademicYear->current_academicyear();
+			$academicYearSemesterArray = explode(",", $academicYearSemester);
+			$academicYear = str_replace("-", "/", $academicYearSemesterArray[0]);
+			$current_academic_year = $academicYear;
+			$section_semester = $academicYearSemesterArray[1];
+		} else {
+			//check the selected section for academic year
+			$secDetail = $this->CourseAdd->PublishedCourse->Section->find('first', array('conditions' => array('Section.id' => $section_id), 'recursive' => -1));
+
+			if (isset($secDetail['Section']['academicyear']) && !empty($secDetail['Section']['academicyear'])) {
+				$current_academic_year = $secDetail['Section']['academicyear'];
+			} else {
+				$current_academic_year = $this->AcademicYear->current_academicyear();
+			}
+
+			//debug($current_academic_year);
+
+			if (!empty($student_id)) {
+				$latestAcSemester = ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($student_id, $current_academic_year);
+			} else {
+				$latestAcSemester = ClassRegistry::init('CourseRegistration')->getLastestStudentSemesterAndAcademicYear($this->student_id, $current_academic_year);
+			}
+			//debug($latestAcSemester);
+
+			$section_semester = ClassRegistry::init('CourseRegistration')->latest_semester_of_section($section_id, $current_academic_year);
+			//debug($section_semester);
+
+			if ($section_semester == 2 && !empty($secDetail['Section']['department_id'])) {
+				$section_semester = $latestAcSemester['semester'];
+			} else if ($section_semester == 2 && empty($secDetail['Section']['department_id'])) {
+				$tmp = $this->CourseAdd->PublishedCourse->find('first', array(
+					'conditions' => array(
+						'PublishedCourse.academic_year' => $current_academic_year,
+						'PublishedCourse.section_id' => $section_id
+					),
+					'order' => array('PublishedCourse.semester' => 'DESC'),
+					'recursive' => -1
+				));
+
+				if (!empty($tmp)) {
+					$section_semester = $tmp['PublishedCourse']['semester'];
+				} else {
+					$section_semester = '';
+				}
+			}
+		}
+
+		if (!empty($student_id)) {
+			$student_section_id = $this->CourseAdd->Student->StudentsSection->field('section_id', array('student_id' => $student_id, 'archive' => 0));
+		} else {
+			$student_section_id = $this->CourseAdd->Student->StudentsSection->field('section_id', array('student_id' => $this->student_id, 'archive' => 0));
+		}
+
+		if ($student_section_id == $section_id) {
+			//debug($section_id);
+			// exclude mass add 
+			$otherpublished = $this->CourseAdd->PublishedCourse->find('all', array(
+				'conditions' => array(
+					'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+					'PublishedCourse.semester ' => $section_semester,
+					'PublishedCourse.drop = 0',
+					'PublishedCourse.add = 0',
+					'PublishedCourse.section_id' => $section_id
+				),
+				'contain' => array(
+					'Course' => array(
+						'fields' => array('course_code', 'credit', 'id', 'course_title', 'active', 'course_detail_hours'),
+						'Curriculum'  => array('id', 'name', 'type_credit', 'year_introduced', 'active')
+					)
+				)
+			));
+		} else {
+			$otherpublished = $this->CourseAdd->PublishedCourse->find('all', array(
+				'conditions' => array(
+					'PublishedCourse.academic_year LIKE ' => $current_academic_year . '%',
+					'PublishedCourse.semester ' => $section_semester,
+					'PublishedCourse.drop = 0',
+					'PublishedCourse.add = 0',
+					'PublishedCourse.section_id' => $section_id
+				),
+				'contain' => array(
+					'Course' => array(
+						'fields' => array('course_code', 'credit', 'id', 'course_title', 'active', 'course_detail_hours'),
+						'Curriculum'  => array('id', 'name', 'type_credit', 'year_introduced', 'active')
+					)
+				)
+			));
+			//debug($current_academic_year);
+			//debug($section_semester);
+		}
+
+		//debug($otherpublished);
+
+		if (!empty($student_id)) {
+			$otherAdds = $this->__exclude_already_added($otherpublished, $student_id);
+		} else {
+			$otherAdds = $this->__exclude_already_added($otherpublished, $this->student_id);
+		}
+
+		$this->set(compact('otherAdds'));
+
+		if (!empty($student_id)) {
+			$this->set('student_id', $student_id);
+		} else {
+			$this->set('student_id', $this->student_id);
+		}
+	}
+
+	function __exclude_already_added($otherAdds, $student_id = null)
+	{
+		$pub_own_as_add_courses = array();
+		$count = 0;
+
+		if (!empty($otherAdds)) {
+			foreach ($otherAdds as $ownIndex => $ownValue) {
+				if (isset($student_id) && !empty($student_id)) {
+					$already_added = $this->CourseAdd->find('count', array(
+						'conditions' => array(
+							'CourseAdd.student_id' => $student_id,
+							'CourseAdd.registrar_confirmation' => 1,
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.published_course_id' => $ownValue['PublishedCourse']['id']
+						)
+					));
+				} else {
+					$already_added = $this->CourseAdd->find('count', array(
+						'conditions' => array(
+							'CourseAdd.student_id' => $this->student_id,
+							'CourseAdd.registrar_confirmation' => 1,
+							'CourseAdd.department_approval' => 1,
+							'CourseAdd.published_course_id' => $ownValue['PublishedCourse']['id']
+						)
+					));
+				}
+
+				if (!empty($ownValue['Course']['id'])) {
+					$already_taken_course = ClassRegistry::init('CourseDrop')->course_taken($student_id, $ownValue['Course']['id']);
+				}
+
+				//debug($already_taken_course);
+				/**
+				 *1 -exclude from add 
+				 *2 -exclude from add
+				 *3 -allow add 
+				 *4 - prerequist failed.
+				 */
+
+				if ($already_taken_course == 1 || $already_taken_course == 4 || $already_taken_course == 2) {
+					if ($already_added > 0) {
+						$pub_own_as_add_courses[$count] = $ownValue;
+						$pub_own_as_add_courses[$count]['already_added'] = 0;
+					} else {
+						$pub_own_as_add_courses[$count] = $ownValue;
+						$pub_own_as_add_courses[$count]['already_added'] = 1;
+					}
+
+					if ($already_taken_course == 4) {
+						$pub_own_as_add_courses[$count]['prerequiste_failed'] = 1;
+					}
+				} else {
+					$pub_own_as_add_courses[$count] = $ownValue;
+					$pub_own_as_add_courses[$count]['already_added'] = 0;
+				}
+				$count++;
+			}
+		}
+		return $pub_own_as_add_courses;
+	}
+
+	function cancel_mass_add()
+	{
+		// Function to load/save search criteria.
+		// $this->Session->delete('search_data');
+
+		if ($this->Session->read('search_data') && !isset($this->request->data['getsection'])) {
+			$this->request->data['getsection'] = true;
+			$this->request->data['Student'] = $this->Session->read('search_data');
+			$this->set('hide_search', true);
+		}
+
+		if (!empty($this->request->data) && isset($this->request->data['cancelmassadd'])) {
+			$one_is_selected = 0;
+			$selected_published_courses = array();
+
+			if (!empty($this->request->data['PublishedCourse'])) {
+				foreach ($this->request->data['PublishedCourse'] as $section_id => $publishedcourse) {
+					foreach ($publishedcourse as $p_id => $selected) {
+						if ($selected == 1) {
+							$one_is_selected++;
+							// break 2;
+							$selected_published_courses[] = $p_id;
+						}
+					}
+				}
+			}
+
+			//check if checked.
+			if ($one_is_selected) {
+				if (!empty($selected_published_courses)) {
+					//foreach publish course, check if grade is not submitted then allow cancellation.
+					$grade_submitted_pub_count = 0;
+					$add_for_delete['add'] = array();
+
+					foreach ($selected_published_courses as $key => $pid) {
+						$is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted($pid);
+						if (!$is_grade_submitted) {
+							$add_for_delete['add'][] = $pid;
+						} else {
+							$grade_submitted_pub_count++;
+						}
+					}
+
+					if (count($selected_published_courses) != $grade_submitted_pub_count) {
+						if (!empty($add_for_delete['add'])) {
+							if ($this->CourseAdd->deleteAll(array('CourseAdd.published_course_id' => $add_for_delete['add']), false)) {
+								$this->Flash->success('Mass Add is cancelled for selected course(s).');
+							} else {
+								$this->Flash->error('Mass Add is not cancelled for selected course(s). please try again');
+							}
+						}
+						unset($this->request->data['getsection']);
+					} else {
+						$this->Flash->warning('You can not cancel the Mass Add, Grade is already submitted for the selected course(s).');
+					}
+				}
+			} else {
+				$this->Flash->error('Please select at least one course or courses you want to cancel the Mass Add.');
+			}
+		}
+
+		if (!empty($this->request->data) && isset($this->request->data['getsection'])) {
+			$this->Session->delete('search_data');
+
+			$everythingfine = false;
+			switch ($this->request->data) {
+				case empty($this->request->data['Student']['academic_year']):
+					$this->Flash->error('Please select the academic year you want to cancel the Mass Add.');
+					break;
+				case empty($this->request->data['Student']['semester']):
+					$this->Flash->error('Please select the semester you want to cancel the Mass Add.');
+					break;
+				case empty($this->request->data['Student']['department_id']):
+					$this->Flash->error('Please select the department you want to cancel the Mass Add');
+					break;
+				case empty($this->request->data['Student']['year_level_id']):
+					$this->Flash->error('Please select the year level you want cancel the Mass Add.');
+					break;
+				case empty($this->request->data['Student']['program_id']):
+					$this->Flash->error('Please select the program you want to cancel the Mass Add.');
+					break;
+				case empty($this->request->data['Student']['program_type_id']):
+					$this->Flash->error('Please select the program type you want to cancel the Mass Add.');
+					break;
+				default:
+					$everythingfine = true;
+			}
+
+			if ($everythingfine) {
+				// yearlevel map for the selected department
+				// debug($this->request->data['Student']['year_level_id']);
+
+				$this->__init_search();
+
+				$yearLevelId = $this->CourseAdd->PublishedCourse->YearLevel->field('id', array(
+					'YearLevel.department_id' => $this->request->data['Student']['department_id'],
+					'YearLevel.name' => $this->request->data['Student']['year_level_id']
+				));
+
+				$sections = $this->CourseAdd->PublishedCourse->Section->find('list', array(
+					'conditions' => array(
+						'Section.department_id' => $this->request->data['Student']['department_id'],
+						'Section.year_level_id' => $yearLevelId,
+						'Section.program_id' => $this->request->data['Student']['program_id'],
+						'Section.program_type_id' => $this->request->data['Student']['program_type_id']
+					)
+				));
+
+				$listOfPublishedCourses = $this->CourseAdd->PublishedCourse->find('all', array(
+					'conditions' => array(
+						'PublishedCourse.department_id' => $this->request->data['Student']['department_id'],
+						'PublishedCourse.year_level_id' => $yearLevelId,
+						'PublishedCourse.add' => 1,
+						'PublishedCourse.program_id' => $this->request->data['Student']['program_id'],
+						'PublishedCourse.program_type_id' => $this->request->data['Student']['program_type_id'],
+						'PublishedCourse.semester' => $this->request->data['Student']['semester'],
+						"OR" => array(
+							'PublishedCourse.id IN (select published_course_id from course_adds where academic_year = "' . $this->request->data['Student']['academic_year'] . '" AND semester = "' . $this->request->data['Student']['semester'] . '" GROUP BY published_course_id)'
+						),
+					),
+					'fields' => array('id', 'section_id'),
+					'contain' => array(
+						'Section' => array(
+							'fields' => array('id', 'name', 'academicyear'),
+							'YearLevel' => array('id', 'name'),
+							'Department' => array('id', 'name'),
+							'College' => array('id', 'name'),
+							'Program' => array('id', 'name'),
+							'ProgramType' => array('id', 'name'),
+							'Curriculum' => array(
+								'fields' => array('id', 'name', 'type_credit', 'year_introduced')
+							)
+						),
+						'Course' => array(
+							'fields' => array('id', 'course_title', 'course_code', 'lecture_hours', 'tutorial_hours', 'laboratory_hours', 'credit', 'curriculum_id', 'thesis', 'exit_exam', 'elective'),
+							'Curriculum' => array(
+								'fields' => array('id', 'name', 'type_credit', 'year_introduced')
+							)
+						),
+						'Program' => array('id', 'name'),
+						'ProgramType' => array('id', 'name'),
+						'YearLevel' => array('id', 'name'),
+						'Department' => array('id', 'name'),
+						'College' => array('id', 'name'),
+					)
+				));
+
+				//debug($listOfPublishedCourses);
+
+				$organized_published_course_by_section = array();
+				$publish_courses_list_ids = array();
+
+				$publish_counter = 0;
+				$grade_submitted_counter = 0;
+
+				if (!empty($listOfPublishedCourses)) {
+					foreach ($listOfPublishedCourses as $lp => $lv) {
+						if (isset($lv['PublishedCourse']['section_id']) && !empty($lv['PublishedCourse']['section_id'])) {
+
+							$is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted($lv['PublishedCourse']['id']);
+
+							if ($is_grade_submitted) {
+								//put a flag and disable the check box for selection 
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter] = $lv;
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter]['grade_submitted'] = 1;
+								$publish_courses_list_ids[$publish_counter] = $lv['PublishedCourse']['id'];
+								$grade_submitted_counter++;
+							} else {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter] = $lv;
+								$publish_courses_list_ids[] = $lv['PublishedCourse']['id'];
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter]['grade_submitted'] = 0;
+							}
+
+							if (trim($lv['Course']['Curriculum']['type_credit']) == 'Credit') {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter]['type_credit'] = 'Credit';
+							} else {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$publish_counter]['type_credit'] = 'ECTS';
+							}
+						}
+						$publish_counter++;
+					}
+				}
+
+				$publishedCourseAdd = ClassRegistry::init('CourseAdd')->find('all', array(
+					'conditions' => array(
+						'CourseAdd.published_course_id' => $publish_courses_list_ids,
+						'CourseAdd.published_course_id IN (select published_course_id from course_adds where academic_year = "' . $this->request->data['Student']['academic_year'] . '" AND semester = "' . $this->request->data['Student']['semester'] . '" GROUP BY published_course_id)',
+						'CourseAdd.id NOT IN (select course_add_id from exam_grades where course_add_id is not null)'
+					),
+					'contain' => array(
+						'ExamGrade',
+						'PublishedCourse' => array(
+							'Course',
+							'Section'
+						)
+					)
+				));
+
+				if (empty($publishedCourseAdd)) {
+					$this->Flash->info('No result is found. Either Grade is submitted or there is no Mass Added Course(s) found to cancel in the selected criteria.');
+				} else {
+					$published_course_ids = array();
+					$this->set('hide_search', true);
+					$this->set(compact('sections', 'listOfPublishedCourses', 'organized_published_course_by_section'));
+				}
+
+				$year_level_id = $this->request->data['Student']['year_level_id'];
+				$program_name = $this->CourseAdd->PublishedCourse->Program->field('Program.name', array('Program.id' => $this->request->data['Student']['program_id']));
+				$program_type_name = $this->CourseAdd->PublishedCourse->ProgramType->field('ProgramType.name', array('ProgramType.id' => $this->request->data['Student']['program_type_id']));
+				$academic_year = $this->request->data['Student']['academic_year'];
+				$semester = $this->request->data['Student']['semester'];
+				$department_name = $this->CourseAdd->PublishedCourse->Department->field('Department.name', array('Department.id' => $this->request->data['Student']['department_id']));
+
+				$this->set(compact(
+					'sections',
+					'year_level_id',
+					'program_name',
+					'program_type_name',
+					'academic_year',
+					'semester',
+					'department_name',
+					'publish_counter',
+					'grade_submitted_counter'
+				));
+			}
+		}
+
+		$programs = $this->CourseAdd->Student->Program->find('list', array('conditions' => array('Program.id' => (!empty($this->program_ids) ? $this->program_ids : $this->program_id))));
+		$programTypes = $this->CourseAdd->Student->ProgramType->find('list', array('conditions' => array('ProgramType.id' => (!empty($this->program_type_ids) ? $this->program_type_ids : $this->program_type_id))));
+		$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level();
+
+		if ($this->role_id == ROLE_REGISTRAR) {
+			//$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+			$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, (!empty($this->department_ids) ? $this->department_ids : $this->department_id), (!empty($this->college_ids) ? $this->college_ids : (!empty($this->college_id) ? $this->college_id : array())), 1);
+		} else if ($this->role_id == ROLE_COLLEGE) {
+			$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->college_id, 'Department.active' => 1)));
+		} else if ($this->role_id == ROLE_DEPARTMENT) {
+			$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_id)));
+			$yearLevels = $this->CourseAdd->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
+			$this->set(compact('department_id', $this->department_id));
+		} else {
+			$departments = array();
+			$yearLevels = array();
+			$programs = array();
+			$programTypes = array();
+		}
+
+		$this->set(compact('departments', 'yearLevels', 'programs', 'programTypes'));
+	}
+
+	function mass_add()
+	{
+		// Function to load/save search criteria.
+		// $this->Session->delete('search_data');
+
+		if ($this->Session->read('search_data') && !isset($this->request->data['getsection'])) {
+			$this->request->data['getsection'] = true;
+			$this->request->data['Student'] = $this->Session->read('search_data');
+			$this->set('hide_search', true);
+		}
+
+		if (!empty($this->request->data) && isset($this->request->data['massadd'])) {
+
+			$one_is_selected = false;
+			$selected_published_courses = array();
+			$section_allowed_mass_add = array();
+
+			//debug($this->request->data['PublishedCourse']);
+
+			if (!empty($this->request->data['PublishedCourse'])) {
+				foreach ($this->request->data['PublishedCourse'] as $section_id => $publishedcourse) {
+					foreach ($publishedcourse as $p_id => $selected) {
+						if ($selected == 1) {
+							$one_is_selected = true;
+							// break 2;
+							$selected_published_courses[$section_id][] = $p_id;
+						}
+					}
+				}
+			}
+			//debug($selected_published_courses);
+			//check if checked.
+			//exit();
+
+			if ($one_is_selected) {
+				if (!empty($selected_published_courses)) {
+					$count = 0;
+					$selected_courses_add = array();
+					$totalStudentAlreadyAdded = 0;
+
+					$student_counts = array();
+					$selected_courses_count = 0;
+					$selected_sections_count = 0;
+
+					foreach ($selected_published_courses as $section_id => $pid) {
+						//dont forget to turn on archive to 0
+						$list_of_students_in_active_section = $this->CourseAdd->PublishedCourse->Section->StudentsSection->find('all', array(
+							'conditions' => array(
+								'StudentsSection.section_id' => $section_id,
+								'StudentsSection.archive' => 0
+							),
+							'group' => array(
+								'StudentsSection.section_id',
+								'StudentsSection.student_id'
+							),
+							'recursive' => -1
+						));
+
+						$selected_sections_count++;
+						$selected_courses_count =  $selected_courses_count + count($pid);
+
+						if (!empty($list_of_students_in_active_section)) {
+
+							$criteria = $this->Session->read('search_data');
+
+							$year_level_id = NULL;
+
+							if (!empty($criteria['department_id']) && !empty($criteria['year_level_id'])) {
+								$year_level_id = $this->CourseAdd->PublishedCourse->YearLevel->field('id', array('YearLevel.department_id' => $criteria['department_id'], 'YearLevel.name' => $criteria['year_level_id']));
+							}
+
+							//debug($year_level_id);
+							//debug(count($list_of_students_in_active_section));
+
+							$current_acy_and_semester = $this->AcademicYear->current_acy_and_semester();
+
+							if (!empty($list_of_students_in_active_section)) {
+								foreach ($list_of_students_in_active_section as $k => $value) {
+									$pp = 0;
+									foreach ($pid as $pk => $pvalue) {
+										//debug($criteria);
+										//debug($year_level_id);
+										//debug($pvalue);
+
+										$check = $this->CourseAdd->find('count', array(
+											'conditions' => array(
+												'CourseAdd.student_id' => $value['StudentsSection']['student_id'],
+												'CourseAdd.academic_year' => $criteria['academic_year'],
+												'CourseAdd.semester' => $criteria['semester'],
+												'CourseAdd.year_level_id' => (!empty($year_level_id) ? $year_level_id : array(NULL, 0, '')),
+												'CourseAdd.published_course_id' => $pvalue,
+											),
+											'recursive' => -1
+										));
+
+										$graduated = $this->CourseAdd->Student->field('Student.graduated', array('Student.id' => $value['StudentsSection']['student_id']));
+
+										//debug($graduated);
+
+										$listThePrerequistCourse = $this->CourseAdd->PublishedCourse->find('first', array(
+											'conditions' => array(
+												'PublishedCourse.id' => $pvalue
+											),
+											'contain' => array(
+												'Course' => array(
+													'Prerequisite' => array('id', 'prerequisite_course_id', 'co_requisite'),
+													'fields' => array(
+														'Course.id',
+														'Course.course_code',
+														'Course.course_title',
+														'Course.lecture_hours',
+														'Course.tutorial_hours',
+														'Course.credit'
+													)
+												)
+											)
+										));
+
+										$checkForPrerequiste = $this->CourseAdd->courseHasPrerequistAndFullFilled($listThePrerequistCourse, $value['StudentsSection']['student_id']);
+
+										//course taken as registred courses in given semester and academic year 
+
+										$checkForRegistration = ClassRegistry::init('CourseRegistration')->courseRegistered($criteria['semester'], $criteria['academic_year'], $value['StudentsSection']['student_id']);
+
+										//4 dismissed
+										$passed_or_failed = $this->CourseAdd->Student->StudentExamStatus->get_student_exam_status($value['StudentsSection']['student_id'], $criteria['academic_year']);
+
+										// first time and fullfilled prequisite, and course not registred
+
+										if ($checkForPrerequiste == false) {
+											debug($pp++);
+											debug($listThePrerequistCourse);
+										}
+
+										// check current load and compare it to maximum allowed Credit/ECTS for each student per program and program type, if it exceedes skip those, Neway.
+
+										//debug($checkForPrerequiste);
+										//debug($checkForRegistration);
+										//debug($check);
+
+
+										/////////////////////////////////// check course is not taken at all by the student /////////////////////////
+
+										$course_id_from_published_course = $this->CourseAdd->PublishedCourse->field('PublishedCourse.course_id', array('PublishedCourse.id' => $pvalue));
+										//debug($course_id_from_published_course);
+
+										$already_taken_course = 0;
+
+										if (!empty($course_id_from_published_course)) {
+											/*
+											 	1 - exclude from add
+												2 - exclude from add
+												3 - allow add
+												4 - prerequist failed.
+											*/
+
+											//$exclude_course_repeatition_checking = 1 for just checking registration or add, 
+											// skip passing this parameter for normal implementation including repeatition ckecking for failed or repeatable grades.
+
+											$already_taken_course = ClassRegistry::init('CourseDrop')->course_taken($value['StudentsSection']['student_id'], $course_id_from_published_course,  $exclude_course_repeatition_checking = 1);
+										}
+
+										//debug($already_taken_course);
+
+										/////////////////////////////////// check course is not taken at all by the student /////////////////////////
+
+
+										if ($already_taken_course == 3 && !$graduated && $check == 0 && $checkForPrerequiste == true && $checkForRegistration == 0 && $passed_or_failed != 4) {
+											//if ($passed_or_failed != 4) {
+												$selected_courses_add['CourseAdd'][$count]['semester'] = $criteria['semester'];
+												$selected_courses_add['CourseAdd'][$count]['academic_year'] = $criteria['academic_year'];
+												$selected_courses_add['CourseAdd'][$count]['year_level_id'] = $year_level_id;
+												$selected_courses_add['CourseAdd'][$count]['published_course_id'] = $pvalue;
+												$selected_courses_add['CourseAdd'][$count]['student_id'] = $value['StudentsSection']['student_id'];
+												$selected_courses_add['CourseAdd'][$count]['department_approval'] = 1;
+												$selected_courses_add['CourseAdd'][$count]['reason'] = 'Published as add';
+												$selected_courses_add['CourseAdd'][$count]['department_approved_by'] = $this->Auth->user('id');
+												$selected_courses_add['CourseAdd'][$count]['registrar_confirmed_by'] = $this->Auth->user('id');
+												$selected_courses_add['CourseAdd'][$count]['registrar_confirmation'] = 1;
+
+
+												//////////////////////////////////// FIX COURSE HIDING ON Student AC PROFILE IF MASS ADD IS NOT APPOVED ON TIME ////////////////////////////////////
+
+												// course_add created and modified fields are affecting course visibility on student academic profile if date is not passed exclusively and the mass add is approved lately. 
+												// if next semester registration is done before approving the mass add or the course is mass added if the semester is passed. observed in non regular programs
+												// Solution, check course registration of the student and use registration created date time and use that if exists or use the default semester start dates.
+
+
+												if ($current_acy_and_semester['academic_year'] == $criteria['academic_year'] && $current_acy_and_semester['semester'] == $criteria['semester']) {
+													$selected_courses_add['CourseAdd'][$count]['created'] = $selected_courses_add['CourseAdd'][$count]['modified'] = date('Y-m-d H:i:s');
+												} else {
+													$check_registered_date = ClassRegistry::init('CourseRegistration')->find('first', array(
+														'conditions' => array(
+															'CourseRegistration.academic_year' => $criteria['academic_year'],
+															'CourseRegistration.student_id' => $value['StudentsSection']['student_id'],
+															'CourseRegistration.semester' =>  $criteria['semester'],
+														),
+														'contain' => array(),
+														'order' => array('CourseRegistration.academic_year' => 'DESC', 'CourseRegistration.semester' => 'DESC', 'CourseRegistration.id' => 'DESC')
+													));
+
+													$creg_time_ammended = (isset($check_registered_date['CourseRegistration']['created']) && !empty($check_registered_date['CourseRegistration']['created']) && $check_registered_date['CourseRegistration']['created'] != '0000-00-00 00:00:00' ? date('Y-m-d H:i:s', strtotime('+5 minutes', strtotime($check_registered_date['CourseRegistration']['created']))) : $this->AcademicYear->getAcademicYearBegainingDate($criteria['academic_year'], $criteria['semester']));
+													
+													$selected_courses_add['CourseAdd'][$count]['created'] = $selected_courses_add['CourseAdd'][$count]['modified'] = $creg_time_ammended;
+
+												}
+
+												//////////////////////////////////// END FIX COURSE HIDING ON Student AC PROFILE IF MASS ADD IS NOT APPOVED ON TIME ////////////////////////////////////
+
+
+												$count++;
+
+												if (!in_array($value['StudentsSection']['student_id'], $student_counts)) {
+													$student_counts[] = $value['StudentsSection']['student_id'];
+												}
+												
+											//}
+										} else {
+											//nothing 
+											$totalStudentAlreadyAdded++;
+										}
+									}
+									//publishe course 
+								}
+							}
+						}
+					}
+
+					//debug($count);
+					//debug($pp);
+					//check and add course as mass add  
+
+					//debug($selected_courses_add);
+					//exit();
+
+					if (isset($selected_courses_add['CourseAdd']) && count($selected_courses_add['CourseAdd']) > 0) {
+						$successfull_adds = count($student_counts);
+						if ($this->CourseAdd->saveAll($selected_courses_add['CourseAdd'], array('validate' => 'first'))) {
+							$this->Flash->success('Mass Add sucessful for ' . $successfull_adds . ' ' . ($successfull_adds == 1 ? 'student' : 'students which fullfil prequiesete courses, if any, ') . ' for the selected ' . ($selected_courses_count . ' ' . ($selected_courses_count == 1 ? 'course' : 'course')) . ($selected_sections_count != 1 ? ' in the selected ' . $selected_sections_count . ' sections.' : ' in the selected section.'));
+							//$this->Session->delete('search_data');
+							unset($this->request->data['getsection']);
+							//$this->redirect(array('action' => 'mass_add'));
+						} else {
+							$this->Flash->error('The Course Add could not be saved. Please, try again.');
+						}
+					} else {
+						$this->Flash->warning('The mass add for ' . $totalStudentAlreadyAdded . ' student(s) is not applicable or has already been approved earlier and currently the system could not find eligible students for the mass add approval.');
+					}
+				}
+			} else {
+				$this->Flash->error('Please select courses you want to mass add to students.');
+			}
+		}
+
+		if (!empty($this->request->data) && isset($this->request->data['getsection'])) {
+			
+			$this->Session->delete('search_data');
+			
+			$everythingfine = false;
+
+			switch ($this->request->data) {
+				case empty($this->request->data['Student']['academic_year']):
+					$this->Flash->error('Please select the academic year you want to approve the mass add.');
+					break;
+				case empty($this->request->data['Student']['semester']):
+					$this->Flash->error('Please select the semester you want to approve the mass add.');
+					break;
+				case empty($this->request->data['Student']['department_id']):
+					$this->Flash->error('Please select the department you want to approve the mass add.');
+					break;
+				case empty($this->request->data['Student']['year_level_id']):
+					$this->Flash->error('Please select the year level you want to approve the mass add.');
+					break;
+				case empty($this->request->data['Student']['program_id']):
+					$this->Flash->error('Please select the program you want to approve the mass add.');
+					break;
+				case empty($this->request->data['Student']['program_type_id']):
+					$this->Flash->error('Please select the program type you want to approve the mass add.');
+					break;
+				default:
+					$everythingfine = true;
+			}
+
+			if ($everythingfine) {
+				// yearlevel map for the selected department
+				$this->__init_search();
+
+				$program_type_id = $this->AcademicYear->equivalent_program_type($this->request->data['Student']['program_type_id']);
+				
+				$yearLevelId = NULL;
+
+				if (!empty($this->request->data['Student']['department_id']) && !empty($this->request->data['Student']['year_level_id'])) {
+					$yearLevelId = $this->CourseAdd->PublishedCourse->YearLevel->field('id', array('YearLevel.department_id' => $this->request->data['Student']['department_id'], 'YearLevel.name' => $this->request->data['Student']['year_level_id']));
+				}
+
+				$sections = array();
+
+				if (!empty($yearLevelId) && !empty($this->request->data['Student']['department_id'])) {
+					$sections = $this->CourseAdd->PublishedCourse->Section->find('list', array(
+						'conditions' => array(
+							'Section.department_id' => $this->request->data['Student']['department_id'],
+							'Section.year_level_id' => (!empty($yearLevelId) ? $yearLevelId : array(NULL, 0, '')),
+							'Section.program_id' => $this->request->data['Student']['program_id'],
+							'Section.program_type_id' => $program_type_id,
+							'Section.archive' => 0
+						)
+					));
+				}
+
+				$listOfPublishedCourses  = array();
+
+				if (!empty($sections)) {
+					$listOfPublishedCourses = $this->CourseAdd->PublishedCourse->find('all', array(
+						'conditions' => array(
+							'PublishedCourse.department_id' => $this->request->data['Student']['department_id'],
+							'PublishedCourse.year_level_id' => $yearLevelId,
+							'PublishedCourse.add' => 1,
+							'PublishedCourse.drop' => 0,
+							'PublishedCourse.section_id' => array_keys($sections),
+							'PublishedCourse.program_id' => $this->request->data['Student']['program_id'],
+							'PublishedCourse.program_type_id' => $this->request->data['Student']['program_type_id'],
+							'PublishedCourse.semester' => $this->request->data['Student']['semester'],
+							'PublishedCourse.academic_year LIKE ' => $this->request->data['Student']['academic_year'] . '%',
+							'PublishedCourse.id NOT IN (select published_course_id from course_adds where academic_year = "' . $this->request->data['Student']['academic_year'] . '" AND semester = "' . $this->request->data['Student']['semester'] . '" GROUP BY published_course_id)'
+						),
+						'fields' => array('id', 'section_id'),
+						'contain' => array(
+							'Section' => array(
+								'fields' => array('id', 'name', 'academicyear'),
+								'YearLevel' => array('id', 'name'),
+								'Department' => array('id', 'name'),
+								'College' => array('id', 'name'),
+								'Program' => array('id', 'name'),
+								'ProgramType' => array('id', 'name'),
+								'Curriculum' => array(
+									'fields' => array('id', 'name', 'type_credit', 'year_introduced')
+								)
+							),
+							'Course' => array(
+								'fields' => array('id', 'course_title', 'course_code', 'lecture_hours', 'tutorial_hours', 'laboratory_hours', 'credit', 'curriculum_id', 'thesis', 'exit_exam', 'elective'),
+								'Curriculum' => array(
+									'fields' => array('id', 'name', 'type_credit', 'year_introduced')
+								)
+							),
+							'Program' => array('id', 'name'),
+							'ProgramType' => array('id', 'name'),
+							'YearLevel' => array('id', 'name'),
+							'Department' => array('id', 'name'),
+							'College' => array('id', 'name'),
+						)
+					));
+				}
+
+				if (empty($listOfPublishedCourses)) {
+					$this->Flash->info('No course is found which is published as mass add that need your mass course add approval with the selected search criteria.');
+				}
+
+				$organized_published_course_by_section = array();
+				$publish_courses_list_ids = array();
+				$counter = 0;
+				$totalAddedCourse = 0;
+
+				if (!empty($listOfPublishedCourses)) {
+					foreach ($listOfPublishedCourses as $lp => $lv) {
+						if (isset($lv['PublishedCourse']['section_id']) && !empty($lv['PublishedCourse']['section_id'])) {
+							$is_grade_submitted = $this->CourseAdd->ExamGrade->is_grade_submitted($lv['PublishedCourse']['id']);
+
+							if ($is_grade_submitted) {
+								//put a flag and disabled the check box for selection 
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter] = $lv;
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]['grade_submitted'] = true;
+								$publish_courses_list_ids[$counter] = $lv['PublishedCourse']['id'];
+							} else {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter] = $lv;
+								$publish_courses_list_ids[] = $lv['PublishedCourse']['id'];
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]['grade_submitted'] = false;
+							}
+
+							if (trim($lv['Course']['Curriculum']['type_credit']) == 'Credit') {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]['type_credit'] = 'Credit';
+							} else {
+								$organized_published_course_by_section[$lv['PublishedCourse']['section_id']][$counter]['type_credit'] = 'ECTS';
+							}
+						}
+						$counter++;
+					}
+				}
+
+				$this->set(compact('sections', 'listOfPublishedCourses', 'organized_published_course_by_section'));
+
+				$year_level_id = $this->request->data['Student']['year_level_id'];
+				$program_name = $this->CourseAdd->PublishedCourse->Program->field('Program.name', array('Program.id' => $this->request->data['Student']['program_id']));
+				$program_type_name = $this->CourseAdd->PublishedCourse->ProgramType->field('ProgramType.name', array('ProgramType.id' => $this->request->data['Student']['program_type_id']));
+				$academic_year = $this->request->data['Student']['academic_year'];
+				$semester = $this->request->data['Student']['semester'];
+
+				$department_name = $this->CourseAdd->PublishedCourse->Department->field('Department.name', array('Department.id' => $this->request->data['Student']['department_id']));
+
+				$this->set(compact(
+					'sections',
+					'year_level_id',
+					'program_name',
+					'program_type_name',
+					'academic_year',
+					'semester',
+					'department_name'
+				));
+			}
+		}
+
+		$programs = $this->CourseAdd->Student->Program->find('list', array('conditions' => array('Program.id' => (!empty($this->program_ids) ? $this->program_ids : $this->program_id))));
+		$programTypes = $this->CourseAdd->Student->ProgramType->find('list', array('conditions' => array('ProgramType.id' => (!empty($this->program_type_ids) ? $this->program_type_ids : $this->program_type_id))));
+		$yearLevels = $this->CourseAdd->YearLevel->distinct_year_level();
+
+		if ($this->role_id == ROLE_REGISTRAR) {
+			//$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+			$departments = $this->CourseAdd->Student->Department->allDepartmentsByCollege2(0, (!empty($this->department_ids) ? $this->department_ids : $this->department_id), (!empty($this->college_ids) ? $this->college_ids : (!empty($this->college_id) ? $this->college_id : array())), 1);
+		} else if ($this->role_id == ROLE_COLLEGE) {
+			$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.college_id' => $this->college_id, 'Department.active' => 1)));
+		} else if ($this->role_id == ROLE_DEPARTMENT) {
+			$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_id)));
+			$yearLevels = $this->CourseAdd->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
+			$this->set(compact('department_id', $this->department_id));
+		} else {
+			$departments = array();
+			$yearLevels = array();
+			$programs = array();
+			$programTypes = array();
+		}
+
+		$this->set(compact('departments', 'yearLevels', 'programs', 'programTypes'));
+	}
+
+	public function cancel_course_add()
+	{
+		if ($this->role_id == ROLE_REGISTRAR || ROLE_REGISTRAR == $this->Session->read('Auth.User')['Role']['parent_id']) {
+			$this->__cancel_course_add();
+		}
+	}
+
+	private function __cancel_course_add($selected = null)
+	{
 		/*
 		1. Retrieve list of sections based on the given search criteria
 		2. Display list of sections
 		3. Up on the selection of section, display list of students with check-box
 		4. Prepare student grade report in PDF for the selected students
 		*/
+
 		$programs = $this->CourseAdd->PublishedCourse->Section->Program->find('list');
 		$program_types = $this->CourseAdd->PublishedCourse->Section->ProgramType->find('list');
-        $acyear_list = $this->AcademicYear->academicYearInArray(date('Y')-6,date('Y'));
+		//$acyear_list = $this->AcademicYear->academicYearInArray(date('Y') - 6, date('Y'));
+
+		$current_acy = $this->AcademicYear->current_academicyear();
+
+		if (is_numeric(ACY_BACK_FOR_NG_F_FX_W_DO_I_CANCELATION) && ACY_BACK_FOR_NG_F_FX_W_DO_I_CANCELATION) {
+			$acyear_list = $this->AcademicYear->academicYearInArray(((explode('/', $current_acy)[0]) - ACY_BACK_FOR_NG_F_FX_W_DO_I_CANCELATION), (explode('/', $current_acy)[0]));
+		} else if (is_numeric(ACY_BACK_FOR_ALL) && ACY_BACK_FOR_ALL) {
+			$acyear_list = $this->AcademicYear->academicYearInArray(((explode('/', $current_acy)[0]) - ACY_BACK_FOR_ALL), (explode('/', $current_acy)[0]));
+		} else {
+			$acyear_list[$current_acy] = $current_acy;
+		}
+
+		if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1) {
+			$acyear_list = $this->AcademicYear->academicYearInArray(APPLICATION_START_YEAR, (explode('/', $current_acy)[0]));
+		}
+
+		//debug($acyear_list);
+
 		$this->set(compact('acyear_list'));
 
-		 //deleteGrade button is clicked
-	       //deleteGrade button is clicked
-	     if(isset($this->request->data['deleteGrade']) && !empty($this->request->data['deleteGrade'])) {
-		    $publishedCoursesId=array();
-			$student_ids = array();
-			$studentId=null;
-			$courseAddAndGrade=array();
-            $courseAddAndGrade=array();
-			$count=0;
-            $scaleNotFound['freq']=0;
+		//deleteGrade button is clicked 
+
+		//debug($this->request->data);
+
+		if (isset($this->request->data['deleteGrade']) && !empty($this->request->data['deleteGrade'])) {
 			
-			foreach($this->request->data['CourseAdd'] as $key => $student) {
-		     
-			  if($student['gp'] == 1) {
-				$student_ids[] = $student['student_id'];
-			    $studentId=$student['student_id'];
-			    $courseAddAndGrade[$count]['CourseAdd']=$student;
-			    $publishedCoursesId=$student['published_course_id'];
+			$publishedCoursesId = array();
+			$student_ids = array();
+			$studentId = null;
+			$courseAddAndGrade = array();
+			$courseAddAndGrade = array();
+			$count = 0;
+			$scaleNotFound['freq'] = 0;
 
-				if(!empty($student['grade_id'])){
-                    $courseAddAndGrade[$count]['ExamGrade'][$count]['id']=$student['grade_id'];
-				}
+			$student_ids_to_regenarate_status = array();
+			$exam_grade_change_ids_to_delete = array();
 
-                if(!empty($student['id'])){
-                    $courseAddAndGrade[$count]['ExamGrade'][$count]['course_add_id']=$student['id'];
+			if (isset($this->request->data['CourseAdd']) && !empty($this->request->data['CourseAdd'])) {
+				foreach ($this->request->data['CourseAdd'] as $key => $student) {
+					if (isset($student['gp']) && $student['gp'] == 1) {
+						
+						$student_ids[] = $student['student_id'];
+						$studentId = $student['student_id'];
+						$courseAddAndGrade[$count]['CourseAdd'] = $student;
+						$publishedCoursesId = $student['published_course_id'];
+
+						if (isset($student['grade_id']) && !empty($student['grade_id'])) {
+							//debug($student['grade_id']);
+							$courseAddAndGrade[$count]['ExamGrade'][$count]['id'] = $student['grade_id'];
+						}
+
+						if (!empty($student['id'])) {
+							
+							//$courseAddAndGrade[$count]['ExamGrade'][$count]['course_add_id'] = $student['id'];
+
+							// Get all exam exam_grade_ids to delete
+							$tmp = $this->CourseAdd->ExamGrade->find('all', array(
+								'conditions' => array('ExamGrade.course_add_id' => $student['id']), 
+								'contain' => array('ExamGradeChange')
+							));
+	
+							//debug($tmp);
+							if (!empty($tmp)) {
+								foreach ($tmp as $key => $exGrde) {
+									//debug($exGrde);
+									$courseAddAndGrade[$count]['ExamGrade'][$key]['id'] = $exGrde['ExamGrade']['id'];
+									$courseAddAndGrade[$count]['ExamGrade'][$key]['course_add_id'] = $student['id'];
+
+									if (!empty($exGrde['ExamGradeChange'])) {
+										//debug($exGrde['ExamGradeChange']);
+										foreach ($exGrde['ExamGradeChange'] as $key2 => $exGrChange) {
+											//debug($exGrChange['id']);
+											//debug($exGrChange['exam_grade_id']);
+											$exam_grade_change_ids_to_delete[] = $exGrChange['id'];
+										}
+									}
+								}
+							} else {
+								$courseAddAndGrade[$count]['ExamGrade'][$count]['course_add_id'] = $student['id'];
+							}
+						}
+
+						if (isset($student['student_id']) && !empty($student['student_id'])) {
+							if (!empty($student_ids_to_regenarate_status) && !in_array($student['student_id'], $student_ids_to_regenarate_status)) {
+								$student_ids_to_regenarate_status[] = $student['student_id'];
+							} else if (empty($student_ids_to_regenarate_status)) {
+								$student_ids_to_regenarate_status[] = $student['student_id'];
+							}
+						}
+
+						$count++;
+					}
+					//$count++;
 				}
-               
-			 }
-			 $count++;
-		  }
-		
-          if(!empty($courseAddAndGrade)) {
-				$courseAddandRegistrationExamGradeIds=array();
-				foreach($courseAddAndGrade as $data) {
-					  foreach($data['ExamGrade'] as $k=>$v) {
-					    $courseAddandRegistrationExamGradeIds['ExamGrade'][]=$v['id'];
-						if(!empty($v['course_add_id'])) {
-							$courseAddandRegistrationExamGradeIds['CourseAdd'][]=$v['course_add_id'];
+			}
+
+			
+			/* debug($courseAddAndGrade);
+			debug($student_ids_to_regenarate_status);
+			debug($exam_grade_change_ids_to_delete); */
+			
+			if (!empty($courseAddAndGrade)) {
+
+				$courseAddandRegistrationExamGradeIds = array();
+
+				foreach ($courseAddAndGrade as $data) {
+					foreach ($data['ExamGrade'] as $k => $v) {
+
+						//$courseAddandRegistrationExamGradeIds['ExamGrade'][] = $v['id'];
+						if (isset($v['id']) && !empty($v['id'])) {
+							$courseAddandRegistrationExamGradeIds['ExamGrade'][] = $v['id'];
+						}
+
+						if (isset($v['course_add_id']) && !empty($v['course_add_id'])) {
+							$courseAddandRegistrationExamGradeIds['CourseAdd'][] = $v['course_add_id'];
 						}
 					}
 				}
-     
-				
-                if(!empty($courseAddandRegistrationExamGradeIds['CourseAdd'])) {
 
-                      if($this->CourseAdd->deleteAll(array('CourseAdd.id'=>$courseAddandRegistrationExamGradeIds['CourseAdd']),false)) {
-		                   $this->CourseAdd->ExamGrade->deleteAll(array('ExamGrade.id'=>$courseAddandRegistrationExamGradeIds['ExamGrade']),false);
-			$this->Session->setFlash('<span></span>'.__('You have deleted the data successfully.'), 'default', array('class'=>'success-box success-message'));
-					    }
-				}
-				
-			
-		    } else {
-					if(empty($student_ids)) {
-					    $this->request->data['listAddedCourses']=true;
-					    $this->Session->setFlash('<span></span> '.__('You are required to select at least one course.'), 'default', array('class'=>'error-box error-message'));
+				//debug($courseAddandRegistrationExamGradeIds);
+				//exit();
+
+				if (!empty($courseAddandRegistrationExamGradeIds['CourseAdd'])) {
+
+					if ($this->CourseAdd->deleteAll(array('CourseAdd.id' => $courseAddandRegistrationExamGradeIds['CourseAdd']), false)) {
+
+						if (isset($courseAddandRegistrationExamGradeIds['ExamGrade']) && !empty($courseAddandRegistrationExamGradeIds['ExamGrade'])) {
+							$this->CourseAdd->ExamGrade->deleteAll(array('ExamGrade.id' => $courseAddandRegistrationExamGradeIds['ExamGrade']), false);
+						}
+						
+						$cadd_count  = count($courseAddandRegistrationExamGradeIds['CourseAdd']);
+						$this->Flash->success('You have successfully cancelled ' . ($cadd_count == 1 ? '1 course add and associated grades' : $cadd_count. ' course adds and associated grades') . ', if any.');
+
+						// Delete Exam Grade changes associated to the given Exam Grade ID
+						if (!empty($exam_grade_change_ids_to_delete)) {
+							$this->CourseAdd->ExamGrade->ExamGradeChange->deleteAll(array('ExamGradeChange.id' => $exam_grade_change_ids_to_delete), false);
+						}
+						
+						// regenerate all students status
+						if (!empty($student_ids_to_regenarate_status)) {
+							foreach ($student_ids_to_regenarate_status as $key => $stdnt_id) {
+								// regenarate all status regardless if it when it is regenerated
+								$status_status = $this->CourseAdd->Student->StudentExamStatus->regenerate_all_status_of_student_by_student_id($stdnt_id, 0);
+
+								if ($status_status == 3) {
+									// status is regenerated in last 1 week, so check if there is any changes are possible after that
+								}
+							}
+						}
+						
+						unset($this->request->data['CourseAdd']);
+						unset($this->request->data['select-all']);
 					}
+				}
+
+			} else {
+				if (empty($student_ids)) {
+					$this->request->data['listAddedCourses'] = true;
+					$this->Flash->error('You are required to select at least one course.');
+				}
 			}
-	    }
+		}
 
 		//Get published course for the selected student
-	    if(isset($this->request->data['listAddedCourses']) && !empty($this->request->data['listAddedCourses'])) {
-		  
-		    $department_ids=array();
-		    $everyThingOk=false;
-		    $selectedStudent=array();
-		    if(!empty($this->department_ids))
-            {
-				$selectedStudent=$this->CourseAdd->Student->find('first',array('conditions'=>array('Student.studentnumber'=>trim($this->request->data['CourseAdd']['studentnumber'])),
-	'contain'=>array('StudentsSection')));
-			   $selectedStudentDetail=$this->CourseAdd->Student->getStudentRegisteredAddDropCurriculumResult($selectedStudent['Student']['id']);
-			
-			   if(!empty($selectedStudent)) {
-				  if(!in_array($selectedStudent['Student']['department_id'],$this->department_ids)) {
-				  debug($selectedStudent['Student']['department_id']);
-		                      $this->Session->setFlash('<span></span>'.
-	__('You don\'t have the privilage to cancel course add for '.$this->request->data['CourseAdd']['studentnumber'].'.'), 'default', array('class'=>'info-box info-message'));
-				   } else {
-				   
-					$everyThingOk=true;
-				   }
-				} else {
-		            $this->Session->setFlash('<span></span>'.__(' '.$this->request->data['CourseAdd']['studentnumber'].' is not a valid student number.'), 'default', array('class'=>'info-box info-message'));
-				}
-		    } else if(!empty($this->college_ids)) { 
-	
-				$selectedStudent=$this->CourseAdd->Student->find('first',array('conditions'=>array('Student.studentnumber'=>trim($this->request->data['CourseAdd']['studentnumber'])),
-	'contain'=>array('StudentsSection')));
-				$selectedStudentDetail=$this->CourseAdd->Student->getStudentRegisteredAddDropCurriculumResult($selectedStudent['Student']['id']);
-			
-			   if(!empty($selectedStudent)) {
-				   if(!in_array($selectedStudent['Student']['college_id'],$this->college_ids)) {
-		                      $this->Session->setFlash('<span></span>'.
-	__('You don\'t have the privilage to cancel course add for '.$this->request->data['ExamGrade']['studentnumber'].'.'), 'default', array('class'=>'info-box info-message'));
-				   } else {
-						$everyThingOk=true;
-				   }
-				} else {
-		            $this->Session->setFlash('<span></span>'.__(' '.$this->request->data['CourseAdd']['studentnumber'].' is not a valid student number.'), 'default', array('class'=>'info-box info-message'));
-				}
+		if (isset($this->request->data['listAddedCourses']) && !empty($this->request->data['listAddedCourses'])) {
 
-			} else if($this->role_id==ROLE_REGISTRAR) {
-                 $everyThingOk=true;
-                 $selectedStudent=$this->CourseAdd->Student->find('first',array('conditions'=>array('Student.studentnumber'=>trim($this->request->data['CourseAdd']['studentnumber'])),
-	'contain'=>array('StudentsSection')));
-		    } else {
-			   $this->Session->setFlash('<span></span>'.__('You don\'t have the privilage to enter data for the selected student.'), 'default', array('class'=>'info-box info-message'));
+			$department_ids = array();
+			$college_ids = array();
+			$everyThingOk = false;
+			$selectedStudent = array();
 
-		    }
-            $password=$this->CourseAdd->Student->User->field('User.password',
-array('User.id'=>$this->Auth->user('id')));
-			
-            $hashedPasswordGiven=Security::hash($this->request->data['CourseAdd']['password'], null, true);
-		    if($hashedPasswordGiven==$password) {
+			if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !empty($this->department_ids)) {
+				$department_ids = $this->department_ids;
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !empty($this->college_ids)) {
+				$college_ids = $this->college_ids;
+			} /* else if ($this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE) {
+				$college_ids[] = $this->college_id;
+			} else if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) {
+				$department_ids[] = $this->department_id;
+			} */
+
+
+			$password = $this->CourseAdd->Student->User->field('User.password', array('User.id' => $this->Auth->user('id')));
+			$hashedPasswordGiven = Security::hash($this->request->data['CourseAdd']['password'], null, true);
+
+			if ($hashedPasswordGiven == $password) {
 				
-             	$everyThingOk=true;
-			 	$selectedStudent=$this->CourseAdd->Student->find('first',array('conditions'=>array('Student.studentnumber'=>trim($this->request->data['CourseAdd']['studentnumber'])),
-	'contain'=>array('StudentsSection')));
+				if (!empty($department_ids)) {
+
+					$selectedStudent = $this->CourseAdd->Student->find('first', array(
+						'conditions' => array(
+							'Student.studentnumber' => trim($this->request->data['CourseAdd']['studentnumber']),
+						),
+						'contain' => array('StudentsSection')
+					));
+
+					//debug($selectedStudent);
+
+					if (empty($selectedStudent)) {
+						$this->Flash->error($this->request->data['CourseAdd']['studentnumber'] . ' is not a valid student number.');
+					} else if (!in_array($selectedStudent['Student']['department_id'], $department_ids) || !in_array($selectedStudent['Student']['program_id'], $this->program_id) || !in_array($selectedStudent['Student']['program_type_id'], $this->program_type_id)) {
+						$this->Flash->error('You don\'t have the privilage to cancel course add for ' . $selectedStudent['Student']['full_name'] . ' (' . $selectedStudent['Student']['studentnumber'] . ').');
+						$selectedStudent = array();
+					} else {
+						if ($selectedStudent['Student']['graduated']) {
+							$this->Flash->error($selectedStudent['Student']['full_name'] . ' (' . $selectedStudent['Student']['studentnumber'] . ') is graduated Student. You don\'t have the privilage to cancel the course add.');
+							$everyThingOk = false;
+							$selectedStudent = array();
+						} else {
+							$everyThingOk = true;
+						}
+					}
+
+				} else if (!empty($college_ids)) {
+
+					$selectedStudent = $this->CourseAdd->Student->find('first', array(
+						'conditions' => array(
+							'Student.studentnumber' => trim($this->request->data['CourseAdd']['studentnumber']),
+						),
+						'contain' => array('StudentsSection')
+					));
+
+					if (empty($selectedStudent)) {
+						$this->Flash->error($this->request->data['CourseAdd']['studentnumber'] . ' is not a valid student number.');
+					} else if (!in_array($selectedStudent['Student']['college_id'], $college_ids) || !in_array($selectedStudent['Student']['program_id'], $this->program_id) || !in_array($selectedStudent['Student']['program_type_id'], $this->program_type_id)) {
+						$this->Flash->error('You don\'t have the privilage to cancel course add for ' . $selectedStudent['Student']['full_name'] . ' (' . $selectedStudent['Student']['studentnumber'] . ').');
+						$selectedStudent = array();
+					} else {
+						if ($selectedStudent['Student']['graduated']) {
+							$this->Flash->error($selectedStudent['Student']['full_name'] . ' (' . $selectedStudent['Student']['studentnumber'] . ') is graduated Student. You don\'t have the privilage to cancel the course add.');
+							$everyThingOk = false;
+							$selectedStudent = array();
+						} else {
+							$everyThingOk = true;
+						}
+					}
+				}
+
 			} else {
-                $everyThingOk=false;
-                $this->Session->setFlash('<span></span>'.__('Wrong password!'), 'default', array('class'=>'info-box info-message'));
+				$everyThingOk = false;
+				$this->Flash->error('Wrong password!');
 			}
+
+			//debug($everyThingOk);
+			//debug($selectedStudent);
+
+			if ($everyThingOk && !empty($selectedStudent)) {
+
+				/* find the published course in that semester and academic year does that published course has registration, grade submitted, then disable in the interface data entry */
+
+				$yearLevelAndSemesterOfStudent = $this->CourseAdd->Student->StudentExamStatus->studentYearAndSemesterLevel($selectedStudent['Student']['id'], $this->request->data['CourseAdd']['acadamic_year'], $this->request->data['CourseAdd']['semester']);
+
+				$student_academic_profile = $this->CourseAdd->Student->getStudentRegisteredAddDropCurriculumResult($selectedStudent['Student']['id'], $this->AcademicYear->current_academicyear());
+				
+				$this->set(compact('student_academic_profile'));
+				
+				$selectedStudentDetails = $this->CourseAdd->ExamGrade->getStudentCopy($selectedStudent['Student']['id'], $this->request->data['CourseAdd']['acadamic_year'], $this->request->data['CourseAdd']['semester']);
+				
+				$admission_explode = explode('-', $selectedStudentDetails['Student']['admissionyear']);
+				
+				$studentAdmissionYear = $this->AcademicYear->get_academicyear($admission_explode[1], $admission_explode[0]);
+
+				$publishedCourses = $this->CourseAdd->find('all', array(
+					'conditions' => array(
+						'CourseAdd.academic_year' => $this->request->data['CourseAdd']['acadamic_year'],
+						'CourseAdd.semester' => $this->request->data['CourseAdd']['semester'],
+						'CourseAdd.student_id' => $selectedStudentDetails['Student']['id'],
+						//'CourseAdd.registrar_confirmation' => 1
+					),
+					'contain' => array(
+						'PublishedCourse' => array('Course' => array('Prerequisite')),
+						'ExamGrade' => array(
+							'order' => array('ExamGrade.id' => 'DESC', 'ExamGrade.registrar_approval' => 'DESC'),
+							'limit' => 1,
+							'ExamGradeChange' => array(
+								'order' => array('ExamGradeChange.id' => 'DESC', 'ExamGradeChange.registrar_approval' => 'DESC'),
+								'limit' => 1
+							)
+						),
+						'ExamResult.course_add = 1'
+					)
+				));
+
+				//debug($publishedCourses);
+
+				$studentbasic = $selectedStudentDetails;
+
+				$this->set(compact('publishedCourses', 'studentbasic'));
+			}
+		}
+
+		if (!empty($this->department_ids)) {
+			$departments = $this->CourseAdd->Student->Department->find('list', array('conditions' => array('Department.id' => $this->department_ids, 'Department.active' => 1)));
+		} else if (!empty($this->college_ids)) {
+			$colleges = $this->CourseAdd->Student->College->find('list', array('conditions' => array('College.id' => $this->college_ids, 'College.active' => 1)));
+		}
+
+		$this->set(compact(
+			'programs', 
+			'program_types', 
+			'departments', 
+			'academic_year_selected', 
+			'semester_selected', 
+			'program_id', 
+			'program_type_id', 
+			'section_id', 
+			'sections', 
+			'students_in_section', 
+			'student_copies', 
+			'colleges', 
+			'department_id', 
+			'college_id'
+		));
+
+		$this->render('cancel_course_add');
+	}
+
+	function __getEquivalentProgramTypes($program_type_id = 0) 
+	{
+		$program_types_to_look = array();
+
+		$equivalentProgramType = unserialize($this->CourseAdd->Student->ProgramType->field('ProgramType.equivalent_to_id', array('ProgramType.id' => $program_type_id)));
+		
+		if (!empty($equivalentProgramType)) {
+			$selected_program_type_array = array();
+			$selected_program_type_array[] = $program_type_id;
+			$program_types_to_look = array_merge($selected_program_type_array, $equivalentProgramType);
+		} else {
+			$program_types_to_look[] = $program_type_id;
+		}
+
+		//debug($program_types_to_look);
+
+		return $program_types_to_look;
+	}
+
+	public function approve_auto_rejected_course_add($id = null)
+	{
+		$this->CourseAdd->id = $id;
+
+		if (!$this->CourseAdd->exists()) {
+			throw new NotFoundException(__('Invalid Course Add'));
+		} else {
+
+			$courseAdd = $this->CourseAdd->find('first', array(
+				'conditions' => array('CourseAdd.id' => $id),
+				'contain' => array(
+					'PublishedCourse' => array(
+						'Course' => array(
+							'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+						),
+						/* 'GivenByDepartment' => array(
+							'College' => array('id', 'name', 'type', 'stream'),
+						),
+						'Department' => array(
+							'College' => array('id', 'name', 'type','stream'),
+							'fields' => array('id', 'name', 'type'),
+						),
+						'College' => array('id', 'name', 'type','stream'),
+						'Section' => array(
+							'fields' => array('id', 'name', 'academicyear', 'curriculum_id', 'program_id', 'program_type_id', 'archive'),
+							'YearLevel' => array('id', 'name'),
+							'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+						), */
+					),
+					'Student' => array(
+						'fields' => array('id', 'full_name', 'gender', 'studentnumber', 'college_id', 'department_id', 'program_id', 'program_type_id', 'graduated', 'academicyear', 'admissionyear'),
+						//'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
+					),
+					'YearLevel' => array('id', 'name'),
+				),
+				'recursive' => -1
+			));
+
+			//debug($courseAdd);
+
+			$courseReformatted = array();
 			
-			debug($everyThingOk);
-			debug($selectedStudent);
-		    if($everyThingOk && !empty($selectedStudent)) {
-			/*
-			 * find the published course in that semester and academic year
-			 * does that published course has registration, grade submitted, then disable in the interface data entry
-			 */
-               $yearLevelAndSemesterOfStudent=$this->CourseAdd->Student->StudentExamStatus->studentYearAndSemesterLevel($selectedStudent['Student']['id'],$this->request->data['CourseAdd']['acadamic_year'], $this->request->data['CourseAdd']['semester']);
-		      
-		      $student_academic_profile=$this->CourseAdd->Student->getStudentRegisteredAddDropCurriculumResult($selectedStudent['Student']['id'],$this->AcademicYear->current_academicyear());
-	        $this->set(compact('student_academic_profile'));
-			$selectedStudentDetails= $this->CourseAdd->ExamGrade->getStudentCopy($selectedStudent['Student']['id'],$this->request->data['CourseAdd']['acadamic_year'], $this->request->data['CourseAdd']['semester']);
-		    $admission_explode=explode('-',$selectedStudentDetails['Student']['admissionyear']);
-			$studentAdmissionYear=$this->AcademicYear->get_academicyear($admission_explode[1], $admission_explode[0]);
-		     
-			 $publishedCourses=$this->CourseAdd->find('all',array('conditions'=>array('CourseAdd.academic_year'=>$this->request->data['CourseAdd']['acadamic_year'],
-'CourseAdd.semester'=>$this->request->data['CourseAdd']['semester'],
-'CourseAdd.student_id'=>$selectedStudentDetails['Student']['id']),
-'contain'=>array('PublishedCourse'=>array('Course'=>array('Prerequisite')))));
-			debug($publishedCourses);
-			$studentbasic=$selectedStudentDetails;
-			$this->set(compact('publishedCourses','studentbasic'));
-		   }
-	       
-	      }
-           
-          if(!empty($this->department_ids)){
-				$departments=$this->CourseAdd->Student->Department->find('list',array('conditions'=>array('Department.id'=>$this->department_ids)));
-           }else if (!empty($this->college_ids)) {
-				$colleges=$this->CourseAdd->Student->College->find('list',array('conditions'=>array('College.id'=>$this->college_ids)));          
-           } 
-           $this->set(compact('programs', 'program_types', 'departments', 'academic_year_selected', 'semester_selected', 'program_id', 'program_type_id', 'section_id', 'sections','students_in_section','student_copies','colleges','department_id','college_id'));
-	       $this->render('cancel_course_add');
-	       
-	      
-	 }
-   
+			if ($this->role_id == ROLE_DEPARTMENT || $this->role_id == ROLE_COLLEGE) {
+				$courseAddReformatted['CourseAdd'] = $courseAdd['CourseAdd'];
+				$courseAddReformatted['CourseAdd']['department_approval'] = 1;
+				$courseAddReformatted['CourseAdd']['reason'] = 'Department Cancelled Auto Rejection. ' . $courseAdd['CourseAdd']['reason'];
+				$courseAddReformatted['CourseAdd']['department_approved_by'] = $this->Auth->user('id');
+				$courseAddReformatted['CourseAdd']['registrar_confirmation'] = null;
+				$courseAddReformatted['CourseAdd']['registrar_confirmed_by'] = null;
+				$courseAddReformatted['CourseAdd']['auto_rejected'] = 0;
+				$courseAddReformatted['CourseAdd']['modified'] = date('Y-m-d H:i:s');
+			} else if ($this->role_id == ROLE_REGISTRAR) {
+				$courseAddReformatted['CourseAdd'] = $courseAdd['CourseAdd'];
+				$courseAddReformatted['CourseAdd']['department_approval'] = 1;
+				$courseAddReformatted['CourseAdd']['reason'] = 'Registrar Cancelled Auto Rejection. ' . $courseAdd['CourseAdd']['reason'];
+				$courseAddReformatted['CourseAdd']['department_approved_by'] = $this->Auth->user('id');
+				$courseAddReformatted['CourseAdd']['registrar_confirmation'] = 1;
+				$courseAddReformatted['CourseAdd']['registrar_confirmed_by'] = $this->Auth->user('id');
+				$courseAddReformatted['CourseAdd']['auto_rejected'] = 0;
+				$courseAddReformatted['CourseAdd']['modified'] = date('Y-m-d H:i:s');
+			}
+
+			//debug($courseReformatted);
+
+			//$this->request->allowMethod('post', 'approve_auto_rejected_course_add');
+
+			if (isset($courseAddReformatted['CourseAdd']['id']) && !empty($courseAddReformatted['CourseAdd']['id'])) {
+				if ($this->CourseAdd->saveAll($courseAddReformatted['CourseAdd'], array('validate' => 'first'))) {
+					$this->Flash->success('You have ' . ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT ? ' approved' : ' comfirmed') . '  course add by cancelling auto rejected course add of ' . $courseAdd['Student']['full_name'] . ' ('.  $courseAdd['Student']['studentnumber'] . ')' . ' for ' . $courseAdd['PublishedCourse']['Course']['course_title'] . ' (' .  $courseAdd['PublishedCourse']['Course']['course_code']. ') course, ' . $courseAdd['PublishedCourse']['Course']['credit']. ' ' . (count(explode('ECTS', $courseAdd['PublishedCourse']['Course']['Curriculum']['type_credit'])) >= 2  ? 'ECTS' : 'Credit') . '.');
+				} else {
+					$this->Flash->error('Couldn\'t cancel the auto rejected course add of ' . $courseAdd['Student']['full_name'] . ' ('.  $courseAdd['Student']['studentnumber'] . ')' . ' for ' . $courseAdd['PublishedCourse']['Course']['course_title'] . ' (' .  $courseAdd['PublishedCourse']['Course']['course_code']. ') course,  ' . $courseAdd['PublishedCourse']['Course']['credit']. ' ' . (count(explode('ECTS', $courseAdd['PublishedCourse']['Course']['Curriculum']['type_credit'])) >= 2  ? 'ECTS' : 'Credit') . '.');
+				}
+			}
+		}
+
+		$this->redirect(Router::url($this->referer(), true));
+	}
+
+	function __isDate($variable) 
+	{
+		try {
+			new DateTime($variable);
+			return true;
+		} catch (Exception $e) {
+			return false;
+		}
+	}
 }

@@ -1,4 +1,5 @@
 <?php
+// ==================== NOT BEING USED, USING FILE FROM ELEMENTS ====================
 //debug($graduation_certificate_template);
 //debug($graduation_certificate);
 App::import('Vendor','tcpdf/tcpdf');

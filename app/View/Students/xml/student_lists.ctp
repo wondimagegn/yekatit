@@ -1,14 +1,14 @@
 <root>
-<students>
-	<?php echo $xml->serialize($students) ?>
-</students>
-<colleges>
-	<?php echo $xml->serialize($colleges) ?>
-</colleges>
-<departments>
-	<?php echo $xml->serialize($departments) ?>
-</departments>
-<sections>
-    <?php echo $xml->serialize($sections);?>
-</sections>
+	<students>
+		<?= $xml->serialize($students) ?>
+	</students>
+	<colleges>
+		<?= $xml->serialize($colleges) ?>
+	</colleges>
+	<departments>
+		<?= $xml->serialize($departments) ?>
+	</departments>
+	<sections>
+		<?= $xml->serialize($sections);?>
+	</sections>
 </root>

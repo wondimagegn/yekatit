@@ -1,157 +1,227 @@
-<?php ?>
 <div class="box">
-     <div class="box-body">
-       <div class="row">
-		<div class="large-12 columns">
-                     <h2 class="box-title">
-			<?php echo __('Curriculum Detail');?>
-		      </h2>
-		</div>
-		<div class="large-12 columns">
-		
-<table>
-<tr>
-<td>
-        <table>
-        <tbody>
-        <tr><td><?php echo '<strong>Department:</strong>'; ?> &nbsp;&nbsp;<?php echo $this->Html->link($curriculum['Department']['name'], array('controller' => 'departments', 'action' => 'view', $curriculum['Department']['id'])); ?></td></tr>
-        <tr><td><?php echo '<strong>Name:</strong>'; ?> &nbsp;&nbsp;<?php echo $curriculum['Curriculum']['name']; ?></td></tr>
-        <tr><td><?php 
-        echo '<strong>Year Introduced:</strong>';
-        
-         ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['year_introduced']; ?></td></tr>
-        <tr><td><?php
-         echo '<strong>Type Of Credit:</strong>'; ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['type_credit']; ?></td></tr>
-        <tr><td><?php 
-         echo '<strong>Amharic Degree Nomenclature:</strong>';
-        
-        
-        ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['amharic_degree_nomenclature']; ?></td></tr>
-        <tr><td><?php 
-        
-         echo '<strong>English Degree Nomenclature:</strong>'; ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['english_degree_nomenclature']; ?></td></tr>
-         <tr><td><?php 
-        
-         echo '<strong>Certificate Name:</strong>'; ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['certificate_name']; ?></td></tr>
-        <tr><td><?php 
-            echo '<strong>Minimum Credit Points:</strong>';  
-        ?>&nbsp;&nbsp;<?php echo $curriculum['Curriculum']['minimum_credit_points']; ?></td></tr>
-        <tr><td> <?php 
-        if (!empty($curriculum['Attachment'])) {
-        echo "<table>";
-        foreach ($curriculum['Attachment'] as $cuk=>$cuv) {
-                //$this->Format->humanize_date
-                
-                
-                   
-                echo '<tr><td>PDF file uploaded on: '.$this->Format->humanize_date($cuv['created']). '</td></tr>';
-                       echo '<tr><td>';
-                      echo '<a href='.$this->Media->url($cuv['dirname'].DS.$cuv['basename'],true).'
-                      target=_blank>View Attachment</a>';
-                      echo '</td></tr>';
-               
-        } 
-        echo "</table>";
+    <div class="box-header bg-transparent">
+        <div class="box-title" style="margin-top: 10px;"><i class="fontello-info-outline"></i>
+            <span style="font-size: medium; font-weight: bold; margin-top: 20px;"> <?= 'View Curriculum Details: ' .  (isset($curriculum['Curriculum']['name']) ? $curriculum['Curriculum']['name'] . ' - ' . $curriculum['Curriculum']['year_introduced'] : ''); ?></span>
+        </div>
+    </div>
+    <div class="box-body">
+        <div class="row">
+            <div class="large-12 columns">
+                <div style="margin-top: -30px;"><hr></div>
+                <div class="row">
+                    <?php
 
-        }
-        ?>
+                    $creditType = 'Credit';
 
-        <?php 
-        ?></td></tr>
+                    if (!empty($curriculum['Curriculum']['type_credit']) && count(explode('ECTS', $curriculum['Curriculum']['type_credit'])) >= 2) {
+                        $creditType = 'ECTS';
+                    } else if (!empty($curriculum['Curriculum']['type_credit'])) {
+                        $creditType = trim($curriculum['Curriculum']['type_credit']);
+                    } ?>
 
-        </tbody>
-        </table>
-</td>
-<td width='20%'>
-<table>
-    <tr>
-    <th>S.N<u>o</u></th><th>Name</th><th>Code</th><th>Mandatory Credit</th>
-    <th>Total Credit</th>
-    </tr>
-    <?php 
-        $cCount=1;
-        foreach ($curriculum['CourseCategory'] as $courseCategory=>$courseCategoryValue) {
-            echo '<tr>';
-            echo '<td>'.$cCount++.'</td><td>'.$courseCategoryValue['name'].'</td><td>'.$courseCategoryValue['code'].'</td><td>'.
-            $courseCategoryValue['mandatory_credit'].'</td><td>'.
-            $courseCategoryValue['total_credit'].'</td>';
-            echo '</tr>';
-        }
-    ?>
-</table>
-</td>
-</tr>
-</table>
-<?php 
-?>
+                    <div class="large-7 columns">
+                        <table cellpadding="0" cellspacing="0" class="table">
+                            <tbody>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Department:</strong> &nbsp; <?= $curriculum['Department']['name']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Program:</strong> &nbsp; <?= $curriculum['Program']['name']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Curriculum Name:</strong> &nbsp; <br><?= $curriculum['Curriculum']['name']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Year Introduced:</strong> &nbsp; <?= $curriculum['Curriculum']['year_introduced']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Minimum Credit Points:</strong> &nbsp; <?= $curriculum['Curriculum']['minimum_credit_points']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Credit Type:</strong> &nbsp; <?= $creditType; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">English Degree Nomenclature:</strong> &nbsp; <br><?= $curriculum['Curriculum']['english_degree_nomenclature']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Amharic Degree Nomenclature:</strong> &nbsp; <br><?= $curriculum['Curriculum']['amharic_degree_nomenclature']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Certificate Name:</strong> &nbsp; <?= $curriculum['Curriculum']['certificate_name']; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Created:</strong> &nbsp; <?= $this->Time->format("M j, Y g:i A", $curriculum['Curriculum']['created'], NULL, NULL); ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="vcenter"><strong class="text-gray">Modified:</strong> &nbsp; <?= $this->Time->format("M j, Y g:i A", $curriculum['Curriculum']['modified'], NULL, NULL); ?></td>
+                                </tr>
+                                <?php
+                                if (!empty($curriculum['Attachment'])) { ?>
+                                    <tr>
+                                        <td class="vcenter">
+                                            <table cellpadding="0" cellspacing="0" class="table">
+                                                <?php
+                                                foreach ($curriculum['Attachment'] as $cuk => $cuv) {
+                                                    if (isset($cuv['dirname']) && isset($cuv['basename'])) {  ?>
+                                                        <tr>
+                                                            <td class="vcenter">PDF uploaded on: <?= $this->Time->format("M j, Y g:i A", $cuv['created'], NULL, NULL); ?></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="vcenter">
+                                                                <?php 
+                                                                if ($this->Media->file($cuv['dirname'] . DS . $cuv['basename'])) { ?>
+                                                                    <a href="<?= $this->Media->url($cuv['dirname'] . DS . $cuv['basename'], true); ?>" target=_blank>View Attachment</a><br>
+                                                                    <?= $cuv['basename']; ?> (<?= $size = $this->Number->toReadableSize($this->Media->size($this->Media->file($cuv['dirname'] . DS . $cuv['basename']))); ?>)
+                                                                    <?php // $this->Media->embed($this->Media->file($cuv['dirname'] . DS . $cuv['basename']), array('width' => '144', 'height' => '144'));  ?>
+                                                                    <?php
+                                                                } else { ?>
+                                                                    <span class=" text-red">Attachment not found or deleted</span>
+                                                                    <?php
+                                                                } ?>
+                                                            </td>
+                                                        </tr>
+                                                        <?php
+                                                    }
+                                                } ?>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                } else { ?>
+                                    <tr>
+                                        <td class="vcenter"><span class=" text-red">No PDF is Attached to the Curriculum</span></td>
+                                    </tr>
+                                    <?php
+                                } ?>
+                            </tbody>
+                        </table>
+                        <br>
+                    </div>
 
-<?php 
-  if (!empty($curriculum['Course'])) {
-?>
-<div class="related">
-	<h3><?php echo __('Related Courses');?></h3>
-	<?php if (!empty($curriculum['Course'])):?>
-	<table cellpadding = "0" cellspacing = "0">
-	<tr>
-		<th><?php echo __('S.No'); ?></th>
-		<th width="2%"><?php echo __('Year Level'); ?></th>
-		<th width="2%"><?php echo __('Semester'); ?></th>
-		<th><?php echo __('Course Title'); ?></th>
-		<th><?php echo __('Course Code'); ?></th>
-		<th><?php echo __('Course Category'); ?></th>
-	
-		<th><?php echo __('Lecture Attendance Requirement'); ?></th>
-		<th><?php echo __('Lab Attendance Requirement'); ?></th>
-		<th><?php echo __('Grade Type'); ?></th>
-		<th><?php echo __('Credit'); ?></th>
-		
-		<th width="5%"><?php echo __('L T L'); ?></th>
-		
-		<th class="actions"><?php echo __('Actions');?></th>
-	</tr>
-	<?php
-		$i = 0;
-		$count=1;
-		foreach ($curriculum['Course'] as $course):
-			$class = null;
-			if ($i++ % 2 == 0) {
-				$class = ' class="altrow"';
-			}
-		   
-			
-		?>
-		<tr<?php echo $class;?>>
-			<td><?php echo $count++;?></td>
-			<td><?php echo $course['YearLevel']['name'];?></td>
-			<td><?php echo $course['semester'];?></td>
-			<td><?php echo $course['course_title'];?></td>
-			<td><?php echo $course['course_code'];?></td>
-			
-			<td><?php echo $course['CourseCategory']['name'];?></td>
-			
-		
-			<td><?php echo $course['lecture_attendance_requirement'];?></td>
-			<td><?php echo $course['lab_attendance_requirement'];?></td>
-			<td><?php echo $course['GradeType']['type'];?></td>
-			<td><?php echo $course['credit'];?></td>
-			<td><?php echo $course['course_detail_hours'];?></td>
-			
-			<td class="actions">
-				<?php echo $this->Html->link(__('View'), array('controller' => 'courses', 'action' => 'view', $course['id'])); ?>
-				<?php  if ($role_id == ROLE_DEPARTMENT)  { ?>
-				<?php echo $this->Html->link(__('Edit'), array('controller' => 'courses', 'action' => 'edit', $course['id'])); ?>
-				<?php echo $this->Html->link(__('Delete'), array('controller' => 'courses', 'action' => 'delete', $course['id']), null, sprintf(__('Are you sure you want to delete # %s?'), $course['id'])); ?>
-				
-				<?php } ?>
-			</td>
-		</tr>
-	<?php endforeach; ?>
-	</table>
-<?php endif; ?>
-</div>
+                    <div class="large-5 columns">
+                        <div style="overflow-x:auto;">
+                            <table cellpadding="0" cellspacing="0" class="table">
+                                <tr>
+                                    <th class="center">#</th>
+                                    <th class="vcenter">Category Name</th>
+                                    <th class="center">Code</th>
+                                    <th class="center">Mandatory Credit</th>
+                                    <th class="center">Total Credit</th>
+                                </tr>
+                                <?php
+                                $cCount = 1;
+                                foreach ($curriculum['CourseCategory'] as $courseCategory => $courseCategoryValue) { ?>
+                                    <tr>
+                                        <td class="center"><?= $cCount++; ?></td>
+                                        <td class="vcenter"><?= $courseCategoryValue['name']; ?></td>
+                                        <td class="center"><?= $courseCategoryValue['code']; ?></td>
+                                        <td class="center"><?= $courseCategoryValue['mandatory_credit']; ?></td>
+                                        <td class="center"><?= $courseCategoryValue['total_credit']; ?></td>
+                                    </tr>
+                                    <?php
+                                } ?>
+                            </table>
+                        </div>
+                        <br>
 
-<?php } ?>
-		</div>
-	</div>
-     </div>
+                        <div style="overflow-x:auto;">
+                            <table cellpadding="0" cellspacing="0" class="table">
+                                <tbody>
+                                    <?php
+                                    if (!empty($curriculum['DepartmentStudyProgram']['study_program_id'])) { ?>
+                                        <tr>
+                                            <td class="vcenter"><strong class="text-gray">Study Program:</strong> &nbsp; <br><?= $curriculum['DepartmentStudyProgram']['StudyProgram']['study_program_name']; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="vcenter"><strong class="text-gray">Qualification:</strong> &nbsp; <?= $curriculum['DepartmentStudyProgram']['Qualification']['qualification']; ?></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="vcenter"><strong class="text-gray">Program Modality:</strong> &nbsp; <?= $curriculum['DepartmentStudyProgram']['ProgramModality']['modality']; ?></td>
+                                        </tr>
+                                        <?php
+                                    } else { ?>
+                                        <tr>
+                                            <td class="center">No study program is attached to the curriculum.</td>
+                                        </tr>
+                                        <?php  
+                                    } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="large-12 columns">
+                        <?php
+                        if (!empty($curriculum['Course'])) { ?>
+                            <hr>
+                            <h6 class="fs14 text-gray">Curriculum Courses:</h6>
+                            <br>
+                            <?php
+                            if (!empty($curriculum['Course'])) { ?>
+                                <div style="overflow-x:auto;">
+                                    <table cellpadding="0" cellspacing="0" class="table">
+                                        <thead>
+                                            <tr>
+                                                <th class="center">#</th>
+                                                <th class="center">Year</th>
+                                                <th class="center">Sem</th>
+                                                <th class="vcenter">Course Title</th>
+                                                <th class="center">Course Code</th>
+                                                <th class="center"><?= $creditType; ?></th>
+                                                <th class="center">Course Category</th>
+                                                <!-- <th class="center">Lecture Attendance Requirement</th>
+                                                <th class="center">Lab Attendance Requirement</th> -->
+                                                <th class="center">Grade Type</th>
+                                                <th class="center">L T L</th>
+                                                <!-- <th class="center">Active</th> -->
+                                                <th class="center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                            $count = 1;
+                                            foreach ($curriculum['Course'] as $course) { ?>
+                                                <tr>
+                                                    <td class="center"><?= $count++; ?></td>
+                                                    <td class="center"><?= $course['YearLevel']['name']; ?></td>
+                                                    <td class="center"><?= $course['semester']; ?></td>
+                                                    <td class="vcenter"><?= $course['course_title']; ?></td>
+                                                    <td class="center"><?= $course['course_code']; ?></td>
+                                                    <td class="center"><?= $course['credit']; ?></td>
+                                                    <td class="center"><?= (isset($course['CourseCategory']['name'])  && !empty($course['CourseCategory']['name']) ? $course['CourseCategory']['name'] : ''); ?></td>
+                                                    <!-- <td class="center"><?php //echo $course['lecture_attendance_requirement']; ?></td>
+                                                    <td class="center"><?php // $course['lab_attendance_requirement']; ?></td> -->
+                                                    <td class="center"><?= $course['GradeType']['type']; ?></td>
+                                                    <td class="center"><?= $course['course_detail_hours']; ?></td>
+                                                    <!-- <td class="center"><?php // (isset($course['active']) && $course['active'] == 0 ? '<span style="color:red">No</span>' : '<span style="color:green">Yes</span>'); ?></td> -->
+                                                    <td class="center">
+                                                        <?= $this->Html->link(__(''), array('controller' => 'courses', 'action' => 'view', $course['id']), array('class' => 'fontello-eye', 'title' => 'View')); ?>&nbsp;
+                                                        <?php
+                                                        if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) { ?>
+                                                            <?= $this->Html->link(__(''), array('controller' => 'courses', 'action' => 'edit', $course['id']), array('class' => 'fontello-pencil', 'title' => 'Edit')); ?>
+                                                            <?php
+                                                            if (!$hideDeleteButton && !$curriculum['Curriculum']['for_freshman']) { ?>
+                                                                <?= $this->Html->link(__(''), array('controller' => 'courses', 'action' => 'delete', $course['id']), array('class' => 'fontello-trash', 'title' => 'Delete'), sprintf(__('Are you sure you want to delete %s from %s curriculum ?'), $course['course_title'], $curriculum['Curriculum']['name'])); ?>
+                                                                <?php
+                                                            }
+                                                        } ?>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            } ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <br>
+                                <?php
+                            } ?>
+                            <?php
+                        } ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

@@ -1,5 +1,5 @@
 <?php
-
+// ==================== NOT BEING USED, USING FILE FROM ELEMENTS ====================
 App::import('Vendor','tcpdf/tcpdf');
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
 //show header or footer
@@ -30,7 +30,7 @@ $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
 
 	$bg_mime = explode('/', $bg_mime);
 	$bg_mime = strtoupper($bg_mime[1]);
-    $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/border-background-images-grad-certificate.png', 3, 3, 580, 400, $bg_mime, '', '', false, 600, 'C', false, false, 0);
+    $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/border-background-images-grad-certificate.gif', 3, 3, 580, 400, $bg_mime, '', '', false, 600, 'C', false, false, 0);
 
     $pdf->Image($bg_path, 0, 15, 180, 180, $bg_mime, '', '', false, 300, 'C', false, false, 0);
     $pdf->Image($logo_path, '5', '13', 35, 35, $logo_mime, '', 'N', true, 300, 'C');
@@ -38,7 +38,7 @@ $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
     $pdf->SetFont($fontPath, '', 17, '', false);
     $pdf->MultiCell(107, 7, strtoupper($graduation_certificate['student_detail']['University']['University']['name']), 0, 'L', false, 0, 30, 14);
     $pdf->SetFont($fontPath, 'U', 12, '', false);
-    $pdf->MultiCell(157, 7, 'OFFICE OF THE COLLEGE REGISTRAR', 0, 'L', false, 0, 27, 21);
+    $pdf->MultiCell(157, 7, 'OFFICE OF THE UNIVERSITY REGISTRAR', 0, 'L', false, 0, 27, 21);
     
     $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/jiret.ttf');
     $pdf->SetFont($fontPath, '', 20, '', true);
@@ -52,7 +52,7 @@ $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, 'A4', true, 'UTF-8', false);
 /*
 $this->MultiCell($w, $h, $html, $border, $align, $fill, $ln, $x, $y, $reseth, 0, true, $autopadding, 0, 'T', false);
 */
-    $pdf->MultiCell(157, 7, 'Addis Abeba, Ethiopia', 0, 'C', false, 0, 72, 54);
+    $pdf->MultiCell(157, 7, 'Arba Minch, Ethiopia', 0, 'C', false, 0, 72, 54);
     $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
     $pdf->SetFont($fontPath, '', 12, '', false);
     $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/post_icon.png', '70', '29', 8, 8, 'PNG', '', '', true, 300, '');
@@ -152,7 +152,6 @@ $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/centered-line-certificat
     $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/jiret.ttf');
     $pdf->SetFont($fontPath, '', 15, '', true);
     $pdf->AddFont('bookman_old_style', '', 'bookman_old_style.php');
-    //$pdf->AddFont('bookman_old_style_bold', '', 'bookman_old_style_b.php');
     $pdf->AddFont('jiret', '', 'jiret.php');
     $pdf->SetFont('bookman_old_style', '', 15, '', true);
     $pdf->writeHTML($certificate_content);

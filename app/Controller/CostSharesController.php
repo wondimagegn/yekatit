@@ -3,14 +3,12 @@ App::import('Vendor', 'PhpExcelReader/Excel/reader');
 class CostSharesController extends AppController {
 	public $name = 'CostShares';
     public $menuOptions = array(
-	     'parent'=>'payments',
              'exclude'=>array('search','get_cost_share_summery'),
              'alias' => array(
                     'index'=>'View Cost Shares',
                     'add'=>'Maintain Cost Shares'
                     
-            ),
-            'weight'=>3,
+            )
     );
     public $helpers = array('Media.Media');
     public $components =array('AcademicYear');

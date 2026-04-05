@@ -1,54 +1,53 @@
 <div class="instructorEvalutionSettings index">
-	<h2><?php echo __('Instructor Evalution Settings'); ?></h2>
+	<h2><?= __('Instructor Evalution Settings'); ?></h2>
 	<table cellpadding="0" cellspacing="0">
-	<thead>
-	<tr>
-			<th><?php echo $this->Paginator->sort('id'); ?></th>
-			<th><?php echo $this->Paginator->sort('academic_year'); ?></th>
-			<th><?php echo $this->Paginator->sort('head_percent'); ?></th>
-			<th><?php echo $this->Paginator->sort('colleague_percent'); ?></th>
-			<th><?php echo $this->Paginator->sort('student_percent'); ?></th>
-			<th><?php echo $this->Paginator->sort('created'); ?></th>
-			<th><?php echo $this->Paginator->sort('modified'); ?></th>
-			<th class="actions"><?php echo __('Actions'); ?></th>
-	</tr>
-	</thead>
-	<tbody>
-	<?php foreach ($instructorEvalutionSettings as $instructorEvalutionSetting): ?>
-	<tr>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['id']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['academic_year']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['head_percent']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['colleague_percent']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['student_percent']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['created']); ?>&nbsp;</td>
-		<td><?php echo h($instructorEvalutionSetting['InstructorEvalutionSetting']['modified']); ?>&nbsp;</td>
-		<td class="actions">
-			<?php echo $this->Html->link(__('View'), array('action' => 'view', $instructorEvalutionSetting['InstructorEvalutionSetting']['id'])); ?>
-			<?php echo $this->Html->link(__('Edit'), array('action' => 'edit', $instructorEvalutionSetting['InstructorEvalutionSetting']['id'])); ?>
-			<?php echo $this->Form->postLink(__('Delete'), array('action' => 'delete', $instructorEvalutionSetting['InstructorEvalutionSetting']['id']), array('confirm' => __('Are you sure you want to delete # %s?', $instructorEvalutionSetting['InstructorEvalutionSetting']['id']))); ?>
-		</td>
-	</tr>
-<?php endforeach; ?>
-	</tbody>
+		<thead>
+			<tr>
+				<th><?= $this->Paginator->sort('id'); ?></th>
+				<th><?= $this->Paginator->sort('academic_year'); ?></th>
+				<th><?= $this->Paginator->sort('head_percent'); ?></th>
+				<th><?= $this->Paginator->sort('colleague_percent'); ?></th>
+				<th><?= $this->Paginator->sort('student_percent'); ?></th>
+				<th><?= $this->Paginator->sort('created'); ?></th>
+				<th><?= $this->Paginator->sort('modified'); ?></th>
+				<th class="actions"><?= __('Actions'); ?></th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php 
+			foreach ($instructorEvalutionSettings as $instructorEvalutionSetting){ ?>
+				<tr>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['id']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['academic_year']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['head_percent']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['colleague_percent']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['student_percent']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['created']); ?></td>
+					<td><?= __($instructorEvalutionSetting['InstructorEvalutionSetting']['modified']); ?></td>
+					<td class="actions">
+						<?= $this->Html->link(__('View'), array('action' => 'view', $instructorEvalutionSetting['InstructorEvalutionSetting']['id'])); ?>
+						<?= $this->Html->link(__('Edit'), array('action' => 'edit', $instructorEvalutionSetting['InstructorEvalutionSetting']['id'])); ?>
+						<?= $this->Form->postLink(__('Delete'), array('action' => 'delete', $instructorEvalutionSetting['InstructorEvalutionSetting']['id']), array('confirm' => __('Are you sure you want to delete # %s?', $instructorEvalutionSetting['InstructorEvalutionSetting']['id']))); ?>
+					</td>
+				</tr>
+				<?php 
+			} ?>
+		</tbody>
 	</table>
 	<p>
-	<?php
-	echo $this->Paginator->counter(array(
-		'format' => __('Page {:page} of {:pages}, showing {:current} records out of {:count} total, starting on record {:start}, ending on {:end}')
-	));
-	?>	</p>
+		<?= $this->Paginator->counter(array('format' => __('Page {:page} of {:pages}, showing {:current} records out of {:count} total, starting on record {:start}, ending on {:end}'))); ?>
+	</p>
 	<div class="paging">
-	<?php
+		<?php
 		echo $this->Paginator->prev('< ' . __('previous'), array(), null, array('class' => 'prev disabled'));
 		echo $this->Paginator->numbers(array('separator' => ''));
 		echo $this->Paginator->next(__('next') . ' >', array(), null, array('class' => 'next disabled'));
-	?>
+		?>
 	</div>
 </div>
 <div class="actions">
-	<h3><?php echo __('Actions'); ?></h3>
+	<h3><?= __('Actions'); ?></h3>
 	<ul>
-		<li><?php echo $this->Html->link(__('New Instructor Evalution Setting'), array('action' => 'add')); ?></li>
+		<li><?= $this->Html->link(__('New Instructor Evalution Setting'), array('action' => 'add')); ?></li>
 	</ul>
 </div>
