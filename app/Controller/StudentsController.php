@@ -2349,153 +2349,163 @@ class StudentsController extends AppController
 
 	// this function has a known issue, please dont use it use department_issue_password or college_issue_password instead
 
-	function issue_password()
-	{
-		//debug($this->request->data);
-		if (!empty($this->request->data) && isset($this->request->data['issuepasswordtostudent'])) {
-
-			// check password length
-			/* $this->loadModel('Securitysetting');
-
-			$securitysetting = $this->Securitysetting->find('first');
-
-			if (strlen($this->request->data['User']['passwd']) >= $securitysetting['Securitysetting']['minimum_password_length'] && strlen($this->request->data['User']['passwd']) <= $securitysetting['Securitysetting']['maximum_password_length']) {
-
-				// if (!empty($this->request->data['User']['password'])) {
-				
-				debug($this->request->data);
-
-				$this->request->data['User']['role_id'] = ROLE_STUDENT;
-				$this->request->data['User']['password'] = $this->Auth->password($this->request->data['User']['passwd']);
-				
-				unset($this->request->data['User']['passwd']);
-
-				$username = $this->Student->User->find('first', array('conditions' => array('User.username' => $this->request->data['User']['username']), 'recursive' => -1));
-
-				if (!empty($username)) {
-					$this->request->data['User']['id'] = $username['User']['id'];
-				}
-
-				$this->request->data['User']['force_password_change'] = 1;
-
-				if ($this->Student->User->save($this->request->data['User'])) {
-
-					// if the issued is the first time, update  user_id field in student table
-					if (empty($this->request->data['User']['id'])) {
-
-						$this->request->data['Student']['user_id'] = $this->Student->User->id;
-						$this->Student->id = $this->request->data['Student']['id'];
-
-						$this->Student->saveField('user_id', $this->request->data['Student']['user_id']);
-					}
-
-					$student = $this->Student->find('first', array('conditions' => array('Student.id' => $this->request->data['Student']['id']), 'recursive' => -1, 'fields' => array('id', 'user_id')));
-
-					if (!empty($student)) {
-
-						if (!empty($this->request->data['User']['id'])) {
-							$student['Student']['user_id'] = $this->request->data['User']['id'];
-						} else {
-							$student['Student']['user_id'] = $this->Student->User->id;
-						}
-
-						$this->Student->id = $student['Student']['id'];
-						$this->Student->saveField('user_id', $student['Student']['user_id']);
-
-						$this->Student->AcceptedStudent->id = $student['Student']['accepted_student_id'];
-						$this->Student->AcceptedStudent->saveField('user_id', $student['Student']['user_id']);
-
-						$this->Flash->success('The student password has been updated.');
-					} else {
-						$this->Flash->success('The student password has been updated.');
-					}
-
-					$this->request->data = null;
-				} else {
-					$this->Flash->error('The student password could not be updated. ');
-				}
-			} else {
-				$this->Flash->error(__('Password policy: Your password should be greather than or equal to ' . $securitysetting['Securitysetting']['minimum_password_length'] . ' and less than or equal to ' . $securitysetting['Securitysetting']['maximum_password_length'] . ''));
-			} */
-		}
-
-		if (!empty($this->request->data) && isset($this->request->data['issuestudentidsearch'])) {
-
-			if (!empty($this->request->data['Student']['studentnumber'])) {
-
-				$students = array();
-
-				if ($this->role_id == ROLE_DEPARTMENT) {
-
-					$students = $this->Student->find('first', array(
-						'conditions' => array(
-							'Student.studentnumber  LIKE ' => trim($this->request->data['Student']['studentnumber']) . '%',
-							'Student.department_id' => $this->department_id
-						),
-						'contain' => array(
-							'User', 
-							'AcceptedStudent', 
-							'Program', 
-							'College',
-							'Department', 
-							'ProgramType'
-						)
-					));
-
-					if (!empty($students)) {
-						$this->set('students', $students);
-						$this->set('hide_search', true);
-						$this->set('student_number', $this->request->data['Student']['studentnumber']);
-					} else {
-						$this->Flash->warning('You are not elegible to issue/reset password.The student is not belongs to your  department.');
-					}
-				} else if ($this->role_id == ROLE_COLLEGE) {
-
-					$students = $this->Student->find('first', array(
-						'conditions' => array('Student.studentnumber LIKE ' => trim($this->request->data['Student']['studentnumber']) . '%'), 
-						'contain' => array(
-							'User', 
-							'AcceptedStudent', 
-							'Program', 
-							'College',
-							'Department', 
-							'ProgramType'
-						)
-					));
-
-					if (!empty($students)) {
-						$students = $this->Student->find('first', array(
-							'conditions' => array(
-								'Student.studentnumber LIKE' => trim($this->request->data['Student']['studentnumber']) . '%',
-								'Student.college_id' => $this->college_id,
-								'Student.department_id is null',
-							)
-						));
-
-						if (empty($students)) {
-							$this->Flash->warning('You are not elegible to issue/reset password. The student has already assigned to department. Department is responsible for  password  issue or reset.');
-						} else {
-							$this->set('students', $students);
-							$this->set('hide_search', true);
-							$this->set('student_number', $this->request->data['Student']['studentnumber']);
-						}
-					} else {
-						if (empty($students)) {
-							$this->Flash->error('Please enter a valid student number');
-						}
-					}
-				}
-			} else {
-				$this->Flash->error('Please enter student number');
-			}
-		}
-
-		//$this->set('studentks', $this->paginate());
-
-	}
 
 
-	function profile($student_id = null)
+    function issue_password() {
+        //debug($this->request->data);
+        if(!empty($this->request->data) &&
+            isset($this->request->data['issuepasswordtostudent'])){
+
+            // check password length
+            $this->loadModel('Securitysetting');
+
+            $securitysetting=$this->Securitysetting->find('first');
+            if (strlen($this->request->data['User']['passwd'])
+                >=$securitysetting['Securitysetting']['minimum_password_length']
+                && strlen($this->request->data['User']['passwd'])<=
+                $securitysetting['Securitysetting']['maximum_password_length']) {
+
+                // if (!empty($this->request->data['User']['password'])) {
+                debug($this->request->data);
+                $this->request->data['User']['role_id']=ROLE_STUDENT;
+                $this->request->data['User']['password']=$this->Auth->password($this->request->data['User']['passwd']);
+                unset($this->request->data['User']['passwd']);
+
+                $username=$this->Student->User->find('first',array('conditions'=>array('User.username'=>$this->request->data['User']['username']),'recursive'=>-1));
+
+                if (!empty($username)) {
+                    $this->request->data['User']['id']=$username['User']['id'];
+                }
+                $this->request->data['User']['force_password_change'] = 1;
+
+                if($this->Student->User->save($this->request->data['User'])){
+
+
+                    // if the issued is the first time update  student field
+                    if(empty($this->request->data['User']['id'])){
+                        $this->request->data['Student']['user_id']=$this->Student->User->id;
+                        $this->Student->id = $this->request->data['Student']['id'];
+
+                        $this->Student->saveField('user_id',
+                            $this->request->data['Student']['user_id']);
+                    }
+
+                    $student=$this->Student->find('first',array('conditions'=>array(
+                        'Student.id'=>$this->request->data['Student']['id']
+                    ),'recursive'=>-1,'fields'=>array('id','user_id')));
+
+                    if (!empty($student)) {
+                        if (!empty($this->request->data['User']['id'])) {
+                            $student['Student']['user_id']=$this->request->data['User']['id'];
+                        } else {
+                            $student['Student']['user_id']=$this->Student->User->id;
+                        }
+
+                        $this->Student->id=$student['Student']['id'];
+                        $this->Student->saveField('user_id',$student['Student']['user_id']);
+
+                        $this->Student->AcceptedStudent->id=$student['Student']['accepted_student_id'];
+                        $this->Student->AcceptedStudent->saveField('user_id',$student['Student']['user_id']);
+
+                        $this->Session->setFlash('<span></span>
+
+                            The student password has been updated. ','default',
+                            array('class'=>'success-box success-message'));
+
+                    } else {
+
+                        $this->Session->setFlash('<span></span>
+                    The student password has been updated. ','default',
+                            array('class'=>'success-box success-message'));
+                    }
+
+                    $this->request->data=null;
+
+
+                } else {
+                    $this->Session->setFlash('<span></span>The student password could not be updated. ','default',array('class'=>'error-box error-message'));
+                }
+            } else {
+                $this->Session->setFlash('<span></span>'.__('Password policy: Your password should be greather than or equal to '.$securitysetting['Securitysetting']['minimum_password_length'].' and less than or equal to '.$securitysetting['Securitysetting']['maximum_password_length'].''), 'default', array('class' => 'error-box error-message'));
+
+            }
+
+        }
+        if(!empty($this->request->data)&&isset($this->request->data['issuestudentidsearch'])){
+
+            if(!empty($this->request->data['Student']['studentnumber'])){
+                $students = array();
+                if ($this->role_id == ROLE_DEPARTMENT) {
+                    $students=$this->Student->find('first',
+                        array('conditions'=>array('Student.studentnumber 
+		                  LIKE '=>trim($this->request->data['Student']['studentnumber']).'%',
+                            'Student.department_id'=>$this->department_id),
+                            'contain'=>array('User','AcceptedStudent','Program','College',
+                                'Department','ProgramType')));
+                    if (!empty($students)) {
+                        $this->set('students',$students);
+                        $this->set('hide_search',true);
+                        $this->set('student_number',$this->request->data['Student']['studentnumber']);
+                    } else {
+                        $this->Session->setFlash('
+			                         <span></span> You are not elegible to issue/reset password.The student  is not belongs to your  department.','default',array('class'=>'info-box info-message'));
+
+                    }
+
+
+                } else if ($this->role_id == ROLE_COLLEGE) {
+                    $students=$this->Student->find('first',array('conditions'=>
+                        array('Student.studentnumber LIKE '=>
+                            trim($this->request->data['Student']['studentnumber']).'%'),'contain'=>array('User','AcceptedStudent','Program','College',
+                        'Department','ProgramType')));
+                    if (!empty($students)) {
+
+                        $students=$this->Student->find('first',
+                            array('conditions'=>array('Student.studentnumber LIKE'=>
+                                trim($this->request->data['Student']['studentnumber']).'%',
+                                'Student.college_id'=>$this->college_id,
+                                'Student.department_id is null',
+                            )));
+
+                        if (empty($students)) {
+
+                            $this->Session->setFlash('
+			                         <span></span> You are not elegible to issue/reset password. The student has already assigned to department. Department is responsible for  password  issue or reset.','default',
+                                array('class'=>'info-box info-message'));
+
+                        } else {
+
+                            $this->set('students',$students);
+                            $this->set('hide_search',true);
+                            $this->set('student_number',$this->request->data['Student']['studentnumber']);
+
+                        }
+
+                    } else {
+
+                        if(empty($students)){
+                            $this->Session->setFlash('<span></span>
+			                  Please enter a valid student number','default',
+                                array('class'=>'error-box error-message'));
+                        }
+                    }
+                }
+
+
+            } else {
+                $this->Session->setFlash('<span></span>Please enter student number','default',
+                    array('class'=>'error-box error-message'));
+            }
+
+        }
+
+        //$this->set('studentks', $this->paginate());
+
+    }
+
+
+
+    function profile($student_id = null)
 	{
 
 		$check_student_admitted = $this->Student->find('count', array('conditions' => array('Student.id' => (isset($this->student_id) || $this->role_id == ROLE_STUDENT ? $this->student_id : (isset($student_id) ? $student_id : 0)))));
