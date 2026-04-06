@@ -1,3 +1,126 @@
+<script type='text/javascript'>
+
+    var image = new Image();
+    image.src = '/img/busy.gif';
+    function getSectionSummery() {
+        //serialize form data
+        var summery = $("#academicyear")
+            .val();
+        var exploded = summery.split('/');
+
+        var academicYear = exploded[0] +
+            '-' + exploded[1];
+
+        $("#academicyear").attr('disabled',
+            true);
+
+        $("#sectionNotAssignClass").empty().
+        html(
+            '<img src="/img/busy.gif" class="displayed" >'
+        );
+        //get form action
+        var formUrl =
+            '/sections/un_assigned_summeries/' +
+            academicYear;
+        $.ajax({
+            type: 'get',
+            url: formUrl,
+            data: summery,
+            success: function(data,
+                              textStatus, xhr
+            ) {
+                $("#academicyear")
+                    .attr(
+                        'disabled',
+                        false);
+
+                $("#sectionNotAssignClass")
+                    .empty();
+                $("#sectionNotAssignClass")
+                    .append(
+                        data);
+                // $("#FixedSectionName").val(data.FixedSectionName);
+            },
+            error: function(xhr,
+                            textStatus,
+                            error) {
+                alert(
+                    textStatus
+                );
+            }
+        });
+        return false;
+    }
+
+
+    function getCurriculumList() {
+
+        var pid = $("#ProgramId").val();
+
+        $("#CurriculumID").attr('disabled', true);
+        $("#CurriculumID").empty();
+
+        //get form action
+        var formUrl = '/curriculums/get_curriculums_based_on_program_combo/' + pid;
+
+        $.ajax({
+            type: 'get',
+            url: formUrl,
+            data: pid,
+            success: function(data,textStatus,xhr){
+                $("#CurriculumID").attr('disabled', false);
+                $("#CurriculumID").empty().append(data);
+            },
+            error: function(xhr,textStatus,error){
+                alert(textStatus);
+            }
+        });
+
+        return false;
+    }
+
+
+    //$('#selectedProgram').html($("#ProgramId option:selected").text());
+
+    function toggleFields(id) {
+        //$('#selectedProgram').html($("#ProgramId option:selected").text());
+        if ($("#ProgramId").val() == 1) {
+            $("#PrefixSectionName").val('UG');
+        } else if ($("#ProgramId").val() == 2) {
+            $("#PrefixSectionName").val('PG');
+        } else if ($("#ProgramId").val() == 3) {
+            $("#PrefixSectionName").val('PhD');
+        } else if ($("#ProgramId").val() == 4) {
+            $("#PrefixSectionName").val('PGDT');
+        } else if ($("#ProgramId").val() == 5) {
+            $("#PrefixSectionName").val('REM');
+        }
+    }
+
+    var form_being_submitted = false;
+
+    var checkForm = function(form) {
+
+        if (form.academicyear.value == '') {
+            form.academicyear.focus();
+            return false;
+        }
+
+        if (form_being_submitted) {
+            alert("Creating section(s), please wait a moment...");
+            form.SubmitID.disabled = true;
+            return false;
+        }
+
+        form.SubmitID.value = 'Creating Section(s)...';
+        form_being_submitted = true;
+        return true;
+    };
+
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+</script>
 <div class="box">
     <div class="box-header bg-transparent">
         <div class="box-title" style="margin-top: 10px;"><i class="fontello-plus"></i>
@@ -45,7 +168,14 @@
                             <div class="large-12 columns">
                                 <div class="large-6 columns">
                                     <?= $this->Form->hidden('name'); ?>
-                                    <?= $this->Form->input('academicyear', array('label' => 'Academic Year: ', 'type' => 'select', 'options' => $acyear_array_data, 'empty' => '[ Select Aacemic Year ]', 'required', 'id' => 'academicyear', 'onchange' => 'getSectionSummery()', 'default' => isset($thisacademicyear) ? $thisacademicyear : '', 'style' => 'width:100%;')); ?>
+                                    <?= $this->Form->input('academicyear', array('label' => 'Academic Year: ', 'type' => 'select',
+                                            'options' => $acyear_array_data,
+                                            'empty' => '[ Select Academic Year ]',
+                                            'required',
+                                            'id' => 'academicyear',
+                                            'onchange' => 'getSectionSummery()',
+                                            'default' => isset($thisacademicyear) ? $thisacademicyear : '',
+                                            'style' => 'width:100%;')); ?>
                                 </div>
                                 <div class="large-6 columns">
                                     <?php
@@ -70,7 +200,8 @@
                             if ($role_id !=  ROLE_COLLEGE) { ?>
                                 <div class="large-12 columns">
                                     <div class="large-6 columns">
-                                        <?= $this->Form->input('prefix_section_name', array('label' => 'Prefix: ', 'options' => $prefix_section_name, 'id' => 'PrefixSectionName', 'style' => 'width:100%;')); ?>
+                                        <?= $this->Form->input('prefix_section_name', array('label' => 'Prefix: ',
+                                                'options' => $prefix_section_name, 'id' => 'PrefixSectionName', 'style' => 'width:100%;')); ?>
                                     </div>
                                     <div class="large-6 columns">
                                         <?= $this->Form->input('additionalprefix_section_name', array('label' => 'Additional Prefix: ', 'pattern' => "[a-zA-Z]+", 'type' => 'text', 'maxlength' => "10", 'style' => 'width:100%;', 'id' => 'Additional Prefix Section Name')); ?>
@@ -163,18 +294,13 @@
                 <?php
 				if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) { ?>
 					<hr>
-					<!-- <blockquote>
-						    <h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
-						<span style="text-align:justify;" class="fs16 text-black"><b style="text-decoration: underline;" class="text-red"><i>Only recent curriculums which are active, locked and approved by the registrar appear here for attachent.</i></b> If you miss any of the curriculums in the options list here but available in "Curriculum > List Curriculums" page, Contact your respective registrar to approve, lock or activate the required curriculum to appear here for attachement.</span>
-					</blockquote>
-					<hr> -->
-
 					<fieldset style="padding-bottom: 5px;padding-top: 5px;">
 						<div class="large-2 columns">
 							&nbsp;
 						</div>
 						<div class="large-8 columns">
-						    <?= $this->Form->input('curriculum_id', array('id' => 'CurriculumID', 'label' => 'Section Curriculum: <span></span>', 'empty' => '[ Select Curriculum ]', 'required' => true, 'style' => 'width: 90%;', /* 'onchange' => 'getSectionSummery();' */)); ?>
+						    <?= $this->Form->input('curriculum_id', array('id' => 'CurriculumID', 'label' => 'Section Curriculum: <span></span>',
+                                    'empty' => '[ Select Curriculum ]', 'required' => true, 'style' => 'width: 90%;')); ?>
 						</div>
 						<div class="large-2 columns">
 							&nbsp;
@@ -189,119 +315,3 @@
         </div>
     </div>
 </div>
-
-<script type='text/javascript'>
-
-    var image = new Image();
-    image.src = '/img/busy.gif';
-    //$("#runautoplacementbutton").attr('disabled', true);
-    //Get placement setting summery
-
-    function getSectionSummery() {
-        
-        var summery = $("#academicyear").val();
-        var academicYear =  $("#academicyear").val().replace("/", "-");
-
-        $("#academicyear").attr('disabled', true);
-        $("#sectionNotAssignClass").empty().html('<img src="/img/busy.gif" class="displayed" >');
-        
-        //get form action
-        var formUrl = '/sections/un_assigned_summeries/' + academicYear;
-
-        $.ajax({
-            type: 'get',
-            url: formUrl,
-            data: summery,
-            success: function(data, textStatus, xhr) {
-                $("#academicyear").attr('disabled', false);
-                $("#sectionNotAssignClass").empty().append(data);
-                // $("#FixedSectionName").val(data.FixedSectionName);
-            },
-            error: function(xhr, textStatus, error) {
-                alert(textStatus);
-            }
-        });
-        return false;
-    }
-
-    function getCurriculumList() {
-
-        var pid = $("#ProgramId").val();
-        
-        $("#CurriculumID").attr('disabled', true);
-		$("#CurriculumID").empty();
-		
-		//get form action
-		var formUrl = '/curriculums/get_curriculums_based_on_program_combo/' + pid;
-
-		$.ajax({
-			type: 'get',
-			url: formUrl,
-			data: pid,
-			success: function(data,textStatus,xhr){
-			    $("#CurriculumID").attr('disabled', false);
-				$("#CurriculumID").empty().append(data);
-			},
-			error: function(xhr,textStatus,error){
-				alert(textStatus);
-			}
-		});
-		
-		return false;
-    }
-
-    /* $(document).ready(function() {
-        $("#ProgramId").change(
-            function() {
-                //alert($(this).text());
-                //$("#PrefixSectionName").val();
-            }
-        );
-    }); */
-
-    $(document).ready(function() {
-        $("#FixedSectionName").val("<?= $FixedSectionName; ?>");
-    });
-
-    //$('#selectedProgram').html($("#ProgramId option:selected").text());
-
-    function toggleFields(id) {
-		//$('#selectedProgram').html($("#ProgramId option:selected").text());
-		if ($("#ProgramId").val() == 1) {
-			$("#PrefixSectionName").val('UG');
-		} else if ($("#ProgramId").val() == 2) {
-			$("#PrefixSectionName").val('PG');
-		} else if ($("#ProgramId").val() == 3) {
-			$("#PrefixSectionName").val('PhD');
-		} else if ($("#ProgramId").val() == 4) {
-			$("#PrefixSectionName").val('PGDT');
-		} else if ($("#ProgramId").val() == 5) {
-			$("#PrefixSectionName").val('REM');
-		}
-	}
-
-    var form_being_submitted = false; 
-
-	var checkForm = function(form) {
-
-		if (form.academicyear.value == '') { 
-			form.academicyear.focus();
-			return false;
-		}
-        
-		if (form_being_submitted) {
-			alert("Creating section(s), please wait a moment...");
-			form.SubmitID.disabled = true;
-			return false;
-		}
-
-		form.SubmitID.value = 'Creating Section(s)...';
-		form_being_submitted = true;
-		return true; 
-	};
-
-	if (window.history.replaceState) {
-		window.history.replaceState(null, null, window.location.href);
-	}
-</script>
-

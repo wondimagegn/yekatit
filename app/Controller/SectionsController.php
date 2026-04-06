@@ -7293,6 +7293,7 @@ class SectionsController extends AppController
 	}
 
 
+    /*
 	function un_assigned_summeries($selectedAcademicYear)
 	{
 		$this->layout = 'ajax';
@@ -7419,7 +7420,71 @@ class SectionsController extends AppController
 		));
 	}
 
-	public function restore_student_section($section_id = null, $student_id = null, $archieve_status = 1)
+    */
+    function un_assigned_summeries($selectedAcademicYear)
+    {
+        $this->layout = 'ajax';
+        debug($this->request->data);
+        $academicYear = str_replace("-", "/", $selectedAcademicYear);
+        $sselectedAcademicYear = $academicYear;
+
+        $summary_data = $this->Section->getsectionlessstudentsummary(
+            $academicYear,
+            $this->college_id,
+            $this->department_id,
+            $this->role_id
+        );
+
+
+        $curriculum_unattached_student_count = $this->Section->getcurriculumunattachedstudentsummary(
+            $academicYear,
+            $this->college_id,
+            $this->department_id,
+            $this->role_id
+        );
+
+        $collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
+        $departmentname = $this->Section->Department->field('Department.name', array('Department.id' =>
+            $this->department_id));
+        $departmentshortname = $this->Section->Department->field('Department.shortname', array('Department.id' =>
+            $this->department_id));
+
+        $yearLevels = $this->Section->YearLevel->find('list', array('conditions' =>
+            array('YearLevel.department_id' => $this->department_id)));
+        $programs = $this->Section->Program->find('list');
+        $programTypes = $this->Section->ProgramType->find('list');
+        $thisacademicyear = $academicYear;
+        $GCyear = substr(($academicYear), 0, 4);
+        $GCmonth = date('n');
+        $GCday = date('j');
+
+        if ($GCmonth >= 9) {
+            $GCyear = $GCyear;
+        } else {
+            $GCyear = $GCyear + 1;
+        }
+        $ETY = $this->EthiopicDateTime->GetEthiopicYear($GCday, $GCmonth, $GCyear);
+        if ($GCmonth == 9) {
+            //$ETY+=1;
+        }
+        $FixedSectionName = $departmentshortname . $ETY;
+        //echo $FixedSectionName;
+        $this->set(compact(
+            'departmentname',
+            'yearLevels',
+            'variable_section_name_array',
+            'collegename',
+            'programs',
+            'programTypes',
+            'summary_data',
+            'FixedSectionName',
+            'thisacademicyear',
+            'sselectedAcademicYear',
+            'curriculum_unattached_student_count'
+        ));
+    }
+
+    public function restore_student_section($section_id = null, $student_id = null, $archieve_status = 1)
 	{
 		if (!empty($student_id)) {
 

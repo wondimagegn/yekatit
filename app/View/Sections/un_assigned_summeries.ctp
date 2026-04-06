@@ -78,3 +78,11 @@ if (count($programss) > 0) { ?>
     <br>
     <?php
 } ?>
+
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#FixedSectionName").val("<?php echo $FixedSectionName;?>");
+    });
+
+</script>
