@@ -3,9 +3,9 @@
 
 //----------------------------- BACKUP PATH -------------------------------------------------
 //Wonde
-Configure::write('Utility.backupPath', '/home/wonde/code/yekatit/sisupdate/app/backup/');
-Configure::write('Utility.cache', '/home/wonde/code/yekatit/sisupdate/app/tmp/cache');
-Configure::write('Utility.command',"/home/wonde/code/yekatit/sisupdate/lib/Cake/Console/cake -app /home/wonde/code/yekatit/sisupdate/app backup");
+Configure::write('Utility.backupPath', '/var/www/sisupdate/app/backup/');
+Configure::write('Utility.cache', '/var/www/sisupdate/app/tmp/cache');
+Configure::write('Utility.command',"/var/www/sisupdate/lib/Cake/Console/cake -app /var/www/sisupdate/app backup");
 
 /*
 	The following equivalentACL is used to automatically give privilege for false controllers index or other action if any of sub menu privilege is enabled. 
@@ -761,7 +761,7 @@ Configure::write('certificateVerificationCodeTypes', $certificateVerificationCod
 
 define('ENABLE_MOODLE_INTEGRATION', 1);
 define('ACY_BACK_FOR_MOODLE_INTEGRATION', 2);
-define('MOODLE_SITE_URL', 'https://online.amu.edu.et');
+define('MOODLE_SITE_URL', 'https://online.y12hmc.edu.et');
 define('MOODLE_PASSWORD_ENCRYPRION_ALGORITHM', 'sha1');
 
 define('ALLOW_MOODLE_INTEGRATION_FOR_SUBMITTED_GRADE', 0);

@@ -78,9 +78,9 @@ class DATABASE_CONFIG {
     'datasource' => 'Database/Mysql',
     'persistent' => false,
     'host' => 'localhost',
-    'login' => 'root',
-    'password' => '1234',
-    'database' => 'yekatit_sis_update',
+    'login' => 'sis_u',
+    'password' => '#asdfds789ADD',
+    'database' => 'sis_update',
     'prefix' => '',
      'encoding' => 'utf8mb4'
   );
