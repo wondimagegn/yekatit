@@ -40,7 +40,8 @@
 						<td>
 							<div class="row">
 								<div class="large-6 columns" style="margin-top: 10px;">
-									<?= $this->Form->input('Section.year_level_id', array('label' => 'Select Year Level: ', 'style' => 'width:90%',  'empty' => '[ Select Year Level of Section ]', 'id' => 'year_level_id',  'options' => $yearLevelsProfile, /*  (empty($student_detail['Student']['department_id']) ? $yearLevelsProfile : $yearLevels), */  'onchange' => 'updateSection("' . $student_detail['Student']['id'] . '")')); ?>
+									<?= $this->Form->input('Section.year_level_id', array('label' => 'Select Year Level: ', 'style' => 'width:90%',  'empty' => '[ Select Year Level of Section ]', 'id' => 'year_level_id',
+                                            'options' => $yearLevels, 'onchange' => 'updateSection("' . $student_detail['Student']['id'] . '")')); ?>
 								</div>
 							</div>
 						</td>
