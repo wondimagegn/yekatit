@@ -380,7 +380,7 @@ class Department extends AppModel
 			foreach ($departments_data as $key => $college_and_department) {
 				$departments_organized[$college_and_department['College']['name']] = array();
 				if ($include_freshman_program == 1) {
-					$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = $college_and_department['College']['shortname'] . ' - Pre/Freshman/Remedial';
+					//$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = $college_and_department['College']['shortname'] . ' - Pre/Freshman/Remedial';
 				}
 				foreach ($college_and_department['Department'] as $key => $department) {
 					$departments_organized[$college_and_department['College']['name']][$department['id']] = $department['name'];
@@ -468,7 +468,7 @@ class Department extends AppModel
 					// end Added By neway
 					//$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = 'All ' . $college_and_department['College']['shortname'] . '';
 				} else if ($excludeFreshmanFromList == 0 && is_array($privilaged_department_ids) && in_array($college_and_department['College']['id'], $privilaged_collage_ids)) {
-					$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = 'Pre/Freshman/Remedial - ' . $college_and_department['College']['shortname'];
+					//$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = 'Pre/Freshman/Remedial - ' . $college_and_department['College']['shortname'];
 				}
 				foreach ($college_and_department['Department'] as $key => $department) {
 					if (is_array($privilaged_department_ids) && !empty($privilaged_department_id)) {
@@ -518,7 +518,7 @@ class Department extends AppModel
 
 		if (!empty($colleges)) {
 			foreach ($colleges as $k => $v) {
-				$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
+				//$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
 			}
 		}
 		
@@ -555,7 +555,7 @@ class Department extends AppModel
 			if (!empty($departments_data)) {
 				foreach ($departments_data as $key => $department) {
 					if ($include_freshman_program || 1) {
-						$departments_organized['c~' . $department['College']['id']] = 'Pre/Freshman/Remedial - ' . $department['College']['shortname'];
+						//$departments_organized['c~' . $department['College']['id']] = 'Pre/Freshman/Remedial - ' . $department['College']['shortname'];
 					}
 					$departments_organized[$department['Department']['id']] = $department['Department']['name'];
 				}
@@ -589,7 +589,7 @@ class Department extends AppModel
 					foreach ($colleges_with_no_departments as $key => $coll) {
 						if (empty($coll['Department']) && (is_array($college_id) && in_array($coll['College']['id'], $college_id)) || (is_numeric($college_id) && $college_id == $coll['College']['id'])) {
 							if (empty($departments_organized) || (!empty($departments_organized) && !isset($departments_organized['c~' . $coll['College']['id']]))) {
-								$departments_organized['c~' . $coll['College']['id']] = 'Pre/Freshman/Remedial - ' . $coll['College']['shortname'];
+								//$departments_organized['c~' . $coll['College']['id']] = 'Pre/Freshman/Remedial - ' . $coll['College']['shortname'];
 							}
 						}
 					}
@@ -674,9 +674,9 @@ class Department extends AppModel
 			if (!empty($college_s)) {
 				foreach ($college_s as $k => $v) {
 					if ($includePre) {
-						$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
+						//$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
 					} else {
-						//$departments[$v['Department']['id']] = $v['Department']['name'];
+						$departments[$v['Department']['id']] = $v['Department']['name'];
 					}
 					$departments[$v['College']['name']][$v['Department']['id']] = $v['Department']['name'];
 				}
@@ -702,7 +702,7 @@ class Department extends AppModel
 			if (!empty($college_s)) {
 				foreach ($college_s as $k => $v) {
 					if ($includePre) {
-						$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
+						//$departments[$v['College']['name']]['c~' . $v['College']['id']] = 'Pre/Freshman/Remedial - ' . $v['College']['shortname'];
 					} else {
 						//$departments[$v['Department']['id']] = $v['Department']['name'];
 					}
@@ -739,7 +739,7 @@ class Department extends AppModel
 				foreach ($colleges_with_no_departments as $key => $coll) {
 					if (empty($coll['Department']) && (is_array($college_ids) && in_array($coll['College']['id'], $college_ids)) || (is_numeric($college_ids) && $college_ids == $coll['College']['id'])) {
 						if (empty($departments) || (!empty($departments) && !isset($departments[$coll['College']['name']]['c~' . $coll['College']['id']]))) {
-							$departments[$coll['College']['name']]['c~' . $coll['College']['id']] = 'Pre/Freshman/Remedial - ' . $coll['College']['shortname'];
+							//$departments[$coll['College']['name']]['c~' . $coll['College']['id']] = 'Pre/Freshman/Remedial - ' . $coll['College']['shortname'];
 						}
 					}
 				}
@@ -883,7 +883,7 @@ class Department extends AppModel
 			foreach ($departments_data as $key => $college_and_department) {
 				$departments_organized[$college_and_department['College']['name']] = array();
 				if ($include_freshman_program == 1) {
-					$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = $college_and_department['College']['shortname'] . ' - Pre/Freshman/Remedial';
+					//$departments_organized[$college_and_department['College']['name']]['c~' . $college_and_department['College']['id']] = $college_and_department['College']['shortname'] . ' - Pre/Freshman/Remedial';
 				}
 				foreach ($college_and_department['Department'] as $key => $department) {
 					$departments_organized[$college_and_department['College']['name']][$department['id']] = $department['name'];
