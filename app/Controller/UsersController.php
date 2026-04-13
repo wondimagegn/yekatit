@@ -1346,7 +1346,7 @@ class UsersController extends AppController
 						$Email->template('password_reset');
 						$Email->emailFormat('html');
 						$Email->to($this->request->data['User']['email']);
-						$Email->subject('SMiS Password Reset');
+						$Email->subject('SIS Password Reset');
 						$Email->viewVars(array('message' => $message));
 
 						try {

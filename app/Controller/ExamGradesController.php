@@ -3062,7 +3062,7 @@ class ExamGradesController extends AppController
 				// Export to Excel is not working properly for this report due to session write function not preserving array structure with muti dimentional arrays and keys and other reasons better to use Js libraries instead of writing mastersheet to session variable
 				
 				//store to session for excel
-				/* $this->Session->write('master_sheet', $master_sheet);
+				 $this->Session->write('master_sheet', $master_sheet);
 				$this->Session->write('section_detail', $section_detail);
 				$this->Session->write('department_detail', $department_detail);
 				$this->Session->write('college_detail', $college_detail);
@@ -3072,7 +3072,7 @@ class ExamGradesController extends AppController
 				$this->Session->write('program_type_id', $program_type_id);
 				$this->Session->write('department_id', $department_id);
 				$this->Session->write('academic_year_selected', $academic_year_selected);
-				$this->Session->write('semester_selected', $semester_selected); */
+				$this->Session->write('semester_selected', $semester_selected);
 
 				//debug((str_replace(array(' ', '/', '-'), '_', trim(preg_replace('/\s\s+/', ' ', $section_detail['name'])))) . '_' . (str_replace(array(' ', '/', '-'), '_', $academic_year)) . '_' . $semester . '_' . date('Y-m-d'));
 

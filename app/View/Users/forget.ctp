@@ -24,7 +24,7 @@
             <!-- Passive Alert -->
             <div class="alert alert-warning alert-dismissible fade show mb-4" id="passiveAlert" role="alert">
                 <i class="fas fa-bell me-2"></i>
-                If you don’t find an email from SMiS in your inbox after submitting this form and receiving a success message, kindly check your <em>Spam</em> or <em>Junk</em> folders before attempting another request.<br />
+                If you don’t find an email from SIS in your inbox after submitting this form and receiving a success message, kindly check your <em>Spam</em> or <em>Junk</em> folders before attempting another request.<br />
                 <strong>Note:</strong> The link is valid for <strong><?= (isset($tokenExpiration) && !empty($tokenExpiration) ?  $tokenExpiration : '30 minutes'); ?></strong>.
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="shrinkForgotBox()"></button>
             </div>

@@ -119,8 +119,10 @@
                             */ ?>
 
                             <hr>
-                            <!-- <span><?php //echo $this->Html->link('View Pdf', array('controller' => 'examGrades', 'action' => 'view_pdf', $published_course_id), array('class' => 'tiny radius button bg-blue', 'target' => '_blank')); ?></span> -->
-                            <span><!-- &nbsp;&nbsp;&nbsp;&nbsp; --> <?= $this->Html->link('Download Xls', array('controller' => 'examGrades', 'action' => 'view_xls', $published_course_id), array('class' => 'tiny radius button bg-blue')); ?></span>
+                             <span><?php echo $this->Html->link('View Pdf', array('controller' => 'examGrades', 'action' => 'view_pdf',
+                                         $published_course_id), array('class' => 'tiny radius button bg-blue', 'target' => '_blank')); ?></span>
+                            <span><?= $this->Html->link('Download Xls', array('controller' => 'examGrades', 'action' => 'view_xls',
+                                        $published_course_id), array('class' => 'tiny radius button bg-blue')); ?></span>
 
                             <?php
                         } ?>

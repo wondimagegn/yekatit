@@ -1014,7 +1014,8 @@ class CoursesController extends AppController
 
 		$editingLocked = $this->Course->find('first', array('conditions' => array('Course.id' => $id), 'contain' => array('Curriculum')));
 
-		if ($editingLocked['Curriculum']['lock'] == 1 || $editingLocked['Curriculum']['registrar_approved'] == 1) {
+		if (($editingLocked['Curriculum']['lock'] == 1 || $editingLocked['Curriculum']['registrar_approved'] == 1)
+        &&  CREDITEDITDISABLE) {
 			$this->Flash->warning('You can not edit the selected course. Editing is locked  by registrar. Contact your college registrar representative to unlock the curriculum this course included in.');
 			return $this->redirect(array('action' => 'view', $id));
 		}

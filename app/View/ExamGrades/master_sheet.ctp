@@ -51,13 +51,13 @@
 
 						<table cellpadding="0" cellspacing="0" class="table-borderless">
 							<!-- Export to Excel is not working properly for this report due to session write function not preserving array structure with muti dimentional arrays and keys and other reasons better to use Js libraries instead of writing mastersheet to session variable -->
-							<!-- <tr>
+						 <tr>
 								<td colspan="2">
-									<?php //echo $this->Html->link($this->Html->image("/img/xls-icon.gif", array("alt"=>"Export")). ' Export Excel', array('controller'=>'examGrades', 'action' =>'export_mastersheet_xls'), array('escape'=>false)); ?>
+									<?php echo $this->Html->link($this->Html->image("/img/xls-icon.gif", array("alt"=>"Export")). ' Export Excel', array('controller'=>'examGrades', 'action' =>'export_mastersheet_xls'), array('escape'=>false)); ?>
 										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-									<?php // echo $this->Html->link($this->Html->image("/img/pdf_icon.gif",array("alt"=>"Print")),array('controller'=>'examGrades', 'action' =>'export_mastersheet_pdf'),array('escape'=>false)); ?>
+									<?php //echo $this->Html->link($this->Html->image("/img/pdf_icon.gif",array("alt"=>"Print")),array('controller'=>'examGrades', 'action' =>'export_mastersheet_pdf'),array('escape'=>false)); ?>
 								</td>
-							</tr> -->
+							</tr>
 							<tr>
 								<td style="width:40%">
 									<table cellpadding="0" cellspacing="0" class="fs13 table">

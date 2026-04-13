@@ -4877,8 +4877,6 @@ class SectionsController extends AppController
 			$fresh = false;
 			$failReason = '<ul>';
 
-			//debug($this->request->data);
-
 			if (isset($this->request->data['Section']) && !empty($this->request->data['Section'])) {
 				foreach ($this->request->data['Section'] as $k => $v) {
 					if (is_numeric($k)) {
@@ -4905,9 +4903,8 @@ class SectionsController extends AppController
 								$student_curriculum = -1;
 								$fresh = true;
 							}
-							//debug($fresh);
-
 							if ((!empty($new_section_detail['YearLevel']['name'])
+                                    && $new_section_detail['YearLevel']['name'] <= $studentYearLevel['year']
                                     && $this->Section->Student->StudentExamStatus->get_student_exam_status($v['student_id']) &&
                                     ($student_curriculum == $section_curriculum || $section_curriculum == "nostudentinsection")) || $fresh) {
 								
