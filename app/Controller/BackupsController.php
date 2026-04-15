@@ -23,7 +23,7 @@ class BackupsController extends AppController
     {
         parent::beforeFilter();
         // Adjust as needed:
-       $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
+     //  $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
     }
 
     protected function _getBackupService()
