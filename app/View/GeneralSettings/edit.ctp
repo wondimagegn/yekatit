@@ -33,14 +33,14 @@
 								</td>
 							</tr>
 							<tr>
-								<td><?= $this->Form->input('daysAvaiableForGradeChange', array('label' => 'Days Available For Grade Change', 'type' => 'number', 'step' => '7', 'min' => '7', 'max' => DEFAULT_DAYS_AVAILABLE_FOR_GRADE_CHANGE)); ?></td>
-								<td><?= $this->Form->input('daysAvaiableForNgToF', array('label' => 'Days Available For NG To F', 'type' => 'number', 'step' => '7', 'min' => '7', 'max' => DEFAULT_DAYS_AVAILABLE_FOR_NG_TO_F)); ?></td>
-								<td><?= $this->Form->input('daysAvaiableForDoToF', array('label' => 'Days Available For DO To F', 'type' => 'number', 'step' => '7', 'min' => '7', 'max' => DEFAULT_DAYS_AVAILABLE_FOR_DO_TO_F)); ?></td>
+								<td><?= $this->Form->input('daysAvaiableForGradeChange', array('label' => 'Days Available For Grade Change', 'type' => 'number', 'step' => '7')); ?></td>
+								<td><?= $this->Form->input('daysAvaiableForNgToF', array('label' => 'Days Available For NG To F', 'type' => 'number', 'step' => '7')); ?></td>
+								<td><?= $this->Form->input('daysAvaiableForDoToF', array('label' => 'Days Available For DO To F', 'type' => 'number', 'step' => '7')); ?></td>
 							</tr>
 							<tr>
-								<td><?= $this->Form->input('daysAvailableForFxToF', array('label' => 'Days Available For Fx To F', 'type' => 'number', 'step' => '7', 'min' => '7', 'max' => DEFAULT_DAYS_AVAILABLE_FOR_FX_TO_F)); ?></td>
-								<td><?= $this->Form->input('minimumCreditForStatus', array('label' => 'Minimum Credit For Status Generation', 'type' => 'number', 'step' => '1', 'min' => DEFAULT_MINIMUM_CREDIT_FOR_STATUS, 'max' => DEFAULT_MAXIMUM_CREDIT_PER_SEMESTER)); ?></td>
-								<td><?= $this->Form->input('maximumCreditPerSemester', array('label' => 'Maximum Credit For Semester', 'type' => 'number', 'step' => '1', 'min' => DEFAULT_MINIMUM_CREDIT_FOR_STATUS, 'max' => DEFAULT_MAXIMUM_CREDIT_PER_SEMESTER)); ?></td>
+								<td><?= $this->Form->input('daysAvailableForFxToF', array('label' => 'Days Available For Fx To F', 'type' => 'number', 'step' => '7')); ?></td>
+								<td><?= $this->Form->input('minimumCreditForStatus', array('label' => 'Minimum Credit For Status Generation', 'type' => 'number', 'step' => '1')); ?></td>
+								<td><?= $this->Form->input('maximumCreditPerSemester', array('label' => 'Maximum Credit For Semester', 'type' => 'number', 'step' => '1')); ?></td>
 							</tr>
 							<tr>
 								<td><?= $this->Form->input('weekCountForAcademicYear', array('label' => 'Week Count For Academic Year', 'type' => 'number', 'step' => '4', 'min' => '4',  'max' => DEFAULT_WEEK_COUNT_FOR_ACADEMIC_YEAR)); ?></td>

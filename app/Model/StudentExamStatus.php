@@ -6009,6 +6009,8 @@ class StudentExamStatus extends AppModel
 			$next_ay_and_s = $this->getNextSemster($next_ay_and_s['academic_year'], null);
 			$list[$next_ay_and_s['academic_year']] = $next_ay_and_s['academic_year'];
 		} while (!(strcasecmp($to, $next_ay_and_s['academic_year']) == 0));
+
+        debug($list);
 		return $list;
 	}
 
