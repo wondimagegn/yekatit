@@ -1,204 +1,325 @@
 <?php
-App::uses('Folder', 'Utility');
-define("TMP_FILE_PATH", "/var/www/smis-2/app/tmp/cause.txt");
-@chmod(TMP_FILE_PATH, 777);
+// app/Controller/BackupsController.php
+App::uses('AppController', 'Controller');
+App::uses('BackupService', 'Lib');
 
 class BackupsController extends AppController
 {
-	var $name = 'Backups';
 
-	var $menuOptions = array(
-		'exclude' => array('delete_one_month_old_backup'),
-		'alias' => array(
-			'index' => 'Download Backup',
-		)
-	);
 
-	public $components = array('DataTable');
-	public $paginate = array();
+    var $name = "Backups";
+    public $uses = array('Backup');
 
-	function beforeFilter()
-	{
-		parent::beforeFilter();
-		$this->Auth->Allow('delete_one_month_old_backup');
-	}
+    var $menuOptions = array(
+        'weight' => 500,
+        'exclude' => array('create', 'download', 'restore', 'delete', 'prune'),
+        'alias' => array(
+            'index' => 'Take/View/Prune Backups',
+        )
+    );
 
-	function __init_search()
-	{
-		if (!empty($this->request->data['Backup'])) {
-			$search_session = $this->request->data['Backup'];
-			$this->Session->write('backup_search_data', $search_session);
-		} else {
-			$search_session = $this->Session->read('backup_search_data');
-			$this->request->data['Backup'] = $search_session;
-		}
-	}
 
-	function take_backup($cron = false)
-	{
-		//read the command from smis.php
-		if (isset($this->request->data['generateDatabaseBackup'])) {
-			$command = Configure::read('Utility.command');
-			debug($command);
-			$output = shell_exec($command . " > cause.text");
-			$this->Flash->success(__('You have successfully generated database backup, you can download the backup from the following list.'));
-			return $this->redirect(array('action' => 'index'));
-		}
-	}
+    protected $_backupService = null;
 
-	function index($backup_id = null)
-	{
-		$this->__init_search();
-		$this->paginate['limit'] = 20;
-		$this->paginate['order'] = array('Backup.created' => 'DESC');
-		$backupList = array();
-		$files_for_download = array();
-		$dir = new Folder(Configure::read('Utility.backupPath'));
-		//Looking for major backup file types
-		$files1 = $dir->find('.*\.zip');
-		$files2 = $dir->find('.*\.tar');
-		$files3 = $dir->find('.*\.gz');
-		$files4 = $dir->find('.*\.sql');
-		$files = array_merge($files1, $files2, $files3, $files4);
+    public function beforeFilter()
+    {
+        parent::beforeFilter();
+        // Adjust as needed:
+         $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
+    }
 
-		if (!empty($backupList)) {
-			foreach ($files as $file) {
-				$index = count($files_for_download);
-				$file = new File($dir->pwd() . DS . $file);
-				$backupDetail = $this->Backup->find('first', array(
-					'conditions' => array(
-						'Backup.name' => $file->name,
-						'Backup.location' => $file->Folder->path,
-						'Backup.mime' => mime_content_type($file->path)
-					),
-					'recursive' => -1
-				));
+    protected function _getBackupService()
+    {
+        if ($this->_backupService === null) {
+            $this->_backupService = new BackupService();
+        }
 
-				if (empty($backupDetail) && $file->size() > 0) {
-					$bl_index = count($backupList);
-					$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
-					$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
-					$backupList[$bl_index]['Backup']['name'] = $file->name;
-					$backupList[$bl_index]['Backup']['size'] = $file->size();
-					$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
-					$backupList[$bl_index]['Backup']['backup_taken'] = 0;
-					$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
-				}
-			}
-		}
+        return $this->_backupService;
+    }
 
-		if (!empty($backupList)) {
-			$this->Backup->saveAll($backupList);
-		}
-		
-		if (isset($this->request->data['viewBackup']) && !empty($this->request->data['Backup'])) {
-			$backup_from_date = $this->request->data['Backup']['backup_date_from'];
-			$backup_to_date = $this->request->data['Backup']['backup_date_to'];
-			$backup_from_date = $backup_from_date['year'] . '-' . $backup_from_date['month'] . '-' . $backup_from_date['day'] . ' 00:00:00';
-			$backup_to_date = $backup_to_date['year'] . '-' . $backup_to_date['month'] . '-' . $backup_to_date['day'] . ' 23:59:59';
-			$this->paginate['conditions']['Backup.created >='] = $backup_from_date;
-			$this->paginate['conditions']['Backup.created <='] = $backup_to_date;
-		}
 
-		$this->Paginator->settings = $this->paginate;
-		//debug($this->Paginator->settings);
-		$files_for_download = $this->Paginator->paginate('Backup');
+    public function index()
+    {
+        $service = $this->_getBackupService();
+        $filesystemBackups = $service->listBackups();
+        $backupPath = $service->getBackupPath();
+        $mediaPath = $service->getMediaPath();
 
-		if (!empty($files_for_download)) {
-			foreach ($files_for_download as &$ffd_value) {
-				if (file_exists($ffd_value['Backup']['location'] . DS . $ffd_value['Backup']['name'])) {
-					$ffd_value['Backup']['file_exists'] = true;
-				} else {
-					$ffd_value['Backup']['file_exists'] = false;
-				}
-			}
-		}
+        $dbBackups = $this->Backup->find('all', array(
+            'fields' => array(
+                'Backup.id',
+                'Backup.name',
+                'Backup.filename',
+                'Backup.path',
+                'Backup.type',
+                'Backup.status',
+                'Backup.size',
+                'Backup.manifest_json',
+                'Backup.notes',
+                'Backup.error_message',
+                'Backup.created_by',
+                'Backup.restored_by',
+                'Backup.created_at',
+                'Backup.restored_at',
+                'Backup.modified',
 
-		if (empty($files_for_download)) {
-			if (!empty($this->request->data)) {
-				$this->Flash->info(__('There is no backup in the selected date range.'));
-			} else {
-				$this->Flash->info(__('There is no backup to download.'));
-			}
-		}
+                'CreatedBy.id',
+                'CreatedBy.username',
+                'CreatedBy.first_name',
+                'CreatedBy.middle_name',
+                'CreatedBy.last_name',
 
-		$this->set(compact('files_for_download'));
-		$response = $files_for_download;
-		$this->set('_serialize', 'response');
+                'RestoredBy.id',
+                'RestoredBy.username',
+                'RestoredBy.first_name',
+                'RestoredBy.middle_name',
+                'RestoredBy.last_name',
+            ),
+            'recursive' => 0,
+            'order' => array(
+                'Backup.created_at' => 'DESC',
+                'Backup.id' => 'DESC'
+            )
+        ));
 
-		if (!empty($backup_id)) {
-			$backupDetail = $this->Backup->find('first', array('conditions' => array('Backup.id' => $backup_id), 'recursive' => -1));
+        $dbByFilename = array();
+        foreach ($dbBackups as $row) {
+            if (!empty($row['Backup']['filename']) && empty($dbByFilename[$row['Backup']['filename']])) {
+                $dbByFilename[$row['Backup']['filename']] = $row;
+            }
+        }
 
-			if (!empty($backupDetail) && file_exists($backupDetail['Backup']['location'] . DS . $backupDetail['Backup']['name'])) {
-				$backupDetail['Backup']['backup_taken'] = 1;
-				if ($backupDetail['Backup']['first_backup_taken_date'] == 0 || $backupDetail['Backup']['first_backup_taken_date'] == null || $backupDetail['Backup']['first_backup_taken_date'] == '0000-00-00') {
-					$backupDetail['Backup']['first_backup_taken_date'] = date('Y-m-d H:i:s');
-				}
+        $backups = array();
+        foreach ($filesystemBackups as $fileBackup) {
+            $record = !empty($dbByFilename[$fileBackup['name']]) ? $dbByFilename[$fileBackup['name']] : null;
 
-				$backupDetail['Backup']['last_backup_taken_date'] = date('Y-m-d H:i:s');
-				$this->Backup->save($backupDetail);
-				$file_extension = strtolower(substr($backupDetail['Backup']['name'], strripos($backupDetail['Backup']['name'], '.') + 1));
-				$this->viewClass = 'Media';
-				$params = array(
-					'id' => $backupDetail['Backup']['name'],
-					'name' => substr($backupDetail['Backup']['name'], 0, strripos($backupDetail['Backup']['name'], '.')),
-					'download' => true,
-					'extension' => $file_extension, // must be lower case
-					'mimeType' => array($file_extension => $backupDetail['Backup']['mime']),
-					'path' => Configure::read('Utility.backupPath') // don't forget terminal 'DS'
-				);
-				$this->set($params);
-			}
-		}
-	}
+            $backups[] = array(
+                'file' => $fileBackup,
+                'record' => $record,
+            );
+        }
 
-	function delete_one_month_old_backup($cron = false)
-	{
-		$backupList = array();
-		//debug(Configure::read('Utility.command'));
-		$dir = new Folder(Configure::read('Utility.backupPath'));
+        $this->set(compact('backups', 'backupPath', 'mediaPath'));
+    }
+    public function create()
+    {
+        $this->request->onlyAllow('post');
+        $userId=$this->Auth->user('id');
+        try {
+            $result = $this->_getBackupService()->createBackup($userId);
 
-		$files1 = $dir->find('.*\.zip');
-		$files2 = $dir->find('.*\.tar');
-		$files3 = $dir->find('.*\.gz');
-		$files4 = $dir->find('.*\.sql');
-		$files = $files1 + $files2 + $files3 + $files4;
+            $manifestJson = null;
+            $zipPath = $result['path'];
+            if (class_exists('ZipArchive') && is_file($zipPath)) {
+                $zip = new ZipArchive();
+                if ($zip->open($zipPath) === true) {
+                    $manifestContent = $zip->getFromName('manifest.json');
+                    if ($manifestContent !== false) {
+                        $manifestJson = $manifestContent;
+                    }
+                    $zip->close();
+                }
+            }
 
-		if (!empty($files)) {
-			foreach ($files as $file) {
-				$file = new File($dir->pwd() . DS . $file);
-				$backupDetail = $this->Backup->find('first', array(
-					'conditions' => array(
-						'Backup.name' => $file->name,
-						'Backup.location' => $file->Folder->path,
-						'Backup.created <=' => date("Y-m-d 23:59:59", strtotime("-32 day"))
-					),
-					'recursive' => -1
-				));
+            $this->Backup->create();
+            $this->Backup->save(array(
+                'Backup' => array(
+                    'name' => $result['name'],
+                    'filename' => $result['name'],
+                    'path' => $result['path'],
+                    'type' => 'full',
+                    'status' => 'created',
+                    'size' => is_file($result['path']) ? filesize($result['path']) : 0,
+                    'manifest_json' => $manifestJson,
+                    'created_by' => $userId,
+                    'created_at' => date('Y-m-d H:i:s'),
+                )
+            ), false);
 
-				if (!empty($backupDetail)) {
-					$bl_index = count($backupList);
-					$backupList[$bl_index]['Backup']['operation_type'] = 'Backup';
-					$backupList[$bl_index]['Backup']['location'] = $file->Folder->path;
-					$backupList[$bl_index]['Backup']['name'] = $file->name;
-					$backupList[$bl_index]['Backup']['size'] = $file->size();
-					$backupList[$bl_index]['Backup']['mime'] = mime_content_type($file->path);
-					$backupList[$bl_index]['Backup']['backup_taken'] = 0;
-					$backupList[$bl_index]['Backup']['created'] = date('Y-m-d H:i:s', $file->lastChange());
-				}
-			}
-		}
+            $this->Session->setFlash(
+                __('Backup created successfully: %s', $result['name']),
+                'default',
+                array(),
+                'success'
+            );
+        } catch (Exception $e) {
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(
+                __('Backup failed: %s', $e->getMessage()),
+                'default',
+                array(),
+                'error'
+            );
+        }
 
-		$full_file_path = array();
+        return $this->redirect(array('action' => 'index'));
+    }
 
-		if (!empty($backupList)) {
-			foreach ($backupList as $bcindex => $bv) {
-				$full_file_path[] = $bv['Backup']['location'] . '/' . $bv['Backup']['name'];
-			}
-		}
-		
-		if ($cron) {
-			return $full_file_path;
-		}
-	}
+    public function download($filename = null)
+    {
+        $service = $this->_getBackupService();
+        $service->assertValidBackupFilename($filename);
+
+        $fullPath = $service->getBackupPath() . $filename;
+        if (!is_file($fullPath)) {
+            throw new NotFoundException(__('Backup file not found.'));
+        }
+
+        return $this->response->file($fullPath, array(
+            'download' => true,
+            'name' => $filename,
+        ));
+    }
+
+    public function restore($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $userId = isset($this->Auth) && method_exists($this->Auth, 'user') ? $this->Auth->user('id') : null;
+
+        $backupRecord = $this->Backup->find('first', array(
+            'conditions' => array('Backup.filename' => $filename),
+            'recursive' => -1,
+            'order' => array('Backup.id' => 'DESC')
+        ));
+
+        try {
+            $result = $this->_getBackupService()->restoreBackup($filename);
+
+            if (!empty($backupRecord)) {
+                $this->Backup->save(array(
+                    'Backup' => array(
+                        'id' => $backupRecord['Backup']['id'],
+                        'status' => 'restored',
+                        'restored_by' => $userId,
+                        'restored_at' => date('Y-m-d H:i:s'),
+                        'error_message' => null,
+                    )
+                ), false);
+            }
+
+            $this->Session->setFlash(
+                __('Restore completed successfully. Previous media moved to: %s', $result['previous_media_path']),
+                'default',
+                array(),
+                'success'
+            );
+        } catch (Exception $e) {
+            if (!empty($backupRecord)) {
+                $this->Backup->save(array(
+                    'Backup' => array(
+                        'id' => $backupRecord['Backup']['id'],
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                    )
+                ), false);
+            }
+
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(
+                __('Restore failed: %s', $e->getMessage()),
+                'default',
+                array(),
+                'error'
+            );
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function delete($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $backupRecord = $this->Backup->find('first', array(
+            'conditions' => array('Backup.filename' => $filename),
+            'recursive' => -1,
+            'order' => array('Backup.id' => 'DESC')
+        ));
+
+        try {
+            $this->_getBackupService()->deleteBackup($filename);
+
+            if (!empty($backupRecord)) {
+                $this->Backup->save(array(
+                    'Backup' => array(
+                        'id' => $backupRecord['Backup']['id'],
+                        'status' => 'deleted',
+                        'error_message' => null,
+                    )
+                ), false);
+            }
+
+            $this->Session->setFlash(__('Backup deleted successfully.'), 'default', array(), 'success');
+        } catch (Exception $e) {
+            if (!empty($backupRecord)) {
+                $this->Backup->save(array(
+                    'Backup' => array(
+                        'id' => $backupRecord['Backup']['id'],
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                    )
+                ), false);
+            }
+
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(
+                __('Delete failed: %s', $e->getMessage()),
+                'default',
+                array(),
+                'error'
+            );
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function prune($days = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $days = $days !== null ? (int)$days : (int)$this->request->data('Backup.prune_days');
+        if ($days < 1) {
+            $days = 30;
+        }
+
+        try {
+            $service = $this->_getBackupService();
+            $existingBackups = $service->listBackups();
+            $cutoff = strtotime('-' . $days . ' days');
+
+            $deletedFilenames = array();
+            foreach ($existingBackups as $backup) {
+                if ($backup['modified_ts'] < $cutoff) {
+                    $deletedFilenames[] = $backup['name'];
+                }
+            }
+
+            $deleted = $service->pruneBackups($days);
+
+            if (!empty($deletedFilenames)) {
+                $this->Backup->updateAll(
+                    array('Backup.status' => "'deleted'"),
+                    array('Backup.filename' => $deletedFilenames)
+                );
+            }
+
+            $this->Session->setFlash(
+                __('Deleted %d old backup(s).', $deleted),
+                'default',
+                array(),
+                'success'
+            );
+        } catch (Exception $e) {
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(
+                __('Prune failed: %s', $e->getMessage()),
+                'default',
+                array(),
+                'error'
+            );
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
 }
