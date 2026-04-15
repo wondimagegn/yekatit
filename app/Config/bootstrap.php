@@ -146,5 +146,9 @@ foreach (glob(APP."Config_app/*.php") as $configFile) {
     include($configFile);
  }
 */
+// app/Config/bootstrap.php
+Configure::write('Backups.path', APP . 'tmp' . DS . 'backups' . DS);
+Configure::write('Backups.mediaPath', WWW_ROOT . 'media' . DS);
+
  require_once APP . 'Config_app/smis.php';
  require_once APP . 'Config' . DS . 'events.php';
