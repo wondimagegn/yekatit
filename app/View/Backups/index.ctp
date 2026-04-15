@@ -134,12 +134,14 @@
 
                                             echo ' ';
 
+                                            /*
                                             echo $this->Form->postLink(
                                                     __('Restore'),
                                                     array('action' => 'restore', $file['name']),
                                                     array('class' => 'btn btn-sm btn-warning'),
                                                     __('This will overwrite the database and media folder. Continue?')
                                             );
+                                            */
 
                                             echo ' ';
 

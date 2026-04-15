@@ -5,8 +5,6 @@ App::uses('BackupService', 'Lib');
 
 class BackupsController extends AppController
 {
-
-
     var $name = "Backups";
     public $uses = array('Backup');
 
@@ -25,7 +23,7 @@ class BackupsController extends AppController
     {
         parent::beforeFilter();
         // Adjust as needed:
-         $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
+       //  $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
     }
 
     protected function _getBackupService()
