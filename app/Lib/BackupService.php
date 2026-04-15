@@ -88,7 +88,7 @@ class BackupService
             $manifest = array(
                 'created_at' => date('Y-m-d H:i:s'),
                 'created_by' => $userId,
-                'app' => Configure::read('Site.name') ? Configure::read('Site.name') : 'CakePHP',
+                'app' => Configure::read('Site.name') ? Configure::read('Site.name') : 'SIS',
                 'contents' => array('database.sql', 'media/'),
                 'media_source' => $mediaPath,
                 'db_config' => $this->_getDatabaseSummary(),

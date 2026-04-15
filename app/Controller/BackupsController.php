@@ -5,10 +5,10 @@ App::uses('BackupService', 'Lib');
 
 class BackupsController extends AppController
 {
-    var $name = "Backups";
+    public $name = "Backups";
     public $uses = array('Backup');
 
-    var $menuOptions = array(
+    public $menuOptions = array(
         'weight' => 500,
         'exclude' => array('create', 'download', 'restore', 'delete', 'prune'),
         'alias' => array(
@@ -23,7 +23,7 @@ class BackupsController extends AppController
     {
         parent::beforeFilter();
         // Adjust as needed:
-       //  $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
+       $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
     }
 
     protected function _getBackupService()
