@@ -29,7 +29,7 @@
 								<td style="width: 34%;"></td>
 								<td style="width: 33%;">
 									<span id="validation-message_program_type" class="text-red fs13" style="padding: 5%;"></span>
-									<div style="padding: 5%;"><?= $this->Form->input('program_type_id', array('id' => 'ProgramTypeID', 'type' => 'select', 'multiple' => 'checkbox')); ?></d>
+									<div style="padding: 5%;"><?= $this->Form->input('program_type_id', array('id' => 'ProgramTypeID', 'type' => 'select', 'multiple' => 'checkbox')); ?></div>
 								</td>
 							</tr>
 							<tr>
