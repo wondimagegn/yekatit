@@ -1,23 +1,12 @@
 <?php
-// app/Model/Backup.php
 
 App::uses('AppModel', 'Model');
 
 class Backup extends AppModel
 {
-    public $displayField = 'name';
+    public $displayField = 'filename';
 
     public $validate = array(
-        'name' => array(
-            'notBlank' => array(
-                'rule' => 'notBlank',
-                'message' => 'Backup name is required.'
-            ),
-            'maxLength' => array(
-                'rule' => array('maxLength', 255),
-                'message' => 'Backup name must be 255 characters or less.'
-            )
-        ),
         'filename' => array(
             'notBlank' => array(
                 'rule' => 'notBlank',
@@ -31,23 +20,23 @@ class Backup extends AppModel
         'path' => array(
             'notBlank' => array(
                 'rule' => 'notBlank',
-                'message' => 'Backup path is required.'
+                'message' => 'Path is required.'
             ),
             'maxLength' => array(
                 'rule' => array('maxLength', 1024),
                 'message' => 'Path must be 1024 characters or less.'
             )
         ),
-        'type' => array(
+        'backup_category' => array(
             'valid' => array(
-                'rule' => array('inList', array('full')),
-                'message' => 'Invalid backup type.'
+                'rule' => array('inList', array('database', 'media_full', 'media_incremental')),
+                'message' => 'Invalid backup category.'
             )
         ),
         'status' => array(
             'valid' => array(
                 'rule' => array('inList', array('created', 'restored', 'failed', 'deleted')),
-                'message' => 'Invalid backup status.'
+                'message' => 'Invalid status.'
             )
         ),
         'size' => array(
@@ -55,18 +44,36 @@ class Backup extends AppModel
                 'rule' => 'numeric',
                 'message' => 'Size must be numeric.'
             )
+        ),
+        'is_incremental' => array(
+            'boolean' => array(
+                'rule' => array('boolean'),
+                'message' => 'Invalid incremental flag.'
+            )
         )
     );
 
     public $belongsTo = array(
         'CreatedBy' => array(
             'className' => 'User',
-            'foreignKey' => 'created_by',
+            'foreignKey' => 'created_by'
         ),
         'RestoredBy' => array(
             'className' => 'User',
-            'foreignKey' => 'restored_by',
+            'foreignKey' => 'restored_by'
         ),
+        'ParentBackup' => array(
+            'className' => 'Backup',
+            'foreignKey' => 'parent_backup_id'
+        )
+    );
+
+    public $hasMany = array(
+        'ChildBackup' => array(
+            'className' => 'Backup',
+            'foreignKey' => 'parent_backup_id',
+            'dependent' => false
+        )
     );
 
     public function beforeValidate($options = array())
@@ -79,17 +86,25 @@ class Backup extends AppModel
             $this->data[$this->alias]['size'] = (int)$this->data[$this->alias]['size'];
         }
 
+        if (!isset($this->data[$this->alias]['is_incremental'])) {
+            $this->data[$this->alias]['is_incremental'] = 0;
+        }
+
         return true;
     }
 
-    public function markCreated($id, $userId = null)
+    public function createBackupRecord($data)
     {
-        return $this->save(array(
-            'id' => $id,
+        $this->create();
+
+        $defaults = array(
             'status' => 'created',
-            'created_by' => $userId,
+            'size' => 0,
+            'is_incremental' => 0,
             'created_at' => date('Y-m-d H:i:s'),
-        ), false);
+        );
+
+        return $this->save(array($this->alias => array_merge($defaults, $data)), false);
     }
 
     public function markRestored($id, $userId = null)
@@ -99,6 +114,7 @@ class Backup extends AppModel
             'status' => 'restored',
             'restored_by' => $userId,
             'restored_at' => date('Y-m-d H:i:s'),
+            'error_message' => null,
         ), false);
     }
 
@@ -107,30 +123,16 @@ class Backup extends AppModel
         return $this->save(array(
             'id' => $id,
             'status' => 'deleted',
+            'error_message' => null,
         ), false);
     }
 
-    public function markFailed($id, $message = null)
+    public function markFailed($id, $message)
     {
         return $this->save(array(
             'id' => $id,
             'status' => 'failed',
             'error_message' => $message,
         ), false);
-    }
-
-    public function createRecord($data)
-    {
-        $this->create();
-
-        $defaults = array(
-            'type' => 'full',
-            'status' => 'created',
-            'created_at' => date('Y-m-d H:i:s'),
-        );
-
-        $data = array_merge($defaults, $data);
-
-        return $this->save(array($this->alias => $data));
     }
 }

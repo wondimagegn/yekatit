@@ -1,323 +1,428 @@
 <?php
-// app/Controller/BackupsController.php
 App::uses('AppController', 'Controller');
-App::uses('BackupService', 'Lib');
+App::uses('DatabaseBackupService', 'Lib');
+App::uses('MediaBackupService', 'Lib');
 
 class BackupsController extends AppController
 {
-    public $name = "Backups";
     public $uses = array('Backup');
 
-    public $menuOptions = array(
-        'weight' => 500,
-        'exclude' => array('create', 'download', 'restore', 'delete', 'prune'),
-        'alias' => array(
-            'index' => 'Take/View/Prune Backups',
-        )
-    );
-
-
-    protected $_backupService = null;
+    protected $_databaseBackupService = null;
+    protected $_mediaBackupService = null;
 
     public function beforeFilter()
     {
         parent::beforeFilter();
-        // Adjust as needed:
-     //  $this->Auth->allow('index', 'create', 'download', 'restore', 'delete', 'prune');
+        $this->Auth->allow('index', 'create_database_backup', 'create_media_full_backup', 'create_media_incremental_backup',
+            'download_database', 'download_media_full', 'download_media_incremental', 'restore_database', 'restore_media_full',
+            'restore_media_incremental_chain', 'delete_database', 'delete_media_full', 'delete_media_incremental');
     }
 
-    protected function _getBackupService()
+    protected function _getDatabaseBackupService()
     {
-        if ($this->_backupService === null) {
-            $this->_backupService = new BackupService();
+        if ($this->_databaseBackupService === null) {
+            $this->_databaseBackupService = new DatabaseBackupService();
         }
-
-        return $this->_backupService;
+        return $this->_databaseBackupService;
     }
 
+    protected function _getMediaBackupService()
+    {
+        if ($this->_mediaBackupService === null) {
+            $this->_mediaBackupService = new MediaBackupService();
+        }
+        return $this->_mediaBackupService;
+    }
+
+    protected function _getCurrentUserId()
+    {
+        return isset($this->Auth) && method_exists($this->Auth, 'user') ? $this->Auth->user('id') : null;
+    }
 
     public function index()
     {
-        $service = $this->_getBackupService();
-        $filesystemBackups = $service->listBackups();
-        $backupPath = $service->getBackupPath();
-        $mediaPath = $service->getMediaPath();
+        $databaseFiles = $this->_getDatabaseBackupService()->listBackups();
+        $mediaFullFiles = $this->_getMediaBackupService()->listFullBackups();
+        $mediaIncrementalFiles = $this->_getMediaBackupService()->listIncrementalBackups();
 
-        $dbBackups = $this->Backup->find('all', array(
+        $dbRows = $this->Backup->find('all', array(
             'fields' => array(
                 'Backup.id',
                 'Backup.name',
                 'Backup.filename',
                 'Backup.path',
-                'Backup.type',
+                'Backup.backup_category',
                 'Backup.status',
                 'Backup.size',
                 'Backup.manifest_json',
-                'Backup.notes',
+                'Backup.manifest_path',
+                'Backup.base_filename',
+                'Backup.is_incremental',
                 'Backup.error_message',
                 'Backup.created_by',
                 'Backup.restored_by',
                 'Backup.created_at',
                 'Backup.restored_at',
-                'Backup.modified',
-
                 'CreatedBy.id',
                 'CreatedBy.username',
                 'CreatedBy.first_name',
                 'CreatedBy.middle_name',
                 'CreatedBy.last_name',
-
                 'RestoredBy.id',
                 'RestoredBy.username',
                 'RestoredBy.first_name',
                 'RestoredBy.middle_name',
                 'RestoredBy.last_name',
             ),
+            'order' => array('Backup.created_at' => 'DESC', 'Backup.id' => 'DESC'),
             'recursive' => 0,
-            'order' => array(
-                'Backup.created_at' => 'DESC',
-                'Backup.id' => 'DESC'
-            )
         ));
 
-        $dbByFilename = array();
-        foreach ($dbBackups as $row) {
-            if (!empty($row['Backup']['filename']) && empty($dbByFilename[$row['Backup']['filename']])) {
-                $dbByFilename[$row['Backup']['filename']] = $row;
+        $recordsByFilename = array();
+        foreach ($dbRows as $row) {
+            if (!empty($row['Backup']['filename']) && empty($recordsByFilename[$row['Backup']['filename']])) {
+                $recordsByFilename[$row['Backup']['filename']] = $row;
             }
         }
 
-        $backups = array();
-        foreach ($filesystemBackups as $fileBackup) {
-            $record = !empty($dbByFilename[$fileBackup['name']]) ? $dbByFilename[$fileBackup['name']] : null;
+        $databaseBackups = $this->_mergeFileBackupsWithRecords($databaseFiles, $recordsByFilename);
+        $mediaFullBackups = $this->_mergeFileBackupsWithRecords($mediaFullFiles, $recordsByFilename);
+        $mediaIncrementalBackups = $this->_mergeFileBackupsWithRecords($mediaIncrementalFiles, $recordsByFilename);
 
-            $backups[] = array(
-                'file' => $fileBackup,
-                'record' => $record,
-            );
-        }
+        $databasePath = $this->_getDatabaseBackupService()->getBackupPath();
+        $mediaPath = $this->_getMediaBackupService()->getMediaPath();
+        $mediaFullPath = $this->_getMediaBackupService()->getFullBackupPath();
+        $mediaIncrementalPath = $this->_getMediaBackupService()->getIncrementalBackupPath();
 
-        $this->set(compact('backups', 'backupPath', 'mediaPath'));
+        $this->set(compact(
+            'databaseBackups',
+            'mediaFullBackups',
+            'mediaIncrementalBackups',
+            'databasePath',
+            'mediaPath',
+            'mediaFullPath',
+            'mediaIncrementalPath'
+        ));
     }
-    public function create()
+
+    public function create_database_backup()
     {
         $this->request->onlyAllow('post');
-        $userId=$this->Auth->user('id');
+
+        $userId = $this->_getCurrentUserId();
+
         try {
-            $result = $this->_getBackupService()->createBackup($userId);
+            $result = $this->_getDatabaseBackupService()->createBackup();
 
-            $manifestJson = null;
-            $zipPath = $result['path'];
-            if (class_exists('ZipArchive') && is_file($zipPath)) {
-                $zip = new ZipArchive();
-                if ($zip->open($zipPath) === true) {
-                    $manifestContent = $zip->getFromName('manifest.json');
-                    if ($manifestContent !== false) {
-                        $manifestJson = $manifestContent;
-                    }
-                    $zip->close();
-                }
-            }
+            $this->Backup->createBackupRecord(array(
+                'name' => $result['filename'],
+                'filename' => $result['filename'],
+                'path' => $result['path'],
+                'backup_category' => 'database',
+                'size' => $result['size'],
+                'created_by' => $userId,
+            ));
 
-            $this->Backup->create();
-            $this->Backup->save(array(
-                'Backup' => array(
-                    'name' => $result['name'],
-                    'filename' => $result['name'],
-                    'path' => $result['path'],
-                    'type' => 'full',
-                    'status' => 'created',
-                    'size' => is_file($result['path']) ? filesize($result['path']) : 0,
-                    'manifest_json' => $manifestJson,
-                    'created_by' => $userId,
-                    'created_at' => date('Y-m-d H:i:s'),
-                )
-            ), false);
+            $this->Session->setFlash(__('Database backup created: %s', $result['filename']), 'default', array(), 'success');
+        } catch (Exception $e) {
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Database backup failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function create_media_full_backup()
+    {
+        $this->request->onlyAllow('post');
+
+        $userId = $this->_getCurrentUserId();
+
+        try {
+            $result = $this->_getMediaBackupService()->createFullBackup();
+
+            $this->Backup->createBackupRecord(array(
+                'name' => $result['filename'],
+                'filename' => $result['filename'],
+                'path' => $result['path'],
+                'backup_category' => 'media_full',
+                'size' => $result['size'],
+                'manifest_json' => $result['manifest_json'],
+                'manifest_path' => $result['manifest_path'],
+                'base_filename' => $result['base_filename'],
+                'is_incremental' => 0,
+                'created_by' => $userId,
+            ));
+
+            $this->Session->setFlash(__('Media full backup created: %s', $result['filename']), 'default', array(), 'success');
+        } catch (Exception $e) {
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Media full backup failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function create_media_incremental_backup()
+    {
+        $this->request->onlyAllow('post');
+
+        $userId = $this->_getCurrentUserId();
+
+        try {
+            $result = $this->_getMediaBackupService()->createIncrementalBackup();
+
+            $parentRecord = $this->Backup->find('first', array(
+                'conditions' => array('Backup.filename' => $result['base_filename']),
+                'recursive' => -1,
+                'order' => array('Backup.id' => 'DESC')
+            ));
+
+            $this->Backup->createBackupRecord(array(
+                'name' => $result['filename'],
+                'filename' => $result['filename'],
+                'path' => $result['path'],
+                'backup_category' => 'media_incremental',
+                'size' => $result['size'],
+                'manifest_json' => $result['manifest_json'],
+                'manifest_path' => $result['manifest_path'],
+                'base_filename' => $result['base_filename'],
+                'is_incremental' => 1,
+                'parent_backup_id' => !empty($parentRecord['Backup']['id']) ? $parentRecord['Backup']['id'] : null,
+                'created_by' => $userId,
+            ));
 
             $this->Session->setFlash(
-                __('Backup created successfully: %s', $result['name']),
+                __('Media incremental backup created: %s (%d changed, %d deleted)', $result['filename'], $result['changed_count'], $result['deleted_count']),
                 'default',
                 array(),
                 'success'
             );
         } catch (Exception $e) {
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(
-                __('Backup failed: %s', $e->getMessage()),
-                'default',
-                array(),
-                'error'
-            );
+            $this->Session->setFlash(__('Media incremental backup failed: %s', $e->getMessage()), 'default', array(), 'error');
         }
 
         return $this->redirect(array('action' => 'index'));
     }
 
-    public function download($filename = null)
+    public function download_database($filename = null)
     {
-        $service = $this->_getBackupService();
-        $service->assertValidBackupFilename($filename);
+        $this->_getDatabaseBackupService()->assertValidFilename($filename);
+        $fullPath = $this->_getDatabaseBackupService()->getBackupPath() . $filename;
 
-        $fullPath = $service->getBackupPath() . $filename;
         if (!is_file($fullPath)) {
-            throw new NotFoundException(__('Backup file not found.'));
+            throw new NotFoundException(__('Database backup not found.'));
         }
 
-        return $this->response->file($fullPath, array(
-            'download' => true,
-            'name' => $filename,
-        ));
+        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
     }
 
-    public function restore($filename = null)
+    public function download_media_full($filename = null)
+    {
+        $fullPath = $this->_getMediaBackupService()->getFullBackupPath() . $filename;
+
+        if (!is_file($fullPath)) {
+            throw new NotFoundException(__('Media full backup not found.'));
+        }
+
+        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
+    }
+
+    public function download_media_incremental($filename = null)
+    {
+        $fullPath = $this->_getMediaBackupService()->getIncrementalBackupPath() . $filename;
+
+        if (!is_file($fullPath)) {
+            throw new NotFoundException(__('Media incremental backup not found.'));
+        }
+
+        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
+    }
+
+    public function restore_database($filename = null)
     {
         $this->request->onlyAllow('post');
 
-        $userId = isset($this->Auth) && method_exists($this->Auth, 'user') ? $this->Auth->user('id') : null;
-
-        $backupRecord = $this->Backup->find('first', array(
-            'conditions' => array('Backup.filename' => $filename),
-            'recursive' => -1,
-            'order' => array('Backup.id' => 'DESC')
-        ));
+        $userId = $this->_getCurrentUserId();
+        $record = $this->_findBackupRecordByFilename($filename);
 
         try {
-            $result = $this->_getBackupService()->restoreBackup($filename);
+            $this->_getDatabaseBackupService()->restoreBackup($filename);
 
-            if (!empty($backupRecord)) {
-                $this->Backup->save(array(
-                    'Backup' => array(
-                        'id' => $backupRecord['Backup']['id'],
-                        'status' => 'restored',
-                        'restored_by' => $userId,
-                        'restored_at' => date('Y-m-d H:i:s'),
-                        'error_message' => null,
-                    )
-                ), false);
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markRestored($record['Backup']['id'], $userId);
+            }
+
+            $this->Session->setFlash(__('Database restored successfully.'), 'default', array(), 'success');
+        } catch (Exception $e) {
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
+            }
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Database restore failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function restore_media_full($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $userId = $this->_getCurrentUserId();
+        $record = $this->_findBackupRecordByFilename($filename);
+
+        try {
+            $result = $this->_getMediaBackupService()->restoreFullBackup($filename);
+
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markRestored($record['Backup']['id'], $userId);
             }
 
             $this->Session->setFlash(
-                __('Restore completed successfully. Previous media moved to: %s', $result['previous_media_path']),
+                __('Media full restore completed. Previous media moved to: %s', $result['previous_media_path']),
                 'default',
                 array(),
                 'success'
             );
         } catch (Exception $e) {
-            if (!empty($backupRecord)) {
-                $this->Backup->save(array(
-                    'Backup' => array(
-                        'id' => $backupRecord['Backup']['id'],
-                        'status' => 'failed',
-                        'error_message' => $e->getMessage(),
-                    )
-                ), false);
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
-
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(
-                __('Restore failed: %s', $e->getMessage()),
-                'default',
-                array(),
-                'error'
-            );
+            $this->Session->setFlash(__('Media full restore failed: %s', $e->getMessage()), 'default', array(), 'error');
         }
 
         return $this->redirect(array('action' => 'index'));
     }
 
-    public function delete($filename = null)
+    public function restore_media_incremental_chain($filename = null)
     {
         $this->request->onlyAllow('post');
 
-        $backupRecord = $this->Backup->find('first', array(
-            'conditions' => array('Backup.filename' => $filename),
-            'recursive' => -1,
-            'order' => array('Backup.id' => 'DESC')
-        ));
+        $userId = $this->_getCurrentUserId();
+        $record = $this->_findBackupRecordByFilename($filename);
 
         try {
-            $this->_getBackupService()->deleteBackup($filename);
+            $result = $this->_getMediaBackupService()->restoreIncrementalChain($filename);
 
-            if (!empty($backupRecord)) {
-                $this->Backup->save(array(
-                    'Backup' => array(
-                        'id' => $backupRecord['Backup']['id'],
-                        'status' => 'deleted',
-                        'error_message' => null,
-                    )
-                ), false);
-            }
-
-            $this->Session->setFlash(__('Backup deleted successfully.'), 'default', array(), 'success');
-        } catch (Exception $e) {
-            if (!empty($backupRecord)) {
-                $this->Backup->save(array(
-                    'Backup' => array(
-                        'id' => $backupRecord['Backup']['id'],
-                        'status' => 'failed',
-                        'error_message' => $e->getMessage(),
-                    )
-                ), false);
-            }
-
-            $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(
-                __('Delete failed: %s', $e->getMessage()),
-                'default',
-                array(),
-                'error'
-            );
-        }
-
-        return $this->redirect(array('action' => 'index'));
-    }
-
-    public function prune($days = null)
-    {
-        $this->request->onlyAllow('post');
-
-        $days = $days !== null ? (int)$days : (int)$this->request->data('Backup.prune_days');
-        if ($days < 1) {
-            $days = 30;
-        }
-
-        try {
-            $service = $this->_getBackupService();
-            $existingBackups = $service->listBackups();
-            $cutoff = strtotime('-' . $days . ' days');
-
-            $deletedFilenames = array();
-            foreach ($existingBackups as $backup) {
-                if ($backup['modified_ts'] < $cutoff) {
-                    $deletedFilenames[] = $backup['name'];
-                }
-            }
-
-            $deleted = $service->pruneBackups($days);
-
-            if (!empty($deletedFilenames)) {
-                $this->Backup->updateAll(
-                    array('Backup.status' => "'deleted'"),
-                    array('Backup.filename' => $deletedFilenames)
-                );
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markRestored($record['Backup']['id'], $userId);
             }
 
             $this->Session->setFlash(
-                __('Deleted %d old backup(s).', $deleted),
+                __('Media incremental chain restored. Base full: %s. Previous media moved to: %s', $result['base_full'], $result['previous_media_path']),
                 'default',
                 array(),
                 'success'
             );
         } catch (Exception $e) {
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
+            }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(
-                __('Prune failed: %s', $e->getMessage()),
-                'default',
-                array(),
-                'error'
-            );
+            $this->Session->setFlash(__('Media incremental chain restore failed: %s', $e->getMessage()), 'default', array(), 'error');
         }
 
         return $this->redirect(array('action' => 'index'));
+    }
+
+    public function delete_database($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $record = $this->_findBackupRecordByFilename($filename);
+
+        try {
+            $this->_getDatabaseBackupService()->deleteBackup($filename);
+
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markDeleted($record['Backup']['id']);
+            }
+
+            $this->Session->setFlash(__('Database backup deleted.'), 'default', array(), 'success');
+        } catch (Exception $e) {
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
+            }
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function delete_media_full($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $record = $this->_findBackupRecordByFilename($filename);
+
+        try {
+            $this->_getMediaBackupService()->deleteFullBackup($filename);
+
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markDeleted($record['Backup']['id']);
+            }
+
+            $this->Session->setFlash(__('Media full backup deleted.'), 'default', array(), 'success');
+        } catch (Exception $e) {
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
+            }
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    public function delete_media_incremental($filename = null)
+    {
+        $this->request->onlyAllow('post');
+
+        $record = $this->_findBackupRecordByFilename($filename);
+
+        try {
+            $this->_getMediaBackupService()->deleteIncrementalBackup($filename);
+
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markDeleted($record['Backup']['id']);
+            }
+
+            $this->Session->setFlash(__('Media incremental backup deleted.'), 'default', array(), 'success');
+        } catch (Exception $e) {
+            if (!empty($record['Backup']['id'])) {
+                $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
+            }
+            $this->log($e->getMessage(), LOG_ERR);
+            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+        }
+
+        return $this->redirect(array('action' => 'index'));
+    }
+
+    protected function _findBackupRecordByFilename($filename)
+    {
+        return $this->Backup->find('first', array(
+            'conditions' => array('Backup.filename' => $filename),
+            'recursive' => -1,
+            'order' => array('Backup.id' => 'DESC')
+        ));
+    }
+
+    protected function _mergeFileBackupsWithRecords($files, $recordsByFilename)
+    {
+        $result = array();
+
+        foreach ($files as $file) {
+            $result[] = array(
+                'file' => $file,
+                'record' => !empty($recordsByFilename[$file['name']]) ? $recordsByFilename[$file['name']] : null,
+            );
+        }
+
+        return $result;
     }
 }
