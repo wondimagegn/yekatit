@@ -135,4 +135,24 @@ class Backup extends AppModel
             'error_message' => $message,
         ), false);
     }
+
+    function getLatestBackups($limit = 3) {
+        $backups = $this->find('all',
+            array(
+                'order' =>
+                    array(
+                        'Backup.created DESC'
+                    ),
+                'limit' => $limit
+            )
+        );
+        foreach($backups as &$backup) {
+            if(file_exists($backup['Backup']['path']))
+                $backup['Backup']['file_exists'] = true;
+            else
+                $backup['Backup']['file_exists'] = false;
+        }
+        return $backups;
+    }
+
 }
