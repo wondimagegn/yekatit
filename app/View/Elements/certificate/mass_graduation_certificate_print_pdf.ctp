@@ -88,12 +88,25 @@ foreach($graduation_certificates as $k=>$graduation_certificate) {
         $graduation_certificate['student_detail']['e_day'].'/'.
         $graduation_certificate['student_detail']['e_year'].' E.C', 0, 'L', false, 0, 224, 53);
 
+    $pdf->MultiCell(100, 7, $graduation_certificate['student_detail']['e_month_name'].' '.
+        $graduation_certificate['student_detail']['e_day'].'/'.
+        $graduation_certificate['student_detail']['e_year'].' E.C', 0, 'L', false, 0, 224, 53);
+
 
     $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style_b.ttf');
     $pdf->SetFont($fontPath, '', 12, '', false);
     $pdf->MultiCell(100, 7, 'Date: ', 0, 'L', false, 0, 215, 60);
     $pdf->SetFont($fontPath, 'U', 12, '', false);
     $pdf->MultiCell(100, 7, date('d F, Y').' G.C', 0, 'L', false, 0, 228, 60);
+
+
+    $pdf->MultiCell(100, 7, 'Serial: ', 0, 'L', false, 0, 215, 65);
+    $pdf->SetFont($fontPath, 'U', 12, '', false);
+    $pdf->MultiCell(100, 7, ' '.$graduation_certificate['student_detail']['Student']['code'] , 0, 'L', false, 0, 228, 65);
+
+
+
+
     /*
     $pdf->MultiCell(100, 7, 'Serial: ', 0, 'L', false, 0, 215, 38);
     $pdf->SetFont($fontPath, 'U', 12, '', false);
@@ -103,7 +116,7 @@ foreach($graduation_certificates as $k=>$graduation_certificate) {
 
 
 
-    $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/centered-line-certificate.gif', 13, 65, 270, 5, '', '', '', false, 300, '', false, false, 0);
+    $pdf->Image($_SERVER['DOCUMENT_ROOT'].'/app/webroot/img/centered-line-certificate.gif', 13, 70, 270, 5, '', '', '', false, 300, '', false, false, 0);
 
 
     //$pdf->Line(147, 85, 150, 180);
