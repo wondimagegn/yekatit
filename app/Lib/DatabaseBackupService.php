@@ -200,12 +200,6 @@ class DatabaseBackupService
     protected function _exportDatabase($targetPath, $defaultsFile)
     {
 
-
-        print_r(array(
-            'disable_functions' => ini_get('disable_functions'),
-            'exec_exists' => function_exists('exec'),
-        ));
-        exit;
         $config = $this->_getDatasourceConfig();
         $this->_writeMysqlDefaultsFile($defaultsFile);
 
