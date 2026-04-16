@@ -1092,6 +1092,7 @@ class DashboardController extends AppController
 			
 			if ($this->MenuOptimized->check($this->Auth->user(), 'controllers/Backups/index')) {
 				$latest_backups = ClassRegistry::init('Backup')->getLatestBackups(3);
+                debug($latest_backups);
 				$this->set(compact('latest_backups'));
 			}
 

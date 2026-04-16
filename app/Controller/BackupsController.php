@@ -24,11 +24,13 @@ class BackupsController extends AppController
     public function beforeFilter()
     {
         parent::beforeFilter();
+
         /*
         $this->Auth->allow('index', 'create_database_backup', 'create_media_full_backup', 'create_media_incremental_backup',
             'download_database', 'download_media_full', 'download_media_incremental', 'restore_database', 'restore_media_full',
             'restore_media_incremental_chain', 'delete_database', 'delete_media_full', 'delete_media_incremental');
         */
+
     }
 
     protected function _getDatabaseBackupService()
@@ -136,10 +138,12 @@ class BackupsController extends AppController
                 'created_by' => $userId,
             ));
 
-            $this->Session->setFlash(__('Database backup created: %s', $result['filename']), 'default', array(), 'success');
+            $this->Flash->success(__('Database backup created: %s', $result['filename']));
+
+
         } catch (Exception $e) {
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Database backup failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Database backup failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -167,10 +171,13 @@ class BackupsController extends AppController
                 'created_by' => $userId,
             ));
 
-            $this->Session->setFlash(__('Media full backup created: %s', $result['filename']), 'default', array(), 'success');
+            $this->Flash->success(__('Media full backup created: %s', $result['filename']));
+
+
         } catch (Exception $e) {
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Media full backup failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Media full backup failed: %s', $e->getMessage()));
+
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -205,15 +212,14 @@ class BackupsController extends AppController
                 'created_by' => $userId,
             ));
 
-            $this->Session->setFlash(
-                __('Media incremental backup created: %s (%d changed, %d deleted)', $result['filename'], $result['changed_count'], $result['deleted_count']),
-                'default',
-                array(),
-                'success'
-            );
+
+            $this->Flash->success(
+                __('Media incremental backup created: %s (%d changed, %d deleted)', $result['filename'],
+                    $result['changed_count'], $result['deleted_count']));
+
         } catch (Exception $e) {
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Media incremental backup failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Media incremental backup failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -286,13 +292,14 @@ class BackupsController extends AppController
                 $this->Backup->markRestored($record['Backup']['id'], $userId);
             }
 
-            $this->Session->setFlash(__('Database restored successfully.'), 'default', array(), 'success');
+            $this->Flash->success(__('Database restored successfully.'));
+
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Database restore failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Database restore failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -312,18 +319,15 @@ class BackupsController extends AppController
                 $this->Backup->markRestored($record['Backup']['id'], $userId);
             }
 
-            $this->Session->setFlash(
-                __('Media full restore completed. Previous media moved to: %s', $result['previous_media_path']),
-                'default',
-                array(),
-                'success'
-            );
+            $this->Flash->success( __('Media full restore completed. Previous media moved to: %s', $result['previous_media_path']));
+
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Media full restore failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Media full restore failed: %s', $e->getMessage()));
+
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -343,18 +347,16 @@ class BackupsController extends AppController
                 $this->Backup->markRestored($record['Backup']['id'], $userId);
             }
 
-            $this->Session->setFlash(
-                __('Media incremental chain restored. Base full: %s. Previous media moved to: %s', $result['base_full'], $result['previous_media_path']),
-                'default',
-                array(),
-                'success'
-            );
+            $this->Flash->success(__('Media incremental chain restored. Base full: %s. Previous media moved to: %s', $result['base_full'],
+                $result['previous_media_path']));
+
+
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Media incremental chain restore failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Media incremental chain restore failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -372,14 +374,14 @@ class BackupsController extends AppController
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markDeleted($record['Backup']['id']);
             }
+            $this->Flash->success(__('Database backup deleted.'));
 
-            $this->Session->setFlash(__('Database backup deleted.'), 'default', array(), 'success');
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Delete failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -397,14 +399,14 @@ class BackupsController extends AppController
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markDeleted($record['Backup']['id']);
             }
+            $this->Flash->success(__('Media full backup deleted.'));
 
-            $this->Session->setFlash(__('Media full backup deleted.'), 'default', array(), 'success');
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->success(__('Delete failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));
@@ -423,13 +425,13 @@ class BackupsController extends AppController
                 $this->Backup->markDeleted($record['Backup']['id']);
             }
 
-            $this->Session->setFlash(__('Media incremental backup deleted.'), 'default', array(), 'success');
+            $this->Flash->success(__('Media incremental backup deleted.'));
         } catch (Exception $e) {
             if (!empty($record['Backup']['id'])) {
                 $this->Backup->markFailed($record['Backup']['id'], $e->getMessage());
             }
             $this->log($e->getMessage(), LOG_ERR);
-            $this->Session->setFlash(__('Delete failed: %s', $e->getMessage()), 'default', array(), 'error');
+            $this->Flash->error(__('Delete failed: %s', $e->getMessage()));
         }
 
         return $this->redirect(array('action' => 'index'));

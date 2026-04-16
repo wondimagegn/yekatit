@@ -137,15 +137,33 @@ class Backup extends AppModel
     }
 
     function getLatestBackups($limit = 3) {
-        $backups = $this->find('all',
-            array(
-                'order' =>
-                    array(
-                        'Backup.created DESC'
-                    ),
-                'limit' => $limit
-            )
-        );
+
+        $backups = $this->find('all', array(
+            'fields' => array(
+                'Backup.id',
+                'Backup.name',
+                'Backup.filename',
+                'Backup.path',
+                'Backup.backup_category',
+                'Backup.status',
+                'Backup.size',
+                'Backup.manifest_json',
+                'Backup.manifest_path',
+                'Backup.base_filename',
+                'Backup.is_incremental',
+                'Backup.parent_backup_id',
+                'Backup.error_message',
+                'Backup.created_by',
+                'Backup.restored_by',
+                'Backup.created_at',
+                'Backup.restored_at',
+            ),
+            'order' => array('Backup.created_at' => 'DESC'),
+            'limit' => $limit,
+            'recursive' => -1,
+        ));
+
+        debug($backups);
         foreach($backups as &$backup) {
             if(file_exists($backup['Backup']['path']))
                 $backup['Backup']['file_exists'] = true;

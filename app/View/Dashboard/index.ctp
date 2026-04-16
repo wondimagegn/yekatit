@@ -637,11 +637,12 @@
                     <table cellpadding="0" cellspacing="0" class="table">
                         <tbody>
                             <tr ng-repeat="backup in latest_backups | startFrom:currentPage*pageSize | limitTo:pageSize">
-                                <td> {{backup.Backup.created | dateToISO | date:'medium'}} </td>
+                                <td> {{backup.Backup.created_at | dateToISO | date:'medium'}} </td>
                                 <td>
-                                    <a ng-if="backup.Backup.file_exists" ng-href="/backups/index/{{backup.Backup.id}}"> Download </a>
+                                    <a ng-if="backup.Backup.file_exists" ng-href="/backups/download_database/{{backup.Backup.name}}"> Download </a>
                                     <div ng-if="!backup.Backup.file_exists"> Not Available </div>
                                 </td>
+
                             </tr>
                             <tr ng-if="password_reset_confirmation_request">
                                 <td colspan="2">

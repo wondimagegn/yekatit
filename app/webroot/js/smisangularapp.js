@@ -483,8 +483,7 @@ function($scope,$http,$filter,$timeout,removeLoading) {
      url:"/dashboard/getBackupAccountRequest.json"})
     .then(function(response) {
 
-    	if (angular.isUndefined(response.data) 
-    		|| response.data == null) {
+    	if (angular.isUndefined(response.data) || response.data == null) {
 	    		removeLoading.removeLoadingElement("BackupAccountRequest");	
     		}
         $scope.latest_backups=response.data.latest_backups;
@@ -503,6 +502,7 @@ function($scope,$http,$filter,$timeout,removeLoading) {
     $scope.getBackupAccountRequestB();
  
 }]);
+
 
 dashboardApp.controller('profileNotCompleteController', ['$scope','$http', '$filter','$timeout','removeLoading',
 function($scope,$http,$filter,$timeout,removeLoading) {

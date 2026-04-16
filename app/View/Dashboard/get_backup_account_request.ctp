@@ -6,8 +6,10 @@ if (isset($latest_backups) && !empty($latest_backups)) {
 			<?php
 			foreach ($latest_backups as $backup) { ?>
 				<tr>
-					<td style="width:65%"><?= $this->Time->format("M j, Y g:i:s A", $backup['Backup']['created'], NULL, NULL); ?></td>
-					<td style="width:35%; text-align:center"><?= (!$backup['Backup']['file_exists'] ? 'Not Available' : $this->Html->link(__('Download', true), array('controller' => 'backups', 'action' => 'index', $backup['Backup']['id']))); ?></td>
+					<td style="width:65%"><?= $this->Time->format("M j, Y g:i:s A", $backup['Backup']['created_at'], NULL, NULL); ?></td>
+					<td style="width:35%; text-align:center"><?= (!$backup['Backup']['file_exists'] ?
+                                'Not Available' : $this->Html->link(__('Download', true), array('controller' => 'backups',
+                                        'action' => 'download_database', $backup['Backup']['name']))); ?></td>
 				</tr>
 				<?php
 			} ?>
