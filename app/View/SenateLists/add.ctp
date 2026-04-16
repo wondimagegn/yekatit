@@ -113,7 +113,7 @@
 										&nbsp;
 									</div>
 									<div class="large-3 columns">
-										<?= $this->Form->input('minute_number', array('id' => 'minuteNumber', 'style' => 'width:90%;', 'required', ' placeholder' => 'Format: ' . (!empty($college_shortname) ? $college_shortname : 'AMiT') . '/'.$currentMonth.'/'. $yTo.'', 'title' => 'Format: ' . (!empty($college_shortname) ? $college_shortname : 'AMiT') . '/'.$currentMonth.'/'. $yTo.'', 'pattern' => 'minute_number', 'label' => 'Minute Number: <small></small></label><small class="error" style="background: #fff; width: 90%; color:red; border-style: solid; border-width: thin; border-color: red; border-radius: 5px;">Format: ' . (!empty($college_shortname) ? $college_shortname : 'AMiT') . '/'.$currentMonth.'/'. $yTo.'</small>')); ?>
+										<?= $this->Form->input('minute_number', array('id' => 'minuteNumber', 'style' => 'width:90%;', 'required', ' placeholder' => 'Format: ' . (!empty($college_shortname) ? $college_shortname : 'Y12HMC') . '/'.$currentMonth.'/'. $yTo.'', 'title' => 'Format: ' . (!empty($college_shortname) ? $college_shortname : 'Y12HMC') . '/'.$currentMonth.'/'. $yTo.'', 'pattern' => 'minute_number', 'label' => 'Minute Number: <small></small></label><small class="error" style="background: #fff; width: 90%; color:red; border-style: solid; border-width: thin; border-color: red; border-radius: 5px;">Format: ' . (!empty($college_shortname) ? $college_shortname : 'Y12HMC') . '/'.$currentMonth.'/'. $yTo.'</small>')); ?>
 									</div>
 									<div class="large-5 columns">
 										<?= $this->Form->input('approved_date', array('label' => 'Approved Date: ', 'minYear' => $yFrom, 'maxYear' => $yTo, 'style' => 'width:30%;')); ?>
