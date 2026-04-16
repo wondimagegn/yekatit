@@ -199,6 +199,13 @@ class DatabaseBackupService
 
     protected function _exportDatabase($targetPath, $defaultsFile)
     {
+
+
+        print_r(array(
+            'disable_functions' => ini_get('disable_functions'),
+            'exec_exists' => function_exists('exec'),
+        ));
+        exit;
         $config = $this->_getDatasourceConfig();
         $this->_writeMysqlDefaultsFile($defaultsFile);
 
@@ -260,12 +267,6 @@ class DatabaseBackupService
         fclose($in);
         @unlink($tmpSqlPath);
 
-
-        print_r(array(
-            'disable_functions' => ini_get('disable_functions'),
-            'exec_exists' => function_exists('exec'),
-        ));
-        exit;
 
         if (!is_file($targetPath) || filesize($targetPath) === 0) {
             throw new RuntimeException('Compressed database backup was not created.');
