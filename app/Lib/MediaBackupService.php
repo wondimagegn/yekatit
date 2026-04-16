@@ -65,6 +65,7 @@ class MediaBackupService
         return $this->_listArchives($this->getIncrementalBackupPath(), 'media_inc_');
     }
 
+
     public function createFullBackup()
     {
         $timestamp = date('Ymd_His');
@@ -74,6 +75,20 @@ class MediaBackupService
         $manifestPath = $this->getFullBackupPath() . $manifestFilename;
         $workingDir = TMP . 'media_full_' . uniqid('', true) . DS;
         $stagingMediaPath = $workingDir . 'media' . DS;
+
+        if (!class_exists('ZipArchive')) {
+            throw new RuntimeException('ZipArchive extension is not installed.');
+        }
+
+        if (!is_dir($this->_mediaPath)) {
+            throw new RuntimeException('Media path does not exist: ' . $this->_mediaPath);
+        }
+
+        if (!is_readable($this->_mediaPath)) {
+            throw new RuntimeException('Media path is not readable: ' . $this->_mediaPath);
+        }
+
+        $this->_ensureDirectory($this->getFullBackupPath());
 
         try {
             $this->_ensureDirectory($workingDir);
@@ -96,12 +111,17 @@ class MediaBackupService
 
             file_put_contents($workingDir . 'manifest.json', json_encode($manifest, JSON_PRETTY_PRINT));
             file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT));
+
             $this->_zipDirectory($workingDir, $zipPath);
+
+            if (!is_file($zipPath) || filesize($zipPath) === 0) {
+                throw new RuntimeException('Media full zip was not created.');
+            }
 
             return array(
                 'filename' => $filename,
                 'path' => $zipPath,
-                'size' => is_file($zipPath) ? filesize($zipPath) : 0,
+                'size' => filesize($zipPath),
                 'manifest_path' => $manifestPath,
                 'manifest_json' => json_encode($manifest, JSON_PRETTY_PRINT),
                 'base_filename' => $filename,
@@ -549,6 +569,7 @@ class MediaBackupService
         $zip->close();
     }
 
+    /*
     protected function _copyDirectory($source, $destination)
     {
         $source = rtrim($source, DS) . DS;
@@ -556,6 +577,10 @@ class MediaBackupService
 
         if (!is_dir($source)) {
             throw new RuntimeException('Source directory does not exist: ' . $source);
+        }
+
+        if (!is_readable($source)) {
+            throw new RuntimeException('Source directory is not readable: ' . $source);
         }
 
         $this->_ensureDirectory($destination);
@@ -566,18 +591,75 @@ class MediaBackupService
         );
 
         foreach ($iterator as $item) {
-            $targetPath = $destination . substr($item->getPathname(), strlen($source));
+            $sourcePath = $item->getPathname();
+            $targetPath = $destination . substr($sourcePath, strlen($source));
+
+            if ($item->isLink()) {
+                continue;
+            }
 
             if ($item->isDir()) {
                 $this->_ensureDirectory($targetPath);
-            } else {
-                $this->_ensureDirectory(dirname($targetPath));
-                if (!copy($item->getPathname(), $targetPath)) {
-                    throw new RuntimeException('Could not copy file: ' . $item->getPathname());
-                }
+                continue;
+            }
+
+            if (!$item->isReadable()) {
+                throw new RuntimeException('Unreadable media file: ' . $sourcePath);
+            }
+
+            $this->_ensureDirectory(dirname($targetPath));
+
+            if (!copy($sourcePath, $targetPath)) {
+                throw new RuntimeException('Could not copy file: ' . $sourcePath);
             }
         }
     }
+    */
+    protected function _copyDirectory($source, $destination)
+    {
+        $source = rtrim($source, DS) . DS;
+        $destination = rtrim($destination, DS) . DS;
+
+        if (!is_dir($source)) {
+            throw new RuntimeException('Source directory does not exist: ' . $source);
+        }
+
+        if (!is_readable($source)) {
+            throw new RuntimeException('Source directory is not readable: ' . $source);
+        }
+
+        $this->_ensureDirectory($destination);
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        foreach ($iterator as $item) {
+            $sourcePath = $item->getPathname();
+            $targetPath = $destination . substr($sourcePath, strlen($source));
+
+            if ($item->isLink()) {
+                continue;
+            }
+
+            if ($item->isDir()) {
+                $this->_ensureDirectory($targetPath);
+                continue;
+            }
+
+            if (!$item->isReadable()) {
+                throw new RuntimeException('Unreadable media file: ' . $sourcePath);
+            }
+
+            $this->_ensureDirectory(dirname($targetPath));
+
+            if (!copy($sourcePath, $targetPath)) {
+                throw new RuntimeException('Could not copy file: ' . $sourcePath);
+            }
+        }
+    }
+
 
     protected function _ensureDirectory($path)
     {

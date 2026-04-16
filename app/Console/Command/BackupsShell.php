@@ -72,11 +72,48 @@ class BackupsShell extends AppShell
             return $this->_stop(1);
         }
     }
+    /*
 
     public function media_full()
     {
         try {
             $result = $this->_getMediaBackupService()->createFullBackup();
+
+            $this->Backup->createBackupRecord(array(
+                'name' => $result['filename'],
+                'filename' => $result['filename'],
+                'path' => $result['path'],
+                'backup_category' => 'media_full',
+                'size' => $result['size'],
+                'manifest_json' => $result['manifest_json'],
+                'manifest_path' => $result['manifest_path'],
+                'base_filename' => $result['base_filename'],
+                'is_incremental' => 0,
+                'created_by' => null,
+                'notes' => 'Created by shell/cron',
+            ));
+
+            $this->out('Media full backup created: ' . $result['filename']);
+        } catch (Exception $e) {
+            $this->err('Media full backup failed: ' . $e->getMessage());
+            CakeLog::write('error', 'Media full backup failed: ' . $e->getMessage());
+            return $this->_stop(1);
+        }
+    }
+    */
+
+    public function media_full()
+    {
+        try {
+            $this->out('Starting media full backup...');
+            $this->out('Instantiating service...');
+            $service = $this->_getMediaBackupService();
+
+            $this->out('Creating media full backup...');
+            $result = $service->createFullBackup();
+
+            $this->out('Backup archive created: ' . $result['filename']);
+            $this->out('Saving database record...');
 
             $this->Backup->createBackupRecord(array(
                 'name' => $result['filename'],
