@@ -174,6 +174,7 @@ class DatabaseBackupService
 
     protected function _exportDatabase($targetPath, $defaultsFile)
     {
+        /*
         $config = $this->_getDatasourceConfig();
         $this->_writeMysqlDefaultsFile($defaultsFile);
 
@@ -191,6 +192,36 @@ class DatabaseBackupService
         if ($returnCode !== 0 || !is_file($targetPath) || filesize($targetPath) === 0) {
             throw new RuntimeException('Database export failed. ' . implode("\n", $output));
         }
+        */
+
+        $config = $this->_getDatasourceConfig();
+        $this->_writeMysqlDefaultsFile($defaultsFile);
+
+        $command = sprintf(
+            'mysqldump --defaults-extra-file=%s --single-transaction --routines --triggers %s | gzip > %s 2>&1',
+            escapeshellarg($defaultsFile),
+            escapeshellarg($config['database']),
+            escapeshellarg($targetPath)
+        );
+
+        $output = array();
+        $returnCode = 0;
+        exec($command, $output, $returnCode);
+
+        print_r(array(
+            'command' => $command,
+            'returnCode' => $returnCode,
+            'output' => $output,
+            'targetPath' => $targetPath,
+            'targetExists' => file_exists($targetPath),
+            'targetSize' => file_exists($targetPath) ? filesize($targetPath) : 0,
+            'defaultsFile' => $defaultsFile,
+            'defaultsExists' => file_exists($defaultsFile),
+            'defaultsReadable' => is_readable($defaultsFile),
+            'backupDirWritable' => is_writable(dirname($targetPath)),
+            'execDisabled' => in_array('exec', array_map('trim', explode(',', (string)ini_get('disable_functions')))),
+        ));
+        exit;
     }
 
     protected function _importDatabase($sourcePath, $defaultsFile)
