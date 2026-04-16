@@ -13,9 +13,11 @@ class BackupsController extends AppController
     public function beforeFilter()
     {
         parent::beforeFilter();
+        /*
         $this->Auth->allow('index', 'create_database_backup', 'create_media_full_backup', 'create_media_incremental_backup',
             'download_database', 'download_media_full', 'download_media_incremental', 'restore_database', 'restore_media_full',
             'restore_media_incremental_chain', 'delete_database', 'delete_media_full', 'delete_media_incremental');
+        */
     }
 
     protected function _getDatabaseBackupService()
@@ -208,6 +210,8 @@ class BackupsController extends AppController
 
     public function download_database($filename = null)
     {
+        $this->autoRender = false;
+
         $this->_getDatabaseBackupService()->assertValidFilename($filename);
         $fullPath = $this->_getDatabaseBackupService()->getBackupPath() . $filename;
 
@@ -215,29 +219,46 @@ class BackupsController extends AppController
             throw new NotFoundException(__('Database backup not found.'));
         }
 
-        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
+        return $this->response->file($fullPath, array(
+            'download' => true,
+            'name' => $filename
+        ));
+
     }
 
     public function download_media_full($filename = null)
     {
+
+        $this->autoRender = false;
+
         $fullPath = $this->_getMediaBackupService()->getFullBackupPath() . $filename;
 
         if (!is_file($fullPath)) {
             throw new NotFoundException(__('Media full backup not found.'));
         }
 
-        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
+        return $this->response->file($fullPath, array(
+            'download' => true,
+            'name' => $filename
+        ));
+
     }
 
     public function download_media_incremental($filename = null)
     {
+
+        $this->autoRender = false;
+
         $fullPath = $this->_getMediaBackupService()->getIncrementalBackupPath() . $filename;
 
         if (!is_file($fullPath)) {
             throw new NotFoundException(__('Media incremental backup not found.'));
         }
 
-        return $this->response->file($fullPath, array('download' => true, 'name' => $filename));
+        return $this->response->file($fullPath, array(
+            'download' => true,
+            'name' => $filename
+        ));
     }
 
     public function restore_database($filename = null)
