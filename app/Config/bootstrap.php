@@ -148,7 +148,12 @@ foreach (glob(APP."Config_app/*.php") as $configFile) {
 */
 // app/Config/bootstrap.php
 Configure::write('Backups.path', APP . 'tmp' . DS . 'backups' . DS);
+Configure::write('Backups.databasePath', Configure::read('Backups.path') . 'database' . DS);
 Configure::write('Backups.mediaPath', WWW_ROOT . 'media' . DS);
+Configure::write('Backups.mediaFullPath', Configure::read('Backups.path') . 'media' . DS . 'full' . DS);
+Configure::write('Backups.mediaIncrementalPath', Configure::read('Backups.path') . 'media' . DS . 'incremental' . DS);
+
+
 
  require_once APP . 'Config_app/smis.php';
  require_once APP . 'Config' . DS . 'events.php';
