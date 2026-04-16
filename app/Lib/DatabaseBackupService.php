@@ -196,7 +196,7 @@ class DatabaseBackupService
     }
     */
 
-    /*
+
     protected function _exportDatabase($targetPath, $defaultsFile)
     {
         $config = $this->_getDatasourceConfig();
@@ -260,6 +260,13 @@ class DatabaseBackupService
         fclose($in);
         @unlink($tmpSqlPath);
 
+
+        print_r(array(
+            'disable_functions' => ini_get('disable_functions'),
+            'exec_exists' => function_exists('exec'),
+        ));
+        exit;
+
         if (!is_file($targetPath) || filesize($targetPath) === 0) {
             throw new RuntimeException('Compressed database backup was not created.');
         }
@@ -284,160 +291,6 @@ class DatabaseBackupService
             throw new RuntimeException('Database restore failed. ' . implode("\n", $output));
         }
     }
-    */
 
-    protected function _exportDatabase($targetPath, $defaultsFile)
-    {
-        $config = $this->_getDatasourceConfig();
-        $this->_writeMysqlDefaultsFile($defaultsFile);
 
-        $mysqldump = '/usr/bin/mysqldump';
-        if (!is_executable($mysqldump)) {
-            $mysqldump = 'mysqldump';
-        }
-
-        if (!is_writable(dirname($targetPath))) {
-            throw new RuntimeException('Backup directory is not writable: ' . dirname($targetPath));
-        }
-
-        $command = array(
-            $mysqldump,
-            '--defaults-extra-file=' . $defaultsFile,
-            '--single-transaction',
-            '--routines',
-            '--triggers',
-            $config['database'],
-        );
-
-        $descriptors = array(
-            0 => array('pipe', 'r'),
-            1 => array('pipe', 'w'),
-            2 => array('pipe', 'w'),
-        );
-
-        $process = proc_open($command, $descriptors, $pipes);
-
-        if (!is_resource($process)) {
-            throw new RuntimeException('Could not start mysqldump process.');
-        }
-
-        fclose($pipes[0]);
-
-        $gz = gzopen($targetPath, 'wb9');
-        if ($gz === false) {
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($process);
-            throw new RuntimeException('Could not open backup file for writing: ' . $targetPath);
-        }
-
-        $stderr = '';
-        try {
-            while (!feof($pipes[1])) {
-                $chunk = fread($pipes[1], 1024 * 1024);
-                if ($chunk === false) {
-                    throw new RuntimeException('Failed reading mysqldump output.');
-                }
-                if ($chunk !== '') {
-                    gzwrite($gz, $chunk);
-                }
-            }
-
-            while (!feof($pipes[2])) {
-                $chunk = fread($pipes[2], 8192);
-                if ($chunk === false) {
-                    break;
-                }
-                $stderr .= $chunk;
-            }
-        } finally {
-            gzclose($gz);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            $returnCode = proc_close($process);
-        }
-
-        if ($returnCode !== 0 || !is_file($targetPath) || filesize($targetPath) === 0) {
-            @unlink($targetPath);
-            throw new RuntimeException(
-                'Database export failed. Return code: ' . $returnCode . '. Error: ' . trim($stderr)
-            );
-        }
-    }
-
-    protected function _importDatabase($sourcePath, $defaultsFile)
-    {
-        $config = $this->_getDatasourceConfig();
-        $this->_writeMysqlDefaultsFile($defaultsFile);
-
-        $mysql = '/usr/bin/mysql';
-        if (!is_executable($mysql)) {
-            $mysql = 'mysql';
-        }
-
-        if (!is_file($sourcePath) || filesize($sourcePath) === 0) {
-            throw new RuntimeException('Backup file not found or empty: ' . $sourcePath);
-        }
-
-        $command = array(
-            $mysql,
-            '--defaults-extra-file=' . $defaultsFile,
-            $config['database'],
-        );
-
-        $descriptors = array(
-            0 => array('pipe', 'w'),
-            1 => array('pipe', 'w'),
-            2 => array('pipe', 'w'),
-        );
-
-        $process = proc_open($command, $descriptors, $pipes);
-
-        if (!is_resource($process)) {
-            throw new RuntimeException('Could not start mysql restore process.');
-        }
-
-        $gz = gzopen($sourcePath, 'rb');
-        if ($gz === false) {
-            fclose($pipes[0]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-            proc_close($process);
-            throw new RuntimeException('Could not open compressed backup for reading.');
-        }
-
-        $stderr = '';
-        try {
-            while (!gzeof($gz)) {
-                $chunk = gzread($gz, 1024 * 1024);
-                if ($chunk === false) {
-                    throw new RuntimeException('Failed reading compressed backup.');
-                }
-                if ($chunk !== '') {
-                    fwrite($pipes[0], $chunk);
-                }
-            }
-        } finally {
-            gzclose($gz);
-            fclose($pipes[0]);
-        }
-
-        while (!feof($pipes[2])) {
-            $chunk = fread($pipes[2], 8192);
-            if ($chunk === false) {
-                break;
-            }
-            $stderr .= $chunk;
-        }
-
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $returnCode = proc_close($process);
-
-        if ($returnCode !== 0) {
-            throw new RuntimeException(
-                'Database restore failed. Return code: ' . $returnCode . '. Error: ' . trim($stderr)
-            );
-        }
-    }
 }
