@@ -51,7 +51,7 @@ class BackupsController extends AppController
 
     protected function _getCurrentUserId()
     {
-        return isset($this->Auth) && method_exists($this->Auth, 'user') ? $this->Auth->user('id') : null;
+        return $this->Auth->user('id');
     }
 
     public function index()
