@@ -6,6 +6,17 @@ App::uses('MediaBackupService', 'Lib');
 class BackupsController extends AppController
 {
     public $uses = array('Backup');
+    public $menuOptions = array(
+        'exclude' => array(
+            'create_database_backup', 'create_media_full_backup', 'create_media_incremental_backup',
+            'download_database', 'download_media_full', 'download_media_incremental', 'restore_database', 'restore_media_full',
+            'restore_media_incremental_chain', 'delete_database', 'delete_media_full', 'delete_media_incremental'
+        ),
+        'alias' => array(
+            'index' => 'View and Take Backups',
+        )
+    );
+
 
     protected $_databaseBackupService = null;
     protected $_mediaBackupService = null;
