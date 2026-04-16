@@ -1434,6 +1434,7 @@ class GraduateListsController extends AppController
 					$graduation_certificate_template = $certificate_template;
 					$graduation_certificates = $this->GraduateList->getTemporaryDegreeCertificateForMassPrint($student_ids, 'GC');
 
+
 					$this->set(compact('graduation_certificates', 'graduation_certificate_template'));
 
 					if (!empty($graduation_certificates)) {
