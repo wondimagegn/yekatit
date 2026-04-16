@@ -84,7 +84,7 @@
 						<table cellpadding="0" cellspacing="0" class="table">
 							<thead>
 								<tr>
-									<td style="width:3%" class="center">&nbsp;</th>
+									<td style="width:3%" class="center">&nbsp;</td>
 									<td style="width:3%" class="center">#</td>
 									<td style="width:18%" class="vcenter"><?= $this->Paginator->sort('Student.first_name', 'Student Name'); ?></td>
 									<td style="width:9%" class="center"><?= $this->Paginator->sort('student_id', 'Student ID'); ?></td>

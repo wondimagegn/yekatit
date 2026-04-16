@@ -8,10 +8,10 @@
 	$pdf->SetProtection($permissions = array('modify', 'extract', 'assemble'), $user_pass = '', $owner_pass = '1qazXSw23eDC@@', $mode = 0, $pubkeys = null);
 
     $pdf->SetCreator(PDF_CREATOR);
-    $pdf->SetAuthor('SMiS, Arba Minch University');
+    $pdf->SetAuthor('SIS, Yekatit 12 HOspital Medical COllege');
     $pdf->SetTitle('Senate List PDF');
     $pdf->SetSubject('Senate List PDF');
-    $pdf->SetKeywords('Senate, List, PDF, SMiS, AMU');
+    $pdf->SetKeywords('Senate, List, PDF, SIS, Y12HMC');
 
 	$countryAmharic = Configure::read('ApplicationDeployedCountryAmharic');
 	$cityAmharic = Configure::read('ApplicationDeployedCityAmharic');
@@ -24,7 +24,7 @@
 	$pdf->setPageOrientation('L', true, 0);
 
 	$header = '<table style="width:100%;">
-    	<tr><td style="text-align:center; font-weight:bold">ARBA MINCH UNIVERSITY</td></tr>
+    	<tr><td style="text-align:center; font-weight:bold">Yekatit 12 Hospital MEdical College</td></tr>
 		<tr><td style="text-align:center; font-weight:bold">OFFICE OF THE REGISTRAR</td></tr>
 		<tr><td style="text-align:center; font-weight:bold;text-decoration:underline;">GRADUATING CLASS REPORT FORM</td></tr>
     </table>';
