@@ -171,10 +171,11 @@ class DatabaseBackupService
         file_put_contents($filePath, $contents);
         @chmod($filePath, 0600);
     }
+    /*
 
     protected function _exportDatabase($targetPath, $defaultsFile)
     {
-        /*
+
         $config = $this->_getDatasourceConfig();
         $this->_writeMysqlDefaultsFile($defaultsFile);
 
@@ -192,38 +193,77 @@ class DatabaseBackupService
         if ($returnCode !== 0 || !is_file($targetPath) || filesize($targetPath) === 0) {
             throw new RuntimeException('Database export failed. ' . implode("\n", $output));
         }
-        */
+    }
+    */
 
+    protected function _exportDatabase($targetPath, $defaultsFile)
+    {
         $config = $this->_getDatasourceConfig();
         $this->_writeMysqlDefaultsFile($defaultsFile);
 
+        $mysqldump = '/usr/bin/mysqldump';
+        if (!is_executable($mysqldump)) {
+            $mysqldump = 'mysqldump';
+        }
+
+        $tmpSqlPath = preg_replace('/\.gz$/', '', $targetPath);
+
+        if (!is_writable(dirname($targetPath))) {
+            throw new RuntimeException('Backup directory is not writable: ' . dirname($targetPath));
+        }
+
         $command = sprintf(
-            'mysqldump --defaults-extra-file=%s --single-transaction --routines --triggers %s | gzip > %s 2>&1',
+            '%s --defaults-extra-file=%s --single-transaction --routines --triggers --result-file=%s %s 2>&1',
+            escapeshellarg($mysqldump),
             escapeshellarg($defaultsFile),
-            escapeshellarg($config['database']),
-            escapeshellarg($targetPath)
+            escapeshellarg($tmpSqlPath),
+            escapeshellarg($config['database'])
         );
 
         $output = array();
         $returnCode = 0;
         exec($command, $output, $returnCode);
 
-        print_r(array(
-            'command' => $command,
-            'returnCode' => $returnCode,
-            'output' => $output,
-            'targetPath' => $targetPath,
-            'targetExists' => file_exists($targetPath),
-            'targetSize' => file_exists($targetPath) ? filesize($targetPath) : 0,
-            'defaultsFile' => $defaultsFile,
-            'defaultsExists' => file_exists($defaultsFile),
-            'defaultsReadable' => is_readable($defaultsFile),
-            'backupDirWritable' => is_writable(dirname($targetPath)),
-            'execDisabled' => in_array('exec', array_map('trim', explode(',', (string)ini_get('disable_functions')))),
-        ));
-        exit;
-    }
+        if ($returnCode !== 0 || !is_file($tmpSqlPath) || filesize($tmpSqlPath) === 0) {
+            throw new RuntimeException(
+                'Database export failed. Command: ' . $command . ' Output: ' . implode("\n", $output)
+            );
+        }
 
+        $in = fopen($tmpSqlPath, 'rb');
+        if ($in === false) {
+            @unlink($tmpSqlPath);
+            throw new RuntimeException('Could not open temporary SQL dump for reading.');
+        }
+
+        $out = gzopen($targetPath, 'wb9');
+        if ($out === false) {
+            fclose($in);
+            @unlink($tmpSqlPath);
+            throw new RuntimeException('Could not open gzip backup file for writing.');
+        }
+
+        while (!feof($in)) {
+            $chunk = fread($in, 1024 * 1024);
+            if ($chunk === false) {
+                gzclose($out);
+                fclose($in);
+                @unlink($tmpSqlPath);
+                @unlink($targetPath);
+                throw new RuntimeException('Failed while reading temporary SQL dump.');
+            }
+            gzwrite($out, $chunk);
+        }
+
+        gzclose($out);
+        fclose($in);
+        @unlink($tmpSqlPath);
+
+        if (!is_file($targetPath) || filesize($targetPath) === 0) {
+            throw new RuntimeException('Compressed database backup was not created.');
+        }
+    }
+    /*
     protected function _importDatabase($sourcePath, $defaultsFile)
     {
         $config = $this->_getDatasourceConfig();
@@ -239,6 +279,62 @@ class DatabaseBackupService
         $output = array();
         $returnCode = 0;
         exec($command, $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            throw new RuntimeException('Database restore failed. ' . implode("\n", $output));
+        }
+    }
+    */
+    protected function _importDatabase($sourcePath, $defaultsFile)
+    {
+        $config = $this->_getDatasourceConfig();
+        $this->_writeMysqlDefaultsFile($defaultsFile);
+
+        $mysql = '/usr/bin/mysql';
+        if (!is_executable($mysql)) {
+            $mysql = 'mysql';
+        }
+
+        $tmpSqlPath = preg_replace('/\.gz$/', '', $sourcePath) . '.restore.tmp.sql';
+
+        $in = gzopen($sourcePath, 'rb');
+        if ($in === false) {
+            throw new RuntimeException('Could not open compressed database backup for reading.');
+        }
+
+        $out = fopen($tmpSqlPath, 'wb');
+        if ($out === false) {
+            gzclose($in);
+            throw new RuntimeException('Could not create temporary SQL restore file.');
+        }
+
+        while (!gzeof($in)) {
+            $chunk = gzread($in, 1024 * 1024);
+            if ($chunk === false) {
+                gzclose($in);
+                fclose($out);
+                @unlink($tmpSqlPath);
+                throw new RuntimeException('Failed while decompressing database backup.');
+            }
+            fwrite($out, $chunk);
+        }
+
+        gzclose($in);
+        fclose($out);
+
+        $command = sprintf(
+            '%s --defaults-extra-file=%s %s < %s 2>&1',
+            escapeshellarg($mysql),
+            escapeshellarg($defaultsFile),
+            escapeshellarg($config['database']),
+            escapeshellarg($tmpSqlPath)
+        );
+
+        $output = array();
+        $returnCode = 0;
+        exec($command, $output, $returnCode);
+
+        @unlink($tmpSqlPath);
 
         if ($returnCode !== 0) {
             throw new RuntimeException('Database restore failed. ' . implode("\n", $output));
