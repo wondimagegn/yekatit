@@ -1,383 +1,4 @@
 <?= $this->Html->script('amharictyping'); ?>
-<script type="text/javascript">
-	var region = Array();
-	var months = Array();
-
-	var minGraduationYear = <?= (isset($student_admission_year) && !empty($student_admission_year) ? ($student_admission_year - 20) : date('Y') - 30); ?>;
-	var maxGraduationYear = <?= (isset($student_admission_year) && !empty($student_admission_year) ?  $student_admission_year : (date('Y'))); ?>;
-
-	//alert(minGraduation);
-	//alert(maxGraduation);
-
-	<?php
-	for ($i = 1; $i <= 12; $i++) { ?>
-		months[<?= $i - 1; ?>] = new Array();
-		months[<?= $i - 1; ?>][0] = "<?= date('m', mktime(0, 0, 0, $i, 1, 2011)); ?>";
-		months[<?= $i - 1; ?>][1] = "<?= date('F', mktime(0, 0, 0, $i, 1, 2011)); ?>";
-		<?php
-	}
-
-	if (!empty($regionsAll)) {
-		foreach ($regionsAll as $region_id => $region_name) { ?>
-			region["<?= $region_id; ?>"] = "<?= $region_name; ?>";
-			<?php
-		} 
-	} ?>
-
-	function addRow(tableID, model, no_of_fields, all_fields, other) {
-
-		var elementArray = all_fields.split(',');
-		var table = document.getElementById(tableID);
-		var rowCount = table.rows.length;
-		var row = table.insertRow(rowCount);
-		var cell0 = row.insertCell(0);
-		cell0.classList.add("center");
-
-		cell0.innerHTML = rowCount;
-
-		for (var i = 1; i <= no_of_fields; i++) {
-
-			var cell = row.insertCell(i);
-			var div = document.createElement("div");
-			div.style.marginTop = "10px";
-
-			if (elementArray[i - 1] == "region_id") {
-				var element = document.createElement("select");
-				var string = '<option value="">[ Select Region ]</option>';
-
-				for (var f = 1; f < region.length; f++) {
-					if (!(typeof region[f] === 'undefined')) {
-						string += '<option value="' + f + '">' + region[f] + '</option>';
-					}
-				}
-
-				element.style = "width:100%;";
-				element.required = "required";
-				element.innerHTML = string;
-
-			} else if (elementArray[i - 1] == "exam_year") {
-				var element = document.createElement("select");
-				var d = new Date();
-				var full_year = d.getFullYear();
-				var string = '<option value="">[ Select Year ]</option>';
-
-				var selectElement = document.getElementById('EslceResult0ExamYear');
-				//var selectElement = document.getElementById('EslceResult' + (rowCount - 1) + 'ExamYear');
-
-				// Get the selected index
-				var selectedIndex = selectElement.selectedIndex;
-
-				// Get the selected value
-				var selectedValue = selectElement.options[selectedIndex].value;
-				//alert(selectedValue);
-
-				for (var j = full_year - 1; j > other; j--) {
-					if (selectedValue != '' && selectedValue == j) {
-						string += '<option value="' + j + '" selected="selected">' + j + '</option>';
-					} else {
-						string += '<option value="' + j + '">' + j + '</option>';
-					}
-				}
-
-				element.innerHTML = string;
-				//element.style = "width:70%;";
-				element.style = "width:100%;";
-				element.required = "required";
-
-			} else if (elementArray[i - 1] == 'grade') {
-				var element = document.createElement("input");
-				element.type = "text";
-				element.style = "width:100%;";
-				element.placeholder = "A"; 
-				element.required = "required";
-
-				element.classList.add("otherRequiredText-input");
-
-				element.onblur = function() {
-					checkIsAlpha(this);
-				};
-
-			} else if (elementArray[i - 1] == 'mark') {
-				var element = document.createElement("input");
-				element.type = "number";
-				element.max = "100";
-				element.min = "0";
-				element.step = "any";
-				element.style = "width:100%;";
-				element.placeholder = "Mark " + rowCount;
-				element.required = "required";
-
-				element.classList.add("subjectMark-input");
-
-				element.onblur = function() {
-					checkValidMarkInput(this);
-				};
-
-			} else if (elementArray[i - 1] == 'national_exam_taken') {
-				var element = document.createElement("input");
-				element.type = "checkbox";
-				element.style = "width:100%;";
-			} else if (elementArray[i - 1] == 'cgpa_at_graduation') {
-				var element = document.createElement("input");
-				element.type = "text";
-				/* element.max = "4.0";
-				element.min = "2.0";
-				element.step = "any"; */
-				element.classList.add("cgpa-input");
-				element.required = "required";
-
-				element.onblur = function() {
-					checkCGPA(this);
-				};
-
-			} else if (elementArray[i - 1] == 'date_graduated') {
-				//var element = document.createElement("input");
-				//element.type = "date";
-				//element.format = "dd/mm/yyyy";
-				// element.minYear = "<?php //echo date('Y') - 30; ?>";
-				// element.maxYear = "<?php //echo date('Y') - 1; ?>";
-				//element.style.width = '30%';
-				//element.style = "width:90%;";
-				//element.required = "required";
-
-				var divDateGraduated = document.createElement("div");
-				var textNode = document.createTextNode("-");
-				var textNode1 = document.createTextNode("-");
-
-				var currentYear = new Date().getFullYear();
-				currentYear = currentYear - 1;
-
-				var currentMonth = ("0" + (new Date().getMonth() + 1)).slice(-2); // Months are 0-based
-				var currentDay = ("0" + new Date().getDate()).slice(-2);
-
-				var monthSelect = document.createElement("select");
-				monthSelect.name = "data[HigherEducationBackground][" + rowCount + "][date_graduated][month]";
-				monthSelect.style = "width:30%;";
-				monthSelect.required = "required";
-
-				var monthOptions = [
-					{ value: "01", text: "January" },
-					{ value: "02", text: "February" },
-					{ value: "03", text: "March" },
-					{ value: "04", text: "April" },
-					{ value: "05", text: "May" },
-					{ value: "06", text: "June" },
-					{ value: "07", text: "July" },
-					{ value: "08", text: "August" },
-					{ value: "09", text: "September" },
-					{ value: "10", text: "October" },
-					{ value: "11", text: "November" },
-					{ value: "12", text: "December" }
-				];
-
-				monthOptions.forEach(function(option) {
-					var opt = document.createElement("option");
-					opt.value = option.value;
-					opt.textContent = option.text;
-					if (option.value === currentMonth) {
-						opt.selected = true;
-					}
-					monthSelect.appendChild(opt);
-				});
-
-				var daySelect = document.createElement("select");
-				daySelect.name = "data[HigherEducationBackground][" + rowCount + "][date_graduated][day]";
-				daySelect.style = "width:30%;";
-				daySelect.required = "required";
-
-				for (var day = 1; day <= 31; day++) {
-					var opt = document.createElement("option");
-					var dayValue = ("0" + day).slice(-2);
-					opt.value = dayValue;
-					opt.textContent = day;
-					if (dayValue === currentDay) {
-						opt.selected = true;
-					}
-					daySelect.appendChild(opt);
-				}
-
-				var yearSelect = document.createElement("select");
-				yearSelect.name = "data[HigherEducationBackground][" + rowCount + "][date_graduated][year]";
-				yearSelect.style = "width:30%;";
-				yearSelect.required = "required";
-
-				if (maxGraduationYear != '' && minGraduationYear != '') {
-					for (var year = maxGraduationYear; year >= minGraduationYear; year--) {
-						var opt = document.createElement("option");
-						opt.value = year;
-						opt.textContent = year;
-						if (year === currentYear) {
-							opt.selected = true;
-						}
-						yearSelect.appendChild(opt);
-					}
-				} else {
-					for (var year = currentYear; year >= currentYear - 30; year--) {
-						var opt = document.createElement("option");
-						opt.value = year;
-						opt.textContent = year;
-						if (year === currentYear) {
-							opt.selected = true;
-						}
-						yearSelect.appendChild(opt);
-					}
-				}
-				
-				divDateGraduated.appendChild(monthSelect);
-				divDateGraduated.appendChild(textNode);
-				divDateGraduated.appendChild(daySelect);
-				divDateGraduated.appendChild(textNode1);
-				divDateGraduated.appendChild(yearSelect);
-				
-			} else if (elementArray[i - 1] == 'subject') {
-				var element = document.createElement("input");
-				element.type = "text";
-				element.style = "width:100%;";
-				element.placeholder = "Subject " + rowCount;
-				//element.pattern = "^[A-Za-z]+$"
-
-				element.required = "required";
-
-				element.classList.add("subject-input");
-
-				element.onblur = function() {
-					checkIsAlpha(this);
-				};
-
-			} else {
-				var element = document.createElement("input");
-				element.type = "text";
-				//element.size = "13";
-				element.style = "width:100%;";
-				element.required = "required";
-
-				element.classList.add("otherRequiredText-input");
-
-				// override the previous div and styling
-				//var div = document.createElement("div");
-
-				element.onblur = function() {
-					checkIsAlpha(this);
-				};
-			}
-
-			//cell.appendChild(element);
-
-			if (elementArray[i - 1] != 'date_graduated') {
-				element.name = "data[" + model + "][" + rowCount + "][" + elementArray[i - 1] + "]";
-				div.appendChild(element);
-			} else if (elementArray[i - 1] == 'date_graduated') {
-				div.appendChild(divDateGraduated);
-			}
-
-			cell.appendChild(div);
-
-			cell.classList.add("center");
-		}
-
-		updateSequence(tableID);
-
-	}
-
-	function deleteRow(tableID) {
-		try {
-			var table = document.getElementById(tableID);
-			var rowCount = table.rows.length;
-			if (rowCount > 2) {
-				table.deleteRow(rowCount - 1);
-				updateSequence(tableID);
-			} else {
-				alert('No more rows to delete');
-			}
-		} catch (e) {
-			alert(e);
-		}
-	}
-
-	function updateSequence(tableID) {
-		var s_count = 1;
-		for (i = 1; i < document.getElementById(tableID).rows.length; i++) {
-			document.getElementById(tableID).rows[i].cells[0].childNodes[0].data = s_count++;
-		}
-	}
-
-	function updateRegionCity(id) {
-		//serialize form data
-		var formData = $("#country_id_" + id).val();
-
-		$("#region_id_" + id).empty();
-		$("#region_id_" + id).attr('disabled', true);
-		$("#city_id_" + id).attr('disabled', true);
-		
-		//get form action
-		var formUrl = '/students/get_regions/' + formData;
-
-		$.ajax({
-			type: 'get',
-			url: formUrl,
-			data: formData,
-			success: function(data, textStatus, xhr) {
-				$("#region_id_" + id).attr('disabled', false);
-				$("#region_id_" + id).empty();
-				$("#region_id_" + id).append(data);
-
-				//Items list
-				var subCat = $("#region_id_" + id).val();
-				$("#city_id_" + id).empty();
-
-				//get form action
-				var formUrl = '/students/get_cities/' + subCat;
-				$.ajax({
-					type: 'get',
-					url: formUrl,
-					data: subCat,
-					success: function(data, textStatus, xhr) {
-						$("#city_id_" + id).attr('disabled', false);
-						$("#city_id_" + id).empty();
-						$("#city_id_" + id).append(data);
-					},
-					error: function(xhr, textStatus, error) {
-						alert(textStatus);
-					}
-				});
-				//End of items list
-			},
-			error: function(xhr, textStatus, error) {
-				alert(textStatus);
-			}
-		});
-
-		return false;
-	}
-
-	//Update city given region
-	function updateCity(id) {
-		//serialize form data
-		var subCat = $("#region_id_" + id).val();
-		$("#city_id_" + id).attr('disabled', true);
-		$("#city_id_" + id).empty();
-
-		//get form action
-		var formUrl = '/students/get_cities/' + subCat;
-
-		$.ajax({
-			type: 'get',
-			url: formUrl,
-			data: subCat,
-			success: function(data, textStatus, xhr) {
-				$("#city_id_" + id).attr('disabled', false);
-				$("#city_id_" + id).empty();
-				$("#city_id_" + id).append(data);
-			},
-			error: function(xhr, textStatus, error) {
-				alert(textStatus);
-			}
-		});
-
-		return false;
-	}
-</script>
-
 <?php
 if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 	<div class="box">
@@ -390,37 +11,24 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 			<div class="row">
 				<div class="large-12 columns">
 					<div style="margin-top: -40px;"><hr></div>
-
-					<?php
-					/* if (isset($require_update) && $require_update) { ?>
-						<div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>The system detected some invalid fields, to save the changes, you're required to review the listed fields and click "Update Student Details" button to save auto corrected changes.</div>
-						<?php
-						if (isset($require_update_fields) && count($require_update_fields) > 0) { ?>
-							<div class="errorSummary">
-								<ol>
-									<?php
-									foreach ($require_update_fields as $key => $value) { ?>
-										<li class="rejected">Field: <?= ($value['field']); ?>,  Exitsting Value: <?= (!is_array($value['previous_value']) ? $value['previous_value'] : implode($value['previous_value'])); ?>, Auto Corrected Value: <?= ($value['auto_corrected_value']); ?> , Reason: <?= ($value['reason']); ?></li>
-										<?php
-									} ?>
-								</ol>
-							</div>
-							<?php
-						} ?>
-						<hr>
-						<?php
-					}  */?>
 					
 					<?php $this->assign('title_details', (!empty($this->request->params['controller']) ? ' ' . Inflector::humanize(Inflector::underscore($this->request->params['controller'])) . (!empty($this->request->params['action']) && $this->request->params['action'] != 'index' ? ' | ' . ucwords(str_replace('_', ' ', $this->request->params['action'])) : '') : '') . (isset($studentDetail['Student']['id']) ? ' - '. $studentDetail['Student']['full_name'] . ' ('. $studentDetail['Student']['studentnumber'] .')' : '')); ?>
-					
-					<?php
-					if (!empty($studentDetail['Attachment'][0]['basename']) || (empty($studentDetail['Attachment'][0]['basename']) && ALLOW_STUDENTS_TO_UPLOAD_PROFILE_PICTURE == 0)) { ?>
-						<?= $this->Form->create('Student', array('data-abide', 'novalidate' => true)); ?>
-						<?php
-					} else { ?>
-						<?= $this->Form->create('Student', array('data-abide', 'type' => 'file', 'novalidate' => true)); ?>
-						<?php
-					} ?>
+
+                    <?php
+                    if (!empty($studentDetail['Attachment'][0]['basename']) || (empty($studentDetail['Attachment'][0]['basename']) && ALLOW_STUDENTS_TO_UPLOAD_PROFILE_PICTURE == 0)) { ?>
+                        <?= $this->Form->create('Student', array(
+                                'id' => 'StudentProfileForm',
+                                'novalidate' => true
+                        )); ?>
+                        <?php
+                    } else { ?>
+                        <?= $this->Form->create('Student', array(
+                                'id' => 'StudentProfileForm',
+                                'type' => 'file',
+                                'novalidate' => true
+                        )); ?>
+                        <?php
+                    } ?>
 
 					<ul class="tabs" data-tab>
 						<li class="tab-title active"><a href="#basic_data">Basic Student Information</a></li>
@@ -544,7 +152,7 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 													</div>
 
 													<?php
-													if (($ethiopianStudent || $tinMandatory) /* || !empty($studentDetail['Student']['fayda_identification_number']) || !empty($studentDetail['Student']['fayda_alias_number']) */) { ?>
+													if (($ethiopianStudent || $tinMandatory)) { ?>
 														<div class="large-12 columns">
 															<hr>
 															<br>
@@ -552,23 +160,12 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 															if (empty($studentDetail['Student']['fayda_alias_number'])) {
 															 	echo $this->Form->input('fayda_alias_number', array('id' => 'faydaFan', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda FAN Number (16 digit) : &nbsp;<span class="rejected">* (Fill out this very carefully!)</span>', 'style' => 'width:100%;', 'placeholder' => 'Check the FRONT SIDE of your Fayda ID for FAN.', 'onBlur' => 'checkFaydaFan(this)'));
 															} else {
-																echo $this->Form->input('fayda_alias_number', array('id' => 'faydaFan', 'readOnly', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda FAN Number (16 digit) : &nbsp;<span class="rejected">*</span>', 'style' => 'width:100%;', 'placeholder' => 'Check the FRONT SIDE of your Fayda ID for FAN.'/* , 'onBlur' => 'checkFaydaFan(this)' */));
+																echo $this->Form->input('fayda_alias_number', array('id' => 'faydaFan', 'readOnly', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda FAN Number (16 digit) : &nbsp;<span class="rejected">*</span>', 'style' => 'width:100%;', 'placeholder' => 'Check the FRONT SIDE of your Fayda ID for FAN.'));
 																echo $this->Form->hidden('fayda_alias_number', array('value' => (!empty($studentDetail['Student']['fayda_alias_number']) ? $studentDetail['Student']['fayda_alias_number'] : (!empty($this->data['Student']['fayda_alias_number'] ? $this->data['Student']['fayda_alias_number'] : '')))));
 															} ?>
 															<br>
 														</div>
-														<div class="large-12 columns">
-															<?php //echo $this->Form->input('fayda_identification_number', array('id' => 'faydaFin', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'National ID (FAIDA FIN): &nbsp;<span class="rejected">* (Fill out this very carefully!)</span>', 'style' => 'width:100%;', 'placeholder' => 'Leave this empty if you didn\'t get a National ID!', 'onBlur' => 'checkFaydaFin(this)')); ?>
-															<?php
-															if (empty($studentDetail['Student']['fayda_identification_number'])) {
-															 	echo $this->Form->input('fayda_identification_number', array('id' => 'faydaFin', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda FIN Number (12 digit) : &nbsp;<span class="rejected">* (Fill out this very carefully!)</span>', 'style' => 'width:100%;', 'placeholder' => 'Check the BACK SIDE of your Fayda ID for FIN.', 'onBlur' => 'checkFaydaFin(this)'));
-															} else {
-																echo $this->Form->input('fayda_identification_number', array('id' => 'faydaFin', 'readOnly', 'required' => (FORCE_ALL_STUDENTS_TO_FILL_FAYDA_NUMBERS == 1 ? true : false), 'type' => 'text', 'label' => 'Fayda FIN Number (12 digit) : &nbsp;<span class="rejected">*</span>', 'style' => 'width:100%;', 'placeholder' => 'Check the BACK SIDE of your Fayda ID for FIN.'/* , 'onBlur' => 'checkFaydaFin(this)' */));
-																echo $this->Form->hidden('fayda_identification_number', array('value' => (!empty($studentDetail['Student']['fayda_identification_number']) ? $studentDetail['Student']['fayda_identification_number'] : (!empty($this->data['Student']['fayda_identification_number'] ? $this->data['Student']['fayda_identification_number'] : '')))));
-															} ?>
-															<br>
-															<hr>
-														</div>
+
 
 														<div class="large-12 columns">
 
@@ -1153,7 +750,6 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 																<td class="center"><?= ++$count; ?></td>
 																<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.' . $bk . '.subject', array('required', 'class' => "subject-input", 'name' => "data[EheeceResult][$bk][subject]", 'value' => (isset($this->data['EheeceResult'][$bk]['subject']) ? $this->data['EheeceResult'][$bk]['subject'] : ''), 'style' => 'width:100%;', /* 'pattern' => 'alpha', */ 'onBlur' => 'checkIsAlpha(this)', 'placeholder' => 'Subject 1', 'label' => false)); ?></div></td>
 																<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.' . $bk . '.mark', array('class' => "subjectMark-input", 'required', 'onBlur' => 'checkValidMarkInput(this)', 'name' => "data[EheeceResult][$bk][mark]", 'required', 'value' => (isset($this->data['EheeceResult'][$bk]['mark']) ? $this->data['EheeceResult'][$bk]['mark'] : ''),  'style' => 'width:100%;', 'placeholder' => 'Mark 1', 'label' => false, 'min' => '0', 'max' => '100', 'step' => 'any')); ?></div></td>
-																<!-- <td class="center"><?php //echo $this->Form->input('EheeceResult.' . $bk . '.exam_year', array('name' => "data[EheeceResult][$bk][exam_year]", 'value' => (!empty(explode('-', $this->data['EheeceResult'][$bk]['exam_year'])[0]) ? (explode('-', $this->data['EheeceResult'][$bk]['exam_year'])[0]) : ''),  'label' => false, 'style' => 'width:100%;', 'type' => 'select', 'options' => $yearoptions, 'default' => !empty((explode('-', $this->data['EheeceResult'][$bk]['exam_year'])[0])) ? (explode('-', $this->data['EheeceResult'][$bk]['exam_year'])[0]) : '')); ?></td> -->
 															</tr>
 															<?php
 														}
@@ -1162,7 +758,6 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 															<td class="center">1</td>
 															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.0.subject', array('required', 'class' => "subject-input", 'name' => "data[EheeceResult][0][subject]", 'value' => (isset($this->data['EheeceResult'][0]['subject']) ? $this->data['EheeceResult'][0]['subject'] : ''), /* 'pattern' => 'alpha',  */ 'onBlur' => 'checkIsAlpha(this)', 'placeholder' => 'Subject 1',  'style' => 'width:100%;', 'label' => false)); ?></div></td>
 															<td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('EheeceResult.0.mark', array('class' => "subjectMark-input", 'required', 'onBlur' => 'checkValidMarkInput(this)', 'name' => "data[EheeceResult][0][mark]", 'value' => (isset($this->data['EheeceResult'][0]['mark']) ? $this->data['EheeceResult'][0]['mark'] : ''),  'label' => false, 'style' => 'width:100%;', 'placeholder' => 'Mark 1', 'min' => '0', 'max' => '100', 'step' => 'any')); ?></div></td>
-															<!-- <td class="center"><?php //echo $this->Form->input('EheeceResult.0.exam_year', array('name' => "data[EheeceResult][0][exam_year]",  'label' => false, 'type' => 'select', 'options' => $yearoptions, 'empty' => '[ Select Year ]', 'style' => 'width:100%;')); ?></td> -->
 														</tr>
 														<tr>
 															<td class="center">2</td>
@@ -1199,7 +794,8 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 					<h6 class="fs13 info-box" style="font-weight: normal;">By submitting this form, you certify that all the information provided in this form is accurate and truthful to the best of your knowledge or supporting documents. Any false, misleading, or inaccurate information may be subject to further actions as permitted by the university's legislation or applicable law.</h6>
 					<hr>
 					
-					<?= $this->Form->end(array('label' => 'Update Student Detail', /* 'disabled', */ 'name' => 'updateStudentDetail', 'id' => 'updateStudentDetail', 'class' => 'tiny radius button bg-blue')); ?>
+					<?= $this->Form->end(array('label' => 'Update Student Detail',
+                            'name' => 'updateStudentDetail', 'id' => 'updateStudentDetail', 'class' => 'tiny radius button bg-blue')); ?>
 
 				</div>
 			</div>
@@ -1209,639 +805,320 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 } ?>
 
 <script type="text/javascript">
-
-	function toggleSubmitButtonActive() {
-		if ($("#email").val != 0 && $("#email").val != '') {
-			$("#SubmitID").attr('disabled', false);
-		}
-	}
-
-	function isValidPhonenumber(value) {
-    	return (/^\d{7,}$/).test(value.replace(/[\s()+\-\.]|ext/gi, ''));
-	}
-
-	function isValidEmail(value) {
-    	return (/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test(value.trim());
-	}
-
-	function isAlpha(value) {
-    	return (/^[a-zA-Z]+$/).test(value.trim());
-	}
-
-	var faidaMandatory = <?= json_encode($faidaMandatory); ?>;
-
-	function checkFaydaFin(obj) {
-
-		let message = document.getElementById("customMessageFaidaFin");
-
-		obj.value = obj.value.replace(/\s+/g, '').replace(/[^0-9]/g, '');
-
-		if ((obj.value !== '' && !isNaN(obj.value) && obj.value.length !== 12) || (faidaMandatory && obj.value == '')) {
-			obj.style.border = '2px solid red';
-			
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessageFaidaFin";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please check the backside of your Fayda ID for a valid FIN, which 12 digits long.';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-			
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 6000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-
-			if (obj.value.length === 12) {
-				// Format the input for redisplay as 1234-5674-8901
-				obj.value = obj.value.replace(/(\d{4})(\d{4})(\d{4})/, '$1-$2-$3');
-			}
-			
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	function checkFaydaFan(obj) {
-
-		let message = document.getElementById("customMessageFaidaFan");
-
-		obj.value = obj.value.replace(/\s+/g, '').replace(/[^0-9]/g, '');
-
-		if ((obj.value !== '' && !isNaN(obj.value) && obj.value.length !== 16) || (faidaMandatory && obj.value == '')) {
-			obj.style.border = '2px solid red';
-			
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessageFaidaFan";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please check the front side of your Fayda ID for a valid FAN, which 16 digits long.';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-			
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 6000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-
-			if (obj.value.length === 16) {
-				// Format the input for redisplay as 1234-5674-8901-37754
-				obj.value = obj.value.replace(/(\d{4})(\d{4})(\d{4})(\d{4})/, '$1-$2-$3-$4');
-			}
-			
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	var tinMandatory = <?= json_encode($tinMandatory); ?>;
-
-	function checkTinNumber(obj) {
-
-		let message = document.getElementById("customMessageTinNumber");
-
-		// Trim whitespace and tabs, then remove any non-digit characters
-		obj.value = obj.value.replace(/[\s\t]+/g, '').replace(/[^0-9]/g, '');
-
-		// Numeric and length validation
-		if ((obj.value !== '' && (!/^\d+$/.test(obj.value) || obj.value.length !== 10)) || (tinMandatory && obj.value === '')) {
-			
-			obj.style.border = '2px solid red';
-
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessageTinNumber";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please check your Tax Identification Number(TIN). It must be 10 digits long without any separators.';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 6000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-
-			// Optional: redisplay formatted value if exactly 10 digits
-			if (obj.value.length === 10) {
-				//obj.value = obj.value.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-			}
-
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	function checkCGPA(obj) {
-
-		let message = document.getElementById("customMessageCGPA");
-
-		if (isNaN(obj.value) || obj.value == '' || obj.value < 2.00 || obj.value > 4.00) {
-			obj.style.border = '2px solid red';
-			
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessageCGPA";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please enter a valid CGPA between 2.00 and 4.00';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-			
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 3000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-			
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	function checkValidMarkInput(obj) {
-
-		let message = document.getElementById("customMessageMark");
-
-		if (isNaN(obj.value) || obj.value == '' || obj.value < 1 || obj.value > 100) {
-			obj.style.border = '2px solid red';
-			
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessageMark";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please enter a valid Mark between 1 and 100';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-			
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 3000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-			
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	function capitalizeFirstLetterOfEachWord(str) {
-		return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-	}
-
-	function capitalizeWordsExcludePrepositions(str) {
-
-		const prepositions = [
-			'and', 'or', 'of', 'in', 'on', 'at', 'with', 'from', 'by', 'about', 'as', 'into', 'like', 'through', 'after', 'over', 'between', 'out', 'against', 'during', 'without', 'before', 'under', 'around', 'among',
-			'an', 'a', 'the', 'this', 'that', 'these', 'those', 'but', 'nor', 'for', 'so', 'yet', 'is', 'was', 'be', 'been', 'being', 'am', 'are', 'were',
-		];
-
-		// Replace multiple spaces with a single space
-		str = str.replace(/\s+/g, ' ');
-
-		return str.split(' ').map(word => {
-			if (prepositions.includes(word)) {
-				return word.toLowerCase();
-			} else {
-				// Check if the word is a Roman numeral
-				if (/^[IVXLCDM]+$/.test(word)) {
-					return word;
-				}
-				return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-			}
-		}).join(' ');
-
-	}
-
-	function checkIsAlpha(obj) {
-		//const pattern = /^[a-zA-Z]+$/; //doesn't support space, only single word is allowed
-		const pattern = /^[a-zA-Z\s]+$/; // support space, string allowed
-		let message = document.getElementById("customMessage");
-
-		// Trim preceding and trailing spaces
-		//obj.value = obj.value.trim();
-
-		// Trim preceding and trailing spaces and capitalize each word if a string.
-		//obj.value = capitalizeFirstLetterOfEachWord(obj.value.trim());
-
-		// Trim preceding and trailing spaces and capitalize each word if a string and exclude prepositions
-		obj.value = capitalizeWordsExcludePrepositions(obj.value.trim());
-
-		if (!pattern.test(obj.value)) {
-			obj.style.border = '2px solid red';
-			
-			if (!message) {
-				message = document.createElement("div");
-				message.id = "customMessage";
-				document.body.appendChild(message);
-			}
-
-			message.innerText = 'Please use only alphabets, avoid adding special charachters like / ( ) & etc';
-			message.style.position = 'absolute';
-			message.style.backgroundColor = '#f8d7da';
-			message.style.color = '#721c24';
-			message.style.border = '1px solid #f5c6cb';
-			message.style.padding = '5px';
-			message.style.zIndex = '1000';
-
-			const rect = obj.getBoundingClientRect();
-			message.style.top = `${rect.top + window.scrollY + obj.offsetHeight + 5}px`;
-			message.style.left = `${rect.left + window.scrollX}px`;
-			
-			obj.focus();
-
-			// Remove the message after a few seconds
-			setTimeout(() => {
-				message.remove();
-			}, 3000);
-
-			return false;
-		} else {
-			obj.style.border = '2px solid #ccc';
-			
-			if (message) {
-				message.remove();
-			}
-
-			return true;
-		}
-	}
-
-	var form_being_submitted = false;
-	var ethiopianStudent = <?= json_encode($ethiopianStudent); ?>;
-	var ugProgram = <?= json_encode($ugProgram); ?>;
-
-	//alert(ethiopianStudent);
-	//alert(ugProgram);
-	//alert(tinMandatory);
-
-	$('#updateStudentDetail').click(function(event) {
-
-		var isValid = true;
-		var faidaFinValue = '';
-		var faidaFanValue = '';
-		var tinNumberValue = '';
-
-		if (tinMandatory && $('#tinNo').val() == '') {
-			alert('Please check your Tax Identification Number(TIN). It must be 10 digits long without any separators.');
-			$('#tinNo').focus();
-			return false;
-		}
-
-		if ($('#tinNo').val() != '') {
-
-			tinNumberValue = $('#tinNo').val();
-
-			if ($('#tinNo').attr('readonly') === 'readonly') {
-				tinNumberValue = '';
-			}
-
-			var tinLength = $('#tinNo').val().replace(/[\s\t]+/g, '').replace(/[^0-9]/g, '');
-			//alert(tinLength.length);
-			if (tinLength.length !== 10) {
-				alert('Please check your Tax Identification Number(TIN). It must be 10 digits long without any separators.');
-				$('#tinNo').focus();
-				return false;
-			}
-		}
-
-		if (ethiopianStudent) {
-			if ($('#AmharicText').val() == '') {
-				alert('Please provide amharic first name.');
-				$('#AmharicText').focus();
-				return false;
-			}
-
-			if ($('#AmharicTextMiddleName').val() == '') {
-				alert('Please provide amharic middle name.');
-				$('#AmharicTextMiddleName').focus();
-				return false;
-			}
-
-			if ($('#AmharicTextLastName').val() == '') {
-				alert('Please provide amharic last name.');
-				$('#AmharicTextLastName').focus();
-				return false;
-			}
-
-			if (faidaMandatory && $('#faidaFan').val() == '') {
-				alert('Please enter your 16-digit Fayda Alias Number (FAN), located on the front of your Fayda ID.');
-				$('#faidaFan').focus();
-				return false;
-			}
-
-			if (faidaMandatory && $('#faidaFin').val() == '') {
-				alert('Please enter your 12-digit Fayda Identification Number (FIN), located on the back of your Fayda ID.');
-				$('#faidaFin').focus();
-				return false;
-			}
-
-			if ($('#faidaFan').val() != '') {
-
-				faidaFanValue = $('#faidaFan').val();
-
-				if ($('#faidaFan').attr('readonly') === 'readonly') {
-					faidaFanValue = '';
-				}
-
-				var fanLength = $('#faidaFan').val().replace(/\s+/g, '').replace(/[^0-9]/g, '');
-				//alert(finLength.length);
-				if (fanLength.length !== 16) {
-					alert('Please check the FRONT SIDE of your Fayda ID for a valid FAN, which 16 digits long.');
-					$('#faidaFan').focus();
-					return false;
-				}
-			}
-
-			if ($('#faidaFin').val() != '') {
-
-				faidaFinValue = $('#faidaFin').val();
-
-				if ($('#faidaFin').attr('readonly') === 'readonly') {
-					faidaFinValue = '';
-				}
-
-				var finLength = $('#faidaFin').val().replace(/\s+/g, '').replace(/[^0-9]/g, '');
-				//alert(finLength.length);
-				if (finLength.length !== 12) {
-					alert('Please check the BACK SIDE of your Fayda ID for a valid FIN, which 12 digits long.');
-					$('#faidaFin').focus();
-					return false;
-				}
-			}
-		}
-		
-		if ($('#email').val() == '') {
-			alert('Please provide your primary personal email address.');
-			$('#email').focus();
-			return false;
-		} else if ($('#email').val() != '' && !isValidEmail($('#email').val())) {
-			alert('Please provide valid email address. Invalif email address.');
-			$('#email').focus();
-			return false;
-		}
-
-		if ($('#etPhone').val() == '') {
-			alert('Please provide mobile phone number without a leading 0.');
-			$('#etPhone').focus();
-			return false;
-		} else if ($('#etPhone').val() != '' && $('#etPhone').val().length != 13) {
-			alert('Mobile phone number format is invalid. Please check mobile number length is 13 including +251.');
-			$('#etPhone').focus();
-			return false;
-		}
-
-		if ($('#zone_id_2').val() == '') {
-			alert('Please select Zone from Address & Primary Contact tab.');
-			$('#zone_id_2').focus();
-			return false;
-		}
-
-		if ($('#woreda_id_2').val() == '') {
-			alert('Please select woreda from Address & Primary Contact tab.');
-			$('#woreda_id_2').focus();
-			return false;
-		}
-
-		document.querySelectorAll('#StudentProfileForm input[required]').forEach(function(input) {
-			if (!input.value && input.getAttribute("type") === "select") {
-				isValid = false;
-				input.focus();
-				return false;
-			}
-		});
-
-		document.querySelectorAll('#StudentProfileForm input[required]').forEach(function(input) {
-			if (!input.value) {
-				isValid = false;
-				//input.style.border = '2px solid red';
-				if (input.getAttribute("type") === "select") {
-					input.focus();
-					return false;
-				} else if (input.getAttribute("type") !== "email" && input.getAttribute("type") !== "tel") {
-					input.style.border = '2px solid red';
-					if (!input.hasAttribute('highlighted')) {
-						input.setAttribute('highlighted', 'true');
-						input.focus();
-						return false; // Stop further iterations to focus on the first empty input
-					}
-				}
-			} else {
-				input.style.border = ''; // Remove red border if the input is filled
-				input.removeAttribute('highlighted');
-			}
-		});
-
-		if ($('#region_id_1').val() == '') {
-			alert('Please select your primary emergency contatct person Region from Address & Primary Contact tab.');
-			$('#region_id_1').focus();
-			return false;
-		}
-
-		if ($('#zone_id_1').val() == '') {
-			alert('Please select your primary emergency contatct person Zone from Address & Primary Contact tab.');
-			$('#zone_id_1').focus();
-			return false;
-		}
-
-		if ($('#woreda_id_1').val() == '') {
-			alert('Please select your primary emergency contatct person Woreda from Address & Primary Contact tab.');
-			$('#woreda_id_1').focus();
-			return false;
-		}
-		
-		if ($('#phonemobile').val() == '') {
-			alert('Please provide your primary emergency contact mobile number in Address & Primary Contact tab.');
-			$('#phonemobile').focus();
-			return false;
-		} else if ($('#phonemobile').val() != '' && $('#phonemobile').val().length != 13) {
-			alert('Please provide your a valid primary emergency contact mobile number in Address & Primary Contact tab.');
-			$('#phonemobile').focus();
-			return false;
-		}
-
-		if (!isValidPhonenumber($('#phonemobile').val())) {
-			alert('Please provide your a valid primary emergency contact mobile number in Address & Primary Contact tab.');
-			$('#phonemobile').focus();
-			return false;
-		}
-
-		document.querySelectorAll('.otherRequiredText-input').forEach(function(inputField) {
-            if (!checkIsAlpha(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
+    function toggleSubmitButtonActive() {
+        if ($('#email').length && $.trim($('#email').val()) !== '') {
+            $('#updateStudentDetail').prop('disabled', false);
+        }
+    }
+
+    function isValidPhonenumber(value) {
+        return (/^\d{7,}$/).test(String(value || '').replace(/[\s()+\-\.]|ext/gi, ''));
+    }
+
+    function isValidEmail(value) {
+        return (/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test($.trim(String(value || '')));
+    }
+
+    function focusTabForElement($element) {
+        var $content = $element.closest('.content');
+        if (!$content.length) {
+            return;
+        }
+
+        var contentId = $content.attr('id');
+        if (!contentId) {
+            return;
+        }
+
+        $('.tabs .tab-title').removeClass('active');
+        $('.tabs-content .content').removeClass('active');
+
+        $('.tabs .tab-title a[href="#' + contentId + '"]').closest('.tab-title').addClass('active');
+        $('#' + contentId).addClass('active');
+    }
+
+    function failField($field, message) {
+        if ($field && $field.length) {
+            focusTabForElement($field);
+            $field.focus();
+        }
+
+        alert(message);
+        return false;
+    }
+
+    function validateRequiredField(selector, message) {
+        var $field = $(selector);
+
+        if (!$field.length) {
+            return true;
+        }
+
+        if ($.trim($field.val()) === '') {
+            return failField($field, message);
+        }
+
+        return true;
+    }
+
+    function validatePhoneLength(selector, exactLength, emptyMessage, invalidMessage) {
+        var $field = $(selector);
+
+        if (!$field.length) {
+            return true;
+        }
+
+        var value = $.trim($field.val());
+
+        if (value === '') {
+            return failField($field, emptyMessage);
+        }
+
+        if (value.length !== exactLength || !isValidPhonenumber(value)) {
+            return failField($field, invalidMessage);
+        }
+
+        return true;
+    }
+
+    var form_being_submitted = false;
+    var ethiopianStudent = <?= json_encode($ethiopianStudent); ?>;
+    var ugProgram = <?= json_encode($ugProgram); ?>;
+    var faidaMandatory = <?= json_encode($faidaMandatory); ?>;
+    var tinMandatory = <?= json_encode($tinMandatory); ?>;
+
+    $(document).ready(function () {
+        $('#StudentProfileForm').on('submit', function (event) {
+            if (form_being_submitted) {
+                event.preventDefault();
+                alert('Updating Student Profile, please wait a moment or refresh your browser.');
+                $('#updateStudentDetail').prop('disabled', true);
+                return false;
             }
-        });
 
-		if (!ugProgram) {
-			document.querySelectorAll('.cgpa-input').forEach(function(inputField) {
-				if (!checkCGPA(inputField)) {
-					inputField.focus();
-					isValid = false;
-					return false;
-				}
-			});
-		}
+            var isValid = true;
+            var faidaFanValue = '';
 
-		document.querySelectorAll('.subject-input').forEach(function(inputField) {
-            if (!checkIsAlpha(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
+
+            if (ethiopianStudent) {
+                if (!validateRequiredField('#AmharicText', 'Please provide amharic first name.')) {
+                    event.preventDefault();
+                    return false;
+                }
+
+                if (!validateRequiredField('#AmharicTextMiddleName', 'Please provide amharic middle name.')) {
+                    event.preventDefault();
+                    return false;
+                }
+
+                if (!validateRequiredField('#AmharicTextLastName', 'Please provide amharic last name.')) {
+                    event.preventDefault();
+                    return false;
+                }
+
+                if (faidaMandatory && !validateRequiredField('#faidaFan', 'Please enter your 16-digit Fayda Alias Number (FAN), located on the front of your Fayda ID.')) {
+                    event.preventDefault();
+                    return false;
+                }
+
+
+                if ($('#faidaFan').length && $.trim($('#faidaFan').val()) !== '') {
+                    faidaFanValue = $('#faidaFan').val();
+
+                    if ($('#faidaFan').prop('readonly')) {
+                        faidaFanValue = '';
+                    }
+
+                    var fanLength = $('#faidaFan').val().replace(/\s+/g, '').replace(/[^0-9]/g, '');
+                    if (fanLength.length !== 16) {
+                        event.preventDefault();
+                        return failField($('#faidaFan'), 'Please check the FRONT SIDE of your Fayda ID for a valid FAN, which is 16 digits long.');
+                    }
+                }
+
             }
-        });
 
-		document.querySelectorAll('.subjectMark-input').forEach(function(inputField) {
-            if (!checkValidMarkInput(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
+            if (!validateRequiredField('#email', 'Please provide your primary personal email address.')) {
+                event.preventDefault();
+                return false;
             }
+
+            if ($('#email').length && !isValidEmail($('#email').val())) {
+                event.preventDefault();
+                return failField($('#email'), 'Please provide a valid email address.');
+            }
+
+            if (!validatePhoneLength('#etPhone', 13, 'Please provide mobile phone number without a leading 0.', 'Mobile phone number format is invalid. Please check mobile number length is 13 including +251.')) {
+                event.preventDefault();
+                return false;
+            }
+
+            if ($('#zone_id_2').length && $.trim($('#zone_id_2').val()) === '') {
+                event.preventDefault();
+                return failField($('#zone_id_2'), 'Please select Zone from Address & Primary Contact tab.');
+            }
+
+            if ($('#woreda_id_2').length && $.trim($('#woreda_id_2').val()) === '') {
+                event.preventDefault();
+                return failField($('#woreda_id_2'), 'Please select Woreda from Address & Primary Contact tab.');
+            }
+
+            if ($('#region_id_1').length && $.trim($('#region_id_1').val()) === '') {
+                event.preventDefault();
+                return failField($('#region_id_1'), 'Please select your primary emergency contact person Region from Address & Primary Contact tab.');
+            }
+
+            if ($('#zone_id_1').length && $.trim($('#zone_id_1').val()) === '') {
+                event.preventDefault();
+                return failField($('#zone_id_1'), 'Please select your primary emergency contact person Zone from Address & Primary Contact tab.');
+            }
+
+            if ($('#woreda_id_1').length && $.trim($('#woreda_id_1').val()) === '') {
+                event.preventDefault();
+                return failField($('#woreda_id_1'), 'Please select your primary emergency contact person Woreda from Address & Primary Contact tab.');
+            }
+
+            if (!validatePhoneLength('#phonemobile', 13, 'Please provide your primary emergency contact mobile number in Address & Primary Contact tab.', 'Please provide a valid primary emergency contact mobile number in Address & Primary Contact tab.')) {
+                event.preventDefault();
+                return false;
+            }
+
+            $('#StudentProfileForm').find('input[required], select[required], textarea[required]').each(function () {
+                var $field = $(this);
+                var type = ($field.attr('type') || '').toLowerCase();
+                var tag = (this.tagName || '').toLowerCase();
+                var value = $.trim($field.val());
+
+                if ((type === 'checkbox' || type === 'radio') && !$field.is(':checked')) {
+                    isValid = false;
+                    focusTabForElement($field);
+                    $field.focus();
+                    return false;
+                }
+
+                if ((tag === 'select' && value === '') || (tag !== 'select' && value === '')) {
+                    isValid = false;
+                    focusTabForElement($field);
+                    $field.css('border', '2px solid red');
+                    $field.focus();
+                    return false;
+                }
+
+                $field.css('border', '');
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fields are not empty or selected.');
+                return false;
+            }
+
+            $('.otherRequiredText-input').each(function () {
+                if (!checkIsAlpha(this)) {
+                    isValid = false;
+                    focusTabForElement($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            if (!ugProgram) {
+                $('.cgpa-input').each(function () {
+                    if (!checkCGPA(this)) {
+                        isValid = false;
+                        focusTabForElement($(this));
+                        $(this).focus();
+                        return false;
+                    }
+                });
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            $('.subject-input').each(function () {
+                if (!checkIsAlpha(this)) {
+                    isValid = false;
+                    focusTabForElement($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            $('.subjectMark-input').each(function () {
+                if (!checkValidMarkInput(this)) {
+                    isValid = false;
+                    focusTabForElement($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fields are valid.');
+                return false;
+            }
+
+            if (ugProgram && $('#HighSchoolEducationBackground0Name').length && $('#HighSchoolEducationBackground0Name').val().length) {
+                var highSchoolNameLength = $('#HighSchoolEducationBackground0Name').val().length;
+                var minLength = 5;
+                var maxLength = 30;
+
+                if (highSchoolNameLength < minLength || highSchoolNameLength > maxLength) {
+                    event.preventDefault();
+                    return failField($('#HighSchoolEducationBackground0Name'), 'High School Name Length must be between ' + minLength + ' and ' + maxLength + ' characters long. Please shorten the school name.');
+                }
+            }
+
+            var confirmm = true;
+
+            if (faidaFanValue !== '') {
+                confirmm = confirm('You have provided FAN: ' + faidaFanValue + ' for your Fayda ID. Please confirm these values are correct before proceeding.');
+            } else if (faidaFanValue !== '') {
+                confirmm = confirm('You have provided FAN: ' + faidaFanValue + '. Please confirm this value is correct before proceeding.');
+            }
+
+            if (!confirmm) {
+                event.preventDefault();
+                return false;
+            }
+
+            form_being_submitted = true;
+            $('#updateStudentDetail')
+                .prop('disabled', true)
+                .val('Updating Student Profile...');
+
+            return true;
         });
+    });
 
+    function checkFaydaFan(field) {
+        var $field = $(field);
+        var digits = $field.val().replace(/\D/g, '').substring(0, 16);
+        var formatted = digits.replace(/(\d{4})(?=\d)/g, '$1-');
 
-		if (!isValid) {
-			alert("Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fieds are not empty or selected.");
-			return false;
-		}
+        $field.val(formatted);
+        return digits.length === 16;
+    }
+    $('#faidaFan').on('input', function () {
+        checkFaydaFan(this);
+    });
+</script>
 
-		if (ugProgram && $('#HighSchoolEducationBackground0Name').val().length) {
-			const highSchoolNameLength = $('#HighSchoolEducationBackground0Name').val().length;
-			const minLength = 5;
-			const maxLength = 30;
-
-			if (highSchoolNameLength < minLength || highSchoolNameLength > maxLength) {
-				alert(`High School Name Length must be between ${minLength} and ${maxLength} characters long. please make an appropraite adjustment by shortening shool name.`);
-				$('#HighSchoolEducationBackground0Name').focus();
-				return false;
-			}
-		}
-
-		if (form_being_submitted) {
-			alert("Updating Student Profile, please wait a moment or refresh your browser.");
-			$('#updateStudentDetail').attr('disabled', true);
-			return false;
-		}
-
-		var confirmm = true;
-
-		if (faidaFinValue != '' && faidaFanValue != '' && tinNumberValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' and FIN: ' + faidaFinValue +  '  for your Fayda ID and TIN: ' + tinNumberValue +  ' as your Tax Identification Number(TIN). Please confirm that these numbers are correct, as this is your final opportunity to make any corrections before they are permanently updated to your profile. Are you sure you want to proceed?');
-		} else if (faidaFinValue != '' && faidaFanValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' and FIN: ' + faidaFinValue +  '  for your Fayda ID. Please confirm that these numbers are correct, as this is your final opportunity to make any corrections before they are permanently updated to your profile. Are you sure you want to proceed?');
-		} else if (faidaFinValue != '') {
-			confirmm = confirm('You have provided FIN: ' + faidaFinValue +  ' as your Fayda FIN number. Please confirm that the provided Fayda Identification Number (FIN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to your profile. Are you sure you want to proceed?');
-		} else if (faidaFanValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' as your Fayda FAN number. Please confirm that the provided Fayda Alias Number (FAN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to your profile. Are you sure you want to proceed?');
-		} else if (tinNumberValue != '') {
-			confirmm = confirm('You have provided TIN: ' + tinNumberValue +  ' as your Tax Identification Number(TIN). Please confirm that the provided Tax Identification Number(TIN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to your profile. Are you sure you want to proceed?');
-		} 
-
-		if (!form_being_submitted && isValid && confirmm) {
-			$('#updateStudentDetail').val('Updating Student Profile...');
-			form_being_submitted = true;
-			return true;
-		} else {
-			return false;
-		}
-	});
-
-
-	////// For Student Demographic Information ///////////
-
-	// get regions based on selected country
+<script type="text/javascript">
 
 	$('#country_id_2').change(function() {
 		
@@ -1968,11 +1245,6 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 		}
 	});
 
-	////// END For Student Demographic Information ///////////
-
-	//////  END For Emergency Contact  Information///////////
-
-	// get regions based on selected country
 
 	$('#country_id_1').change(function() {
 		
