@@ -1273,19 +1273,20 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 
 <script type="text/javascript">
 
-	function toggleSubmitButtonActive() {
-		if ($("#email").val != 0 && $("#email").val != '') {
-			$("#SubmitID").attr('disabled', false);
-		}
-	}
+    function toggleSubmitButtonActive() {
+        if ($('#email').length && $.trim($('#email').val()) !== '') {
+            $('#updateStudentDetail').prop('disabled', false);
+        }
+    }
 
-	function isValidPhonenumber(value) {
-    	return (/^\d{7,}$/).test(value.replace(/[\s()+\-\.]|ext/gi, ''));
-	}
+    function isValidPhonenumber(value) {
+        return (/^\d{7,}$/).test(String(value || '').replace(/[\s()+\-\.]|ext/gi, ''));
+    }
 
-	function isValidEmail(value) {
-    	return (/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test(value.trim());
-	}
+    function isValidEmail(value) {
+        return (/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test($.trim(String(value || '')));
+    }
+
 
 	function isAlpha(value) {
     	return (/^[a-zA-Z]+$/).test(value.trim());
@@ -1543,40 +1544,34 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 		return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 	}
 
-	function capitalizeWordsExcludePrepositions(str) {
+    function capitalizeWordsExcludePrepositions(str) {
+        var prepositions = [
+            'and', 'or', 'of', 'in', 'on', 'at', 'with', 'from', 'by', 'about', 'as', 'into', 'like', 'through',
+            'after', 'over', 'between', 'out', 'against', 'during', 'without', 'before', 'under', 'around', 'among',
+            'an', 'a', 'the', 'this', 'that', 'these', 'those', 'but', 'nor', 'for', 'so', 'yet', 'is', 'was',
+            'be', 'been', 'being', 'am', 'are', 'were'
+        ];
 
-		const prepositions = [
-			'and', 'or', 'of', 'in', 'on', 'at', 'with', 'from', 'by', 'about', 'as', 'into', 'like', 'through', 'after', 'over', 'between', 'out', 'against', 'during', 'without', 'before', 'under', 'around', 'among',
-			'an', 'a', 'the', 'this', 'that', 'these', 'those', 'but', 'nor', 'for', 'so', 'yet', 'is', 'was', 'be', 'been', 'being', 'am', 'are', 'were',
-		];
+        str = $.trim(String(str || '')).replace(/\s+/g, ' ');
 
-		// Replace multiple spaces with a single space
-		str = str.replace(/\s+/g, ' ');
-
-		return str.split(' ').map(word => {
-			if (prepositions.includes(word)) {
-				return word.toLowerCase();
-			} else {
-				// Check if the word is a Roman numeral
-				if (/^[IVXLCDM]+$/.test(word)) {
-					return word;
-				}
-				return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-			}
-		}).join(' ');
-
-	}
+        return str.split(' ').map(function (word) {
+            if (!word) {
+                return '';
+            }
+            if (/^[IVXLCDM]+$/.test(word)) {
+                return word;
+            }
+            if ($.inArray(word.toLowerCase(), prepositions) !== -1) {
+                return word.toLowerCase();
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }).join(' ');
+    }
 
 	function checkIsAlpha(obj) {
-		//const pattern = /^[a-zA-Z]+$/; //doesn't support space, only single word is allowed
+
 		const pattern = /^[a-zA-Z\s]+$/; // support space, string allowed
 		let message = document.getElementById("customMessage");
-
-		// Trim preceding and trailing spaces
-		//obj.value = obj.value.trim();
-
-		// Trim preceding and trailing spaces and capitalize each word if a string.
-		//obj.value = capitalizeFirstLetterOfEachWord(obj.value.trim());
 
 		// Trim preceding and trailing spaces and capitalize each word if a string and exclude prepositions
 		obj.value = capitalizeWordsExcludePrepositions(obj.value.trim());
@@ -1621,243 +1616,329 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 		}
 	}
 
-	var form_being_submitted = false;
-	var ethiopianStudent = <?= json_encode($ethiopianStudent); ?>;
-	var ugProgram = <?= json_encode($ugProgram); ?>;
 
-	//alert(ethiopianStudent);
-	//alert(ugProgram);
+    function showFieldMessage(obj, messageId, text, timeout) {
+        var $obj = $(obj);
+        var $message = $('#' + messageId);
 
-	$('#updateStudentDetail').click(function(event) {
+        if (!$message.length) {
+            $message = $('<div/>', { id: messageId }).appendTo('body');
+        }
 
-		var isValid = true;
-		var faidaFinValue = '';
-		var faidaFanValue = '';
-		var tinNumberValue = '';
-
-		if (tinMandatory && $('#tinNo').val() == '') {
-			alert('Please check your Tax Identification Number(TIN). It must be 10 digits long without any separators.');
-			$('#tinNo').focus();
-			return false;
-		}
-
-		if ($('#tinNo').val() != '') {
-
-			tinNumberValue = $('#tinNo').val();
-
-			if ($('#tinNo').attr('readonly') === 'readonly') {
-				tinNumberValue = '';
-			}
-
-			var tinLength = $('#tinNo').val().replace(/[\s\t]+/g, '').replace(/[^0-9]/g, '');
-			//alert(tinLength.length);
-			if (tinLength.length !== 10) {
-				alert('Please check your Tax Identification Number(TIN). It must be 10 digits long without any separators.');
-				$('#tinNo').focus();
-				return false;
-			}
-		}
-
-		if (ethiopianStudent) {
-			if ($('#AmharicText').val() == '') {
-				alert('Please provide amharic first name.');
-				$('#AmharicText').focus();
-				return false;
-			}
-
-			if ($('#AmharicTextMiddleName').val() == '') {
-				alert('Please provide amharic middle name.');
-				$('#AmharicTextMiddleName').focus();
-				return false;
-			}
-
-			if ($('#AmharicTextLastName').val() == '') {
-				alert('Please provide amharic last name.');
-				$('#AmharicTextLastName').focus();
-				return false;
-			}
-
-			if (faidaMandatory && $('#faidaFin').val() == '') {
-				alert('Please enter 12-digit Fayda Identification Number (FIN), located on the back of student Fayda ID.');
-				$('#faidaFin').focus();
-				return false;
-			}
-
-			if (faidaMandatory && $('#faidaFan').val() == '') {
-				alert('Please enter 16-digit Fayda Alias Number (FAN), located on the front of student Fayda ID.');
-				$('#faidaFan').focus();
-				return false;
-			}
-
-			if ($('#faidaFan').val() != '') {
-				faidaFanValue = $('#faidaFan').val();
-				var fanLength = $('#faidaFan').val().replace(/\s+/g, '').replace(/[^0-9]/g, '');
-				//alert(finLength.length);
-				if (fanLength.length !== 16) {
-					alert('Please check the FRONT SIDE of Student Fayda ID for a valid FAN, which 16 digits long.');
-					$('#faidaFan').focus();
-					return false;
-				}
-			}
-
-			if ($('#faidaFin').val() != '') {
-				faidaFinValue = $('#faidaFin').val();
-				var finLength = $('#faidaFin').val().replace(/\s+/g, '').replace(/[^0-9]/g, '');
-				//alert(finLength.length);
-				if (finLength.length !== 12) {
-					alert('Please check the BACK SIDE of your Fayda ID for a valid FIN, which 12 digits long.');
-					$('#faidaFin').focus();
-					return false;
-				}
-			}
-		}
-		
-		if ($('#email').val() == '') {
-			alert('Please provide your primary personal email address.');
-			$('#email').focus();
-			return false;
-		} else if ($('#email').val() != '' && !isValidEmail($('#email').val())) {
-			alert('Please provide valid email address. Invalif email address.');
-			$('#email').focus();
-			return false;
-		}
-
-		if ($('#etPhone').val() == '') {
-			alert('Please provide mobile phone number without a leading 0.');
-			$('#etPhone').focus();
-			return false;
-		} else if ($('#etPhone').val() != '' && $('#etPhone').val().length != 13) {
-			alert('Mobile phone number format is invalid. Please check mobile number length is 13 including +251.');
-			$('#etPhone').focus();
-			return false;
-		}
-
-		if ($('#zone_id_2').val() == '') {
-			alert('Please select Zone from Address & Primary Contact tab.');
-			$('#zone_id_2').focus();
-			return false;
-		}
-
-		if ($('#woreda_id_2').val() == '') {
-			alert('Please select Woreda from Address & Primary Contact tab.');
-			$('#woreda_id_2').focus();
-			return false;
-		}
-
-		document.querySelectorAll('#StudentProfileForm input[required]').forEach(function(input) {
-			if (!input.value && input.getAttribute("type") === "select") {
-				isValid = false;
-				input.focus();
-				return false;
-			}
-		});
-
-		document.querySelectorAll('#StudentProfileForm input[required]').forEach(function(input) {
-			if (!input.value) {
-				isValid = false;
-				//input.style.border = '2px solid red';
-				if (input.getAttribute("type") === "select") {
-					input.focus();
-					return false;
-				} else if (input.getAttribute("type") !== "email" && input.getAttribute("type") !== "tel") {
-					input.style.border = '2px solid red';
-					if (!input.hasAttribute('highlighted')) {
-						input.setAttribute('highlighted', 'true');
-						input.focus();
-						return false; // Stop further iterations to focus on the first empty input
-					}
-				}
-			} else {
-				input.style.border = ''; // Remove red border if the input is filled
-				input.removeAttribute('highlighted');
-			}
-		});
-
-
-		document.querySelectorAll('.otherRequiredText-input').forEach(function(inputField) {
-            if (!checkIsAlpha(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
-            }
+        $message.text(text).css({
+            position: 'absolute',
+            backgroundColor: '#f8d7da',
+            color: '#721c24',
+            border: '1px solid #f5c6cb',
+            padding: '5px',
+            zIndex: 1000
         });
 
-		if (!ugProgram) {
-			document.querySelectorAll('.cgpa-input').forEach(function(inputField) {
-				if (!checkCGPA(inputField)) {
-					inputField.focus();
-					isValid = false;
-					return false;
-				}
-			});
-		}
-
-		document.querySelectorAll('.subject-input').forEach(function(inputField) {
-            if (!checkIsAlpha(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
-            }
+        var offset = $obj.offset();
+        $message.css({
+            top: offset.top + $obj.outerHeight() + 5,
+            left: offset.left
         });
 
-		document.querySelectorAll('.subjectMark-input').forEach(function(inputField) {
-            if (!checkValidMarkInput(inputField)) {
-				inputField.focus();
-                isValid = false;
-				return false;
-            }
+        setTimeout(function () {
+            $message.remove();
+        }, timeout || 3000);
+    }
+
+    function clearFieldMessage(messageId) {
+        $('#' + messageId).remove();
+    }
+
+
+    function activateTabForField($field) {
+        var $content = $field.closest('.content');
+        if (!$content.length) {
+            return;
+        }
+
+        var id = $content.attr('id');
+        if (!id) {
+            return;
+        }
+
+        $('.tabs .tab-title').removeClass('active');
+        $('.tabs-content .content').removeClass('active');
+        $('.tabs .tab-title a[href="#' + id + '"]').parent().addClass('active');
+        $('#' + id).addClass('active');
+    }
+
+    function failAndFocus($field, message) {
+        activateTabForField($field);
+        $field.focus();
+        alert(message);
+        return false;
+    }
+
+    var form_being_submitted = false;
+    var ethiopianStudent = <?= json_encode($ethiopianStudent); ?>;
+    var ugProgram = <?= json_encode($ugProgram); ?>;
+    var faidaMandatory = <?= json_encode($faidaMandatory); ?>;
+    var tinMandatory = <?= json_encode($tinMandatory); ?>;
+
+    $(document).ready(function () {
+        var $form = $('#StudentProfileForm');
+
+        if (!$form.length) {
+            $form = $('form').first();
+        }
+
+        $(document).on('input blur', '#faidaFan', function () {
+            checkFaydaFan(this);
         });
 
+        $(document).on('input blur', '#faidaFin', function () {
+            checkFaydaFin(this);
+        });
 
-		if (!isValid) {
-			alert("Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fieds are not empty or selected.");
-			return false;
-		}
+        $(document).on('input blur', '#tinNo', function () {
+            checkTinNumber(this);
+        });
 
-		if (ugProgram && $('#HighSchoolEducationBackground0Name').val().length) {
-			const highSchoolNameLength = $('#HighSchoolEducationBackground0Name').val().length;
-			const minLength = 5;
-			const maxLength = 30;
+        $form.on('submit', function (event) {
+            if (form_being_submitted) {
+                event.preventDefault();
+                $('#updateStudentDetail').prop('disabled', true);
+                alert('Updating Student Profile, please wait a moment or refresh your browser.');
+                return false;
+            }
 
-			if (highSchoolNameLength < minLength || highSchoolNameLength > maxLength) {
-				alert(`High School Name Length must be between ${minLength} and ${maxLength} characters long. please make an appropraite adjustment by shortening shool name.`);
-				$('#HighSchoolEducationBackground0Name').focus();
-				return false;
-			}
-		}
+            var isValid = true;
+            var faidaFinValue = '';
+            var faidaFanValue = '';
+            var tinNumberValue = '';
 
-		if (form_being_submitted) {
-			alert("Updating Student Profile, please wait a moment or refresh your browser.");
-			$('#updateStudentDetail').attr('disabled', true);
-			return false;
-		}
+            if ($('#tinNo').length) {
+                var tinDigits = $.trim($('#tinNo').val()).replace(/\D/g, '');
 
-		var confirmm = true;
+                if (tinMandatory && tinDigits === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#tinNo'), 'Please check your Tax Identification Number (TIN). It must be 10 digits long without any separators.');
+                }
 
-		if (faidaFinValue != '' && faidaFanValue != '' && tinNumberValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' and FIN: ' + faidaFinValue +  '  for your Fayda ID and TIN: ' + tinNumberValue +  ' as your Tax Identification Number(TIN). Please confirm that these numbers are correct, as this is your final opportunity to make any corrections before they are permanently updated to your profile. Are you sure you want to proceed?');
-		} else if (faidaFinValue != '' && faidaFanValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' and FIN: ' + faidaFinValue +  ' for Student Fayda ID. Please confirm that these numbers are correct, as this is your final opportunity to make any corrections before they are permanently updated to student profile. Are you sure you want to proceed?');
-		} else if (faidaFinValue != '') {
-			confirmm = confirm('You have provided FIN: ' + faidaFinValue +  ' as Student Fayda FIN number. Please confirm that the provided Fayda Identification Number (FIN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to student profile. Are you sure you want to proceed?');
-		} else if (faidaFanValue != '') {
-			confirmm = confirm('You have provided FAN: ' + faidaFanValue +  ' as Student Fayda FAN number. Please confirm that the provided Fayda Alias Number (FAN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to the student profile. Are you sure you want to proceed?');
-		} else if (tinNumberValue != '') {
-			confirmm = confirm('You have provided TIN: ' + tinNumberValue +  ' as your Tax Identification Number(TIN). Please confirm that the provided Tax Identification Number(TIN) is correct, as this is your final opportunity to make any corrections before it is permanently updated to your profile. Are you sure you want to proceed?');
-		} 
+                if (tinDigits !== '' && tinDigits.length !== 10) {
+                    event.preventDefault();
+                    return failAndFocus($('#tinNo'), 'Please check your Tax Identification Number (TIN). It must be 10 digits long without any separators.');
+                }
 
-		if (!form_being_submitted && isValid && confirmm) {
-			$('#updateStudentDetail').val('Updating Student Profile...');
-			form_being_submitted = true;
-			return true;
-		} else {
-			return false;
-		}
-	});
+                if (!$('#tinNo').prop('readonly')) {
+                    tinNumberValue = $('#tinNo').val();
+                }
+            }
 
-	////// For Student Demographic Information ///////////
+            if (ethiopianStudent) {
+                if ($('#AmharicText').length && $.trim($('#AmharicText').val()) === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#AmharicText'), 'Please provide amharic first name.');
+                }
 
-	// get regions based on selected country
+                if ($('#AmharicTextMiddleName').length && $.trim($('#AmharicTextMiddleName').val()) === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#AmharicTextMiddleName'), 'Please provide amharic middle name.');
+                }
+
+                if ($('#AmharicTextLastName').length && $.trim($('#AmharicTextLastName').val()) === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#AmharicTextLastName'), 'Please provide amharic last name.');
+                }
+
+                if ($('#faidaFan').length) {
+                    var fanDigits = $.trim($('#faidaFan').val()).replace(/\D/g, '');
+
+                    if (faidaMandatory && fanDigits === '') {
+                        event.preventDefault();
+                        return failAndFocus($('#faidaFan'), 'Please enter 16-digit Fayda Alias Number (FAN), located on the front of student Fayda ID.');
+                    }
+
+                    if (fanDigits !== '' && fanDigits.length !== 16) {
+                        event.preventDefault();
+                        return failAndFocus($('#faidaFan'), 'Please check the FRONT SIDE of Student Fayda ID for a valid FAN, which is 16 digits long.');
+                    }
+
+                    if (!$('#faidaFan').prop('readonly')) {
+                        faidaFanValue = $('#faidaFan').val();
+                    }
+                }
+
+                if ($('#faidaFin').length) {
+                    var finDigits = $.trim($('#faidaFin').val()).replace(/\D/g, '');
+
+                    if (faidaMandatory && finDigits === '') {
+                        event.preventDefault();
+                        return failAndFocus($('#faidaFin'), 'Please enter 12-digit Fayda Identification Number (FIN), located on the back of student Fayda ID.');
+                    }
+
+                    if (finDigits !== '' && finDigits.length !== 12) {
+                        event.preventDefault();
+                        return failAndFocus($('#faidaFin'), 'Please check the BACK SIDE of your Fayda ID for a valid FIN, which is 12 digits long.');
+                    }
+
+                    if (!$('#faidaFin').prop('readonly')) {
+                        faidaFinValue = $('#faidaFin').val();
+                    }
+                }
+            }
+
+            if ($('#email').length) {
+                var emailVal = $.trim($('#email').val());
+                if (emailVal === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#email'), 'Please provide your primary personal email address.');
+                }
+                if (!isValidEmail(emailVal)) {
+                    event.preventDefault();
+                    return failAndFocus($('#email'), 'Please provide a valid email address.');
+                }
+            }
+
+            if ($('#etPhone').length) {
+                var mobileVal = $.trim($('#etPhone').val());
+                if (mobileVal === '') {
+                    event.preventDefault();
+                    return failAndFocus($('#etPhone'), 'Please provide mobile phone number without a leading 0.');
+                }
+                if (mobileVal.length !== 13 || !isValidPhonenumber(mobileVal)) {
+                    event.preventDefault();
+                    return failAndFocus($('#etPhone'), 'Mobile phone number format is invalid. Please check mobile number length is 13 including +251.');
+                }
+            }
+
+            if ($('#zone_id_2').length && $.trim($('#zone_id_2').val()) === '') {
+                event.preventDefault();
+                return failAndFocus($('#zone_id_2'), 'Please select Zone from Address & Primary Contact tab.');
+            }
+
+            if ($('#woreda_id_2').length && $.trim($('#woreda_id_2').val()) === '') {
+                event.preventDefault();
+                return failAndFocus($('#woreda_id_2'), 'Please select Woreda from Address & Primary Contact tab.');
+            }
+
+            $form.find('input[required], select[required], textarea[required]').each(function () {
+                var $field = $(this);
+                var type = ($field.attr('type') || '').toLowerCase();
+                var value = $.trim($field.val());
+
+                if ((type === 'checkbox' || type === 'radio') && !$field.is(':checked')) {
+                    isValid = false;
+                    activateTabForField($field);
+                    $field.focus();
+                    return false;
+                }
+
+                if (value === '') {
+                    isValid = false;
+                    $field.css('border', '2px solid red');
+                    activateTabForField($field);
+                    $field.focus();
+                    return false;
+                }
+
+                $field.css('border', '');
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fields are not empty or selected.');
+                return false;
+            }
+
+            $form.find('.otherRequiredText-input').each(function () {
+                if (!checkIsAlpha(this)) {
+                    isValid = false;
+                    activateTabForField($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            if (!ugProgram) {
+                $form.find('.cgpa-input').each(function () {
+                    if (!checkCGPA(this)) {
+                        isValid = false;
+                        activateTabForField($(this));
+                        $(this).focus();
+                        return false;
+                    }
+                });
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            $form.find('.subject-input').each(function () {
+                if (!checkIsAlpha(this)) {
+                    isValid = false;
+                    activateTabForField($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                return false;
+            }
+
+            $form.find('.subjectMark-input').each(function () {
+                if (!checkValidMarkInput(this)) {
+                    isValid = false;
+                    activateTabForField($(this));
+                    $(this).focus();
+                    return false;
+                }
+            });
+
+            if (!isValid) {
+                event.preventDefault();
+                alert('Please fill out all required fields in all tabs including Educational Background tab and ensure that the required fields are valid.');
+                return false;
+            }
+
+            if (ugProgram && $('#HighSchoolEducationBackground0Name').length) {
+                var highSchoolName = $.trim($('#HighSchoolEducationBackground0Name').val());
+                if (highSchoolName.length > 0 && (highSchoolName.length < 5 || highSchoolName.length > 30)) {
+                    event.preventDefault();
+                    return failAndFocus($('#HighSchoolEducationBackground0Name'), 'High School Name Length must be between 5 and 30 characters long. Please shorten school name.');
+                }
+            }
+
+            var confirmm = true;
+
+            if (faidaFinValue !== '' && faidaFanValue !== '' && tinNumberValue !== '') {
+                confirmm = confirm('You have provided FAN: ' + faidaFanValue + ' and FIN: ' + faidaFinValue + ' for your Fayda ID and TIN: ' + tinNumberValue + ' as your Tax Identification Number (TIN). Please confirm that these numbers are correct before proceeding.');
+            } else if (faidaFinValue !== '' && faidaFanValue !== '') {
+                confirmm = confirm('You have provided FAN: ' + faidaFanValue + ' and FIN: ' + faidaFinValue + ' for Student Fayda ID. Please confirm that these numbers are correct before proceeding.');
+            } else if (faidaFinValue !== '') {
+                confirmm = confirm('You have provided FIN: ' + faidaFinValue + '. Please confirm that the provided Fayda Identification Number (FIN) is correct before proceeding.');
+            } else if (faidaFanValue !== '') {
+                confirmm = confirm('You have provided FAN: ' + faidaFanValue + '. Please confirm that the provided Fayda Alias Number (FAN) is correct before proceeding.');
+            } else if (tinNumberValue !== '') {
+                confirmm = confirm('You have provided TIN: ' + tinNumberValue + '. Please confirm that the provided Tax Identification Number (TIN) is correct before proceeding.');
+            }
+
+            if (!confirmm) {
+                event.preventDefault();
+                return false;
+            }
+
+            form_being_submitted = true;
+            $('#updateStudentDetail').prop('disabled', true).val('Updating Student Profile...');
+            return true;
+        });
+    });
+
+
 
 	$('#country_id_2').change(function() {
 		
@@ -1984,11 +2065,6 @@ if (isset($studentDetail) && !empty($studentDetail['Student'])) { ?>
 		}
 	});
 
-	////// END For Student Demographic Information ///////////
-
-	//////  END For Emergency Contact  Information///////////
-
-	// get regions based on selected country
 
 	$('#country_id_1').change(function() {
 		
