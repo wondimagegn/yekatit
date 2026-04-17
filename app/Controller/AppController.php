@@ -13,26 +13,9 @@ class AppController extends Controller {
 			'authorize' => array(
 				'Actions' => array('actionPath' => 'controllers')
 			),
-			/* 'loginAction' => array(
-				'controller' => 'users',
-				'action' => 'login',
-				//'plugin' => 'users'
-			), */
 			'authError' => 'You do not have permission to access the page you just selected',
-			/* 'authenticate' => array(
-				'Form' => array(
-					'fields' => array(
-					  'username' => 'username', 
-					  'password' => 'password'
-					)
-				)
-			) */
+
 		),
-		/* 'Security' => array(
-            'csrfCheck' => true,        // Enable CSRF validation
-            'csrfUseOnce' => false,     // Token reused until expiry
-            'csrfExpires' => '+30 minutes'
-        ), */
 	);
 
 	public $persistModel = true; // performance
@@ -82,7 +65,7 @@ class AppController extends Controller {
 	//protected $publicRoutes = Configure::read('public_facing_pages');
 
 	protected $publicRoutes = array(
-        /*
+
 		'users/login',
 		'users/forget',
 		'alumni/register',
@@ -96,7 +79,6 @@ class AppController extends Controller {
 		'pages/check_remedial_result',
 		'pages/check_campus_placement',
         'pages/admission'
-	*/
         );
 
 	protected $safeRoutes = array(
@@ -363,20 +345,8 @@ class AppController extends Controller {
 		}
 
 
-
-		//$this->Auth->autoRedirect = false;
-		//$this->Auth->userScope = array('User.active '=> 1);
-
-		//$this->Auth->authError = __('<div class="warning-box warning-message"><span></span>You do not have permission to access the page you just selected.</div>');
-
 		//Configure AuthComponent
 		$prohibited_roles_to_access_this_host = array();
-
-		if (gethostname() != 'KELI' && gethostname() != 'mistest' && gethostname() != 'smis') {
-			//debug(gethostname());
-			//debug($_SERVER['SERVER_NAME']);
-			//$prohibited_roles_to_access_this_host = array(ROLE_STUDENT => ROLE_STUDENT/* , ROLE_INSTRUCTOR => ROLE_INSTRUCTOR */);
-		}
 
 		$this->Auth->loginAction = array(
 			'controller' => 'users',
@@ -443,13 +413,6 @@ class AppController extends Controller {
 				$this->set('user_full_name', $auth['full_name']);
 				$this->Session->write('user_id', $auth['id']);
 
-				//only query if the user details if not found in the session
-				/* if (!$this->Session->read('users_relation')) {
-					$this->Session->write('users_relation', ClassRegistry::init('User')->getUserDetails($auth['id']));
-				} */
-
-				//$userDetail = $this->Session->read('users_relation');
-
 				if ($this->Session->check('users_relation')) {
 					if ($auth['id'] === $this->Session->read('users_relation')['User']['id']) {
 						$userDetail = $this->Session->read('users_relation');
@@ -470,14 +433,6 @@ class AppController extends Controller {
 				// 3. Dont forget to call parent::beforeFilter in your controller beforeFilter action, then all variable set in app controller will be used.
 				// 4. To access it from view, just write $variablename
 
-				/* if( $auth['id'] !== $this->Session->read('users_relation')['User']['id']){
-					$this->Session->destroy();
-					$this->Flash->error('There is a conflicting session, Please close all open browser tabs that uses '.$_SERVER['SERVER_NAME'].' and login again.');
-					return $this->redirect($this->Auth->logout());
-				} */
-
-				//debug($userDetail);
-					
 				if (!empty($userDetail['Staff'][0])) {
 
 					$this->staff_id = $userDetail['Staff'][0]['id'];
@@ -516,30 +471,6 @@ class AppController extends Controller {
 							$this->college_name = $userDetail['Staff'][0]['College']['name'];
 						}
 					}
-
-					//debug($this->Session->read('Auth.User'));
-
-					//registrar role
-
-					/* if ($this->role_id == ROLE_REGISTRAR || $this->Session->read('Auth.User')['Role']['parent_id'] == ROLE_REGISTRAR) {
-						if (isset($userDetail['StaffAssigne']['department_id']) && !empty($userDetail['StaffAssigne']['department_id'])) {
-							$this->department_ids = unserialize($userDetail['StaffAssigne']['department_id']);
-						} else if (isset($userDetail['StaffAssigne']['college_id']) && !empty($userDetail['StaffAssigne']['college_id'])) {
-							$this->college_ids = unserialize($userDetail['StaffAssigne']['college_id']);
-							$this->onlyPre = $userDetail['StaffAssigne']['collegepermission'];
-						}
-
-						if (!empty($userDetail['StaffAssigne']['program_id'])) {
-							$this->program_ids = $this->program_id = unserialize($userDetail['StaffAssigne']['program_id']);
-						}
-
-						if (!empty($userDetail['StaffAssigne']['program_type_id'])) {
-							$this->program_type_ids = $this->program_type_id = unserialize($userDetail['StaffAssigne']['program_type_id']);
-						}
-					} */
-
-					//debug($userDetail['ApplicableAssignments']);
-
 					$this->department_ids = $userDetail['ApplicableAssignments']['department_ids'];
 					$this->college_ids = $userDetail['ApplicableAssignments']['college_ids'];
 					$this->program_id = $this->program_ids = $userDetail['ApplicableAssignments']['program_ids'];
@@ -713,8 +644,6 @@ class AppController extends Controller {
 				if (FORCE_EMAIL_VERIFICATION && FORCE_EMAIL_VERIFICATION_AFTER_LOGIN) {
 					if (!empty($user['User']['email'])) {
 						$email_to_revalidate_date =  date('Y-m-d H:i:s', mktime (date('H'), date('i'), date('s'), date('n'), date('j') - DAYS_TO_ENFORCE_EMAIL_REVALIDATION, date('Y')));
-						//debug($email_to_revalidate_date);
-						//debug(DAYS_TO_ENFORCE_EMAIL_REVALIDATION);
 
 						if (FORCE_EMAIL_VERIFICATION_FOR_ALL_ROLES == 0) {
 							$roles_to_check = Configure::read('roles_for_email_verification');
@@ -788,29 +717,7 @@ class AppController extends Controller {
 						return $this->redirect(array('controller' => 'users', 'action' => 'suspended', $suspended['Student']['user_id']));
 					}
 				}
-					
-				/* if ($this->role_id == ROLE_STUDENT &&  ){
-					return $this->redirect(array('controller'=>'alumni','action' => "add"));
-				} */
-					
-				/* if (isset($user['User']['id']) && !empty($user['User']['id']) 
-					&& strcasecmp($this->request->params['controller'], 'alumni') != 0 
-					&& strcasecmp($this->request->params['action'], 'add') != 0 
-					&& $user['User']['role_id'] == ROLE_STUDENT
-					&& ClassRegistry::init('Alumnus')->checkIfStudentGradutingClass($this->student_id) == true  
-					&& ($user['User']['force_password_change'] != 0 || $password_duration_expired) 
-					&& strcasecmp($this->request->params['controller'], 'users') != 0 
-					&& strcasecmp($this->request->params['action'], 'changePwd') != 0 ) {
-							
-					if ( ClassRegistry::init('Alumnus')->completedRoundOneQuestionner($this->student_id) == false) {
-						return $this->redirect(array('controller' => 'alumni', 'action' => 'add'));
-					} 
-							
-				} */
 			}
-		} else {
-			//$this->Session->destroy();
-			//$this->Flash->info('You are required to login.');
 		}
     }
 }

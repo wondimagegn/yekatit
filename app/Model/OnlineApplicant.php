@@ -14,7 +14,7 @@ class OnlineApplicant extends AppModel
 
         'CodeGenerator' => array(
             'field' => 'applicationnumber',
-            'prefix' => '',
+            'prefix' => 'Y12hmc',
             'date_format' => 'Y', // e.g., INV-2025-000123
             'sequence_length' => 6,
             'reset_sequence' => 'yearly'

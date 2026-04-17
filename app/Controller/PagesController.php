@@ -569,6 +569,7 @@ class PagesController extends AppController
             && !empty($this->request->data['OnlineApplicant']['declaration'])
         ) {
 
+
             $deptDetails = ClassRegistry::init('Department')->find('first',
                 array('conditions' => array('Department.id' =>
                     $this->request->data['OnlineApplicant']['department_id']),'recursive' => -1));
@@ -587,7 +588,12 @@ class PagesController extends AppController
                 $this->request->data['OnlineApplicant']['emergency_contact_name'] = ucwords(strtolower($this->request->data['OnlineApplicant']['emergency_contact_name']));
                 $this->request->data['OnlineApplicant']['emergency_contact_relation'] = ucwords(strtolower($this->request->data['OnlineApplicant']['emergency_contact_relation']));
                 $this->request->data['OnlineApplicant']['emergency_contact_address'] = ucwords(strtolower($this->request->data['OnlineApplicant']['emergency_contact_address']));
-                $this->request->data['OnlineApplicant']['disability']=implode(',', $this->request->data['OnlineApplicant']['disability']);
+                if(!empty($this->request->data['OnlineApplicant']['disability'])) {
+                    $this->request->data['OnlineApplicant']['disability'] = implode(
+                        ',',
+                        $this->request->data['OnlineApplicant']['disability']
+                    );
+                }
 
                 if ($this->OnlineApplicant->saveAll($this->request->data)) {
 
@@ -849,31 +855,8 @@ designated personnel of the university for further processing. Your application 
     {
         $this->layout = 'ajax';
         $departments = array();
-        debug($this->request->data);
+
         if (isset($this->request->data['OnlineApplicant']) && !empty($this->request->data['OnlineApplicant'])) {
-
-            if(isset($this->request->data['OnlineApplicant']['campus_id']) &&
-                !empty($this->request->data['OnlineApplicant']['campus_id'])){
-                $allCollegeIds=ClassRegistry::init('College')->find('list',
-                    array('conditions' => array('College.campus_id' =>
-                        $this->request->data['OnlineApplicant']['campus_id']),
-
-                        'fields' => array('College.id', 'College.id')));
-                $allDeptIds=ClassRegistry::init('Department')->find('list',
-                    array('conditions' => array('Department.college_id' =>
-                        $allCollegeIds
-                    ), 'fields' => array('Department.id', 'Department.id')));
-
-            } else if(isset($this->request->data['OnlineApplicant']['college_id']) &&
-                !empty($this->request->data['OnlineApplicant']['college_id'])) {
-
-                $allDeptIds=ClassRegistry::init('Department')->find('list',
-                    array('conditions' => array('Department.college_id' =>
-                        $this->request->data['OnlineApplicant']['college_id']
-                    ), 'fields' => array('Department.id', 'Department.id')));
-
-            }
-
 
             $academicCalendarss = ClassRegistry::init('AcademicCalendar')->find('all', array(
                 'conditions' => array(
@@ -888,29 +871,6 @@ designated personnel of the university for further processing. Your application 
             ));
         } else if(isset($this->request->data['Page']) && !empty($this->request->data['Page'])){
 
-            if(isset($this->request->data['Page']['campus_id']) &&
-                !empty($this->request->data['Page']['campus_id'])){
-                $allCollegeIds=ClassRegistry::init('College')->find('list',
-                    array('conditions' => array('College.campus_id' =>
-                        $this->request->data['Page']['campus_id']),
-
-                        'fields' => array('College.id', 'College.id')));
-                $allDeptIds=ClassRegistry::init('Department')->find('list',
-                    array('conditions' => array('Department.college_id' =>
-                        $allCollegeIds
-                    ), 'fields' => array('Department.id', 'Department.id')));
-
-            } else if(isset($this->request->data['Page']['college_id']) &&
-                !empty($this->request->data['Page']['college_id'])) {
-
-                $allDeptIds=ClassRegistry::init('Department')->find('list',
-                    array('conditions' => array('Department.college_id' =>
-                        $this->request->data['OnlineApplicant']['college_id']
-                    ), 'fields' => array('Department.id', 'Department.id')));
-
-            }
-
-
             $academicCalendarss = ClassRegistry::init('AcademicCalendar')->find('all', array(
                 'conditions' => array(
                     'AcademicCalendar.online_admission_end_date >=' => date('Y-m-d'),
@@ -924,6 +884,7 @@ designated personnel of the university for further processing. Your application 
             debug($academicCalendarss);
         }
 
+        $allDeptIds=ClassRegistry::init('Department')->find('list', array('fields' => array('Department.id', 'Department.id')));
 
         // get all departments which is open
         $depIds = array();
@@ -932,15 +893,11 @@ designated personnel of the university for further processing. Your application 
             $matched = ArrayUtils::extractContained($tmpIds, $allDeptIds);
             $depIds = array_merge($depIds, $matched);
         }
-
-
         if (isset($depIds) && !empty($depIds)) {
-
             $academicCalendars['AcademicCalendar']['department_id'] = $depIds;
             if (isset($depIds) && !empty($depIds)) {
                 $departments = ClassRegistry::init('Department')->find('list', array('conditions' => array(
                     'Department.id' => $depIds
-
                 )));
             }
         }

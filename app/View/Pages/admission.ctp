@@ -52,50 +52,52 @@
                         <fieldset style="border:1px solid #ddd; padding:20px; border-radius:6px;">
                             <legend style="background:#1779ba; color:white; padding:8px 15px; border-radius:4px;">1. Admission Choice</legend>
                             <div class="row">
-                                <div class="large-6 columns">
-                                    <?= $this->Form->input('OnlineApplicant.campus_id', [
-
-                                            'empty' => '-- Select Campus --',
-                                            'id' => 'campus_id' ,  // ← This must be "campus_id"
-                                            'label' => 'Campus <span class="required">*</span>',
-                                            'class' => 'radius'
-                                    ]); ?>
-                                </div>
-                                <div class="large-6 columns">
-
+                                <div class="large-12 columns">
                                     <label>Field of Study <span class="required">*</span></label>
-                                    <select name="data[OnlineApplicant][department_id]" id="department_id" class="radius" required <?= empty($this->request->data['OnlineApplicant']['department_id']) ? 'disabled' : '' ?>>
-                                        <?php if (!empty($this->request->data['OnlineApplicant']['department_id'])): ?>
-                                            <option value="<?= h($this->request->data['OnlineApplicant']['department_id']) ?>">
-                                                <?= h($departments[$this->request->data['OnlineApplicant']['department_id']]) ?>
-                                            </option>
-                                        <?php else: ?>
-                                            <option>-- Select Campus First --</option>
-                                        <?php endif; ?>
-                                    </select>
-                                </div>
 
+                                    <?php
+                                    $selectedDepartment = !empty($this->request->data['OnlineApplicant']['department_id'])
+                                            ? $this->request->data['OnlineApplicant']['department_id']
+                                            : '';
+                                    ?>
+
+                                    <?= $this->Form->input('OnlineApplicant.department_id', [
+                                            'type' => 'select',
+                                            'options' => [],
+                                            'empty' => '-- Select Field of Study --',
+                                            'id' => 'department_id',
+                                            'label' => '',
+                                            'class' => 'radius',
+                                            'data-selected' => $selectedDepartment
+                                    ]); ?>
+
+                                </div>
                             </div>
+
                             <!-- ... other fields same as before ... -->
                             <div class="row">
                                 <div class="large-6 columns">
                                     <?= $this->Form->input('OnlineApplicant.academic_year', ['options' => $acyeardatas,
                                             'label' => 'Academic Year <span class="required">*</span>',
-                                            'class' => 'radius']); ?>
+                                            'class' => 'radius','id'=>'academicYear']); ?>
                                 </div>
                                 <div class="large-6 columns">
                                     <?= $this->Form->input('OnlineApplicant.semester', ['options' => $semester,
-                                            'label' => 'Semester <span class="required">*</span>', 'class' => 'radius']); ?>
+                                            'label' => 'Semester <span class="required">*</span>', 'class' => 'radius',
+                                            'id' => 'semester']); ?>
                                 </div>
 
                             </div>
                             <div class="row">
                                 <div class="large-6 columns">
-                                    <?= $this->Form->input('OnlineApplicant.program_type_id', ['options' => $programTypes, 'label' => 'Admission Type <span class="required">*</span>', 'class' => 'radius']); ?>
+                                    <?= $this->Form->input('OnlineApplicant.program_type_id', ['options' => $programTypes,
+                                            'label' => 'Admission Type <span class="required">*</span>', 'class' => 'radius',
+                                            'id' => 'program_type_id']); ?>
                                 </div>
                                 <div class="large-6 columns">
                                     <?= $this->Form->input('OnlineApplicant.program_id', ['options' => $programs,
-                                            'label' => 'Study  level <span class="required">*</span>', 'class' => 'radius']); ?>
+                                            'label' => 'Study  level <span class="required">*</span>', 'class' => 'radius',
+                                            'id' => 'program_id']); ?>
                                 </div>
 
 
@@ -271,212 +273,86 @@
                     </div>
 
                     <div class="content" id="tab4">
-                        <fieldset style="border:1px solid #ddd; padding:25px; border-radius:8px;">
+                        <fieldset style="border:1px solid #ddd; border-radius:8px;">
                             <legend style="background:#1779ba; color:white; padding:10px 20px; border-radius:6px; font-size:1.4em;">
-                                4.  Education Background
+                                4.  Undergraduate Study
                             </legend>
                             <div style="overflow-x:auto;">
                                 <hr style="margin-top: -10px;">
                                 <blockquote>
                                     <h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
                                     <span style="text-align:justify;" class="fs15 text-black">Please also make sure that school name doesn't exceed more than 30
-                                    characters and replace spacial characters like - , ( , ) by a space if any found in school name.
-                                    <br> If you want to add more than one record for the required information,
-                                    you can use 'Add Additional School' or 'Add Additional Subject' buttons and make sure
-                                    that the information you are entering is chronologically ordered from the most recent to old for
-                                    highschool background information.</span>
+                                    characters and replace spacial characters like - , ( , ) by a space if any found in field name.
+                                 </span>
                                 </blockquote>
                                 <hr>
-
-                                <?php
-
-                                $fields = array(
-                                        'school_level' => '1',
-                                        'name' => '2',
-                                        'national_exam_taken' => '3',
-                                        'region_id' => '4',
-                                        'zone' => '5',
-                                        'town' => '6',
-                                );
-
-                                $all_fields = "";
-                                $sep = "";
-
-                                foreach ($fields as $key => $tag) {
-                                    $all_fields .= $sep . $key;
-                                    $sep = ",";
-                                } ?>
-
                                 <div class="row">
-                                    <div class="large-12 columns">
-                                        <div style="overflow-x:auto;">
-                                            <table cellpadding="0" cellspacing="0" class="table">
-                                                <thead>
-                                                <tr>
-                                                    <td colspan="7" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;"><h6 class="fs18 text-black">Senior Secondary/Preparatory School Attended</h6></td>
-                                                </tr>
-                                                </thead>
-                                            </table>
-                                            <table id="high_school_education" cellpadding="0" cellspacing="0" class="table">
-                                                <thead>
-                                                <tr>
-                                                    <th style="width: 3%;" class="center">#</th>
-                                                    <th style="width: 16%;" class="ccenter">School Level</th>
-                                                    <th style="width: 21%;" class="vcenter">Name</th>
-                                                    <th style="width: 15%;" class="center">National Exam Taken</th>
-                                                    <th style="width: 15%;" class="center">Region</th>
-                                                    <th style="width: 15%;" class="center">Zone</th>
-                                                    <th style="width: 15%;" class="center">Town</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <?php
-                                                if (!empty($this->data['HighSchoolEducationBackground'])) {
-                                                    $count = 1;
-                                                    foreach ($this->data['HighSchoolEducationBackground'] as $bk => $bv) {
-                                                        ?>
-                                                        <tr>
-                                                            <td class="center"><?= $count; ?></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.school_level', array('class' => "otherRequiredText-input", 'label' => false, 'style' => 'width:100%;', 'required', 'placeholder' => 'preparatory, highschool etc..', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.name', array('class' => "otherRequiredText-input", 'label' => false, 'style' => 'width:100%;', 'required', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.national_exam_taken', array('label' => false, 'style' => 'width:100%;')); ?></div></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.region_id', array('options' => $regionsAll, 'style' => 'width:100%;', 'type' => 'select', 'label' => false, 'required')); ?></div></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.zone', array('class' => "otherRequiredText-input", 'label' => false, 'type' => 'text', 'style' => 'width:100%;', 'required', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.' . $bk . '.town', array('class' => "otherRequiredText-input", 'label' => false, 'style' => 'width:100%;', 'required', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                        </tr>
-                                                        <?php
-                                                        $count++;
-                                                    }
-                                                } else {
-
-                                                    ?>
-                                                    <tr>
-                                                        <td class="center">1</td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.school_level', array('class' => "otherRequiredText-input", 'label' => false, 'placeholder' => 'preparatory, highschool etc..', 'style' => 'width:100%;', 'onBlur' => 'checkIsAlpha(this)', 'required')); ?></div></td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.name', array('class' => "otherRequiredText-input", 'label' => false, 'style' => 'width:100%;', 'required', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.national_exam_taken', array('label' => false, 'style' => 'width:100%;')); ?></div></td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.region_id', array('options' => $regionsAll, 'type' => 'select',  'style' => 'width:100%;', 'label' => false, 'empty' => '[ Select Region ]')); ?></div></td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.zone', array('class' => "otherRequiredText-input", 'label' => false, 'type' => 'text', 'required', 'onBlur' => 'checkIsAlpha(this)', 'style' => 'width:100%;')); ?></div></td>
-                                                        <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HighSchoolEducationBackground.0.town', array('class' => "otherRequiredText-input", 'label' => false, 'style' => 'width:100%;', 'required', 'onBlur' => 'checkIsAlpha(this)')); ?></div></td>
-                                                    </tr>
-                                                    <?php
-                                                } ?>
-                                                </tbody>
-                                            </table>
-
-                                            <table cellpadding="0" cellspacing="0" class="table">
-                                                <tr>
-                                                    <td colspan=7>
-                                                        <div style="padding-top: 10px;padding-bottom: 10px;">
-                                                            <input type="button" value="Add Additional School" onclick="addRow('high_school_education','HighSchoolEducationBackground',6,'<?= $all_fields; ?>')" /> &nbsp;  &nbsp;  &nbsp;
-                                                            <input type="button" value="Delete Last School" onclick="deleteRow('high_school_education')" />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </table>
-
-                                        </div>
-                                        <br>
+                                    <div class="large-4 columns">
+                                        <?= $this->Form->input('OnlineApplicant.undergraduate_university_name',
+                                                ['label'=>'Undergraduate University Name',
+                                                        'class'=>'radius']); ?>
                                     </div>
+
+                                    <div class="large-4 columns">
+                                        <?= $this->Form->input('OnlineApplicant.undergraduate_university_cgpa',
+                                                ['label'=>'Undergraduate University CGPA','type'=>'number',
+                                                        'class'=>'radius']); ?>
+                                    </div>
+
+                                    <div class="large-4 columns">
+
+
+                                        <?= $this->Form->input('OnlineApplicant.undergraduate_university_field_of_study',
+                                                ['label'=>'Undergraduate University Field of Study',
+                                                        'class'=>'radius']); ?>
+                                    </div>
+
                                 </div>
                             </div>
 
-                            <div style="overflow-x:auto;">
 
+                        </fieldset>
+
+                        <fieldset style="border:1px solid #ddd; padding:15px; border-radius:8px;">
+                            <legend style="background:#1779ba; color:white; padding:10px 20px; border-radius:6px; font-size:1.4em;">
+                                5.  Postgraduate Study
+                            </legend>
+                            <div style="overflow-x:auto;">
                                 <hr style="margin-top: -10px;">
                                 <blockquote>
                                     <h6><i class="fa fa-info"></i> &nbsp; Important Note:</h6>
-                                    <span style="text-align:justify;" class="fs15 text-black">
-                                    If you want to add more than one record for the required information,
-                                    you can use 'Add Additional Row' button and make sure that the information you are
-                                    entering is chronologically ordered from the most recent to old for higher education you attended.</span>
+                                    <span style="text-align:justify;" class="fs15 text-black">Please also make sure that school name doesn't exceed more than 30
+                                    characters and replace spacial characters like - , ( , ) by a space if any found in field name.
+                                 </span>
                                 </blockquote>
                                 <hr>
+                                <div class="row">
+                                    <div class="large-4 columns">
+                                        <?= $this->Form->input('OnlineApplicant.postgraduate_university_name',
+                                                ['label'=>'Postgraduate University Name',
+                                                        'class'=>'radius']); ?>
+                                    </div>
 
-                                <?php
+                                    <div class="large-4 columns">
+                                        <?= $this->Form->input('OnlineApplicant.postgraduate_university_cgpa',
+                                                ['label'=>'Postgraduate University CGPA','type'=>'number',
+                                                        'class'=>'radius']); ?>
+                                    </div>
 
-                                $higher_fields = array(
-                                        'name' => '1',
-                                        'field_of_study' => '2',
-                                        'diploma_awarded' => '3',
-                                        'date_graduated' => '4',
-                                        'cgpa_at_graduation' => '5',
-                                        'city' => '6'
-                                );
+                                    <div class="large-4 columns">
 
-                                $higher_all_fields = "";
-                                $sepp = "";
 
-                                foreach ($higher_fields as $key => $tag) {
-                                    $higher_all_fields .= $sepp . $key;
-                                    $sepp = ",";
-                                } ?>
+                                        <?= $this->Form->input('OnlineApplicant.postgraduate_university_field_of_study',
+                                                ['label'=>'Postgraduate University Field of Study',
+                                                        'class'=>'radius']); ?>
+                                    </div>
 
-                                <table cellpadding="0" cellspacing="0" class="table">
-                                    <thead>
-                                    <tr>
-                                        <td colspan="7" style="vertical-align:middle; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: rgb(85, 85, 85); line-height: 1.5;"><h6 class="fs18 text-black">Higher Education Attended</h6></td>
-                                    </tr>
-                                    </thead>
-                                </table>
-                                <table id="higher_education_background" cellpadding="0" cellspacing="0" class="table">
-                                    <thead>
-                                    <tr>
-                                        <th style="width: 3%;" class="center">#</th>
-                                        <th style="width: 18%;" class="vcenter">Institution/College</th>
-                                        <th style="width: 15%;" class="center">Field of study</th>
-                                        <th style="width: 15%;" class="center">Diploma Awared</th>
-                                        <th style="width: 26%;" class="center">Date Graduated (G.C)</th>
-                                        <th style="width: 8%;" class="center">CGPA</th>
-                                        <th style="width: 15%;" class="center">City</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <?php
-                                    if (!empty($this->data['HigherEducationBackground'])) {
-                                        $count = 1;
-                                        foreach ($this->data['HigherEducationBackground'] as $bk => $bv) {
-                                            ?>
-                                            <tr>
-                                                <td class="center"><?= $count; ?></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.name', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'style' => 'width:100%;')); ?></div></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.field_of_study', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'style' => 'width:100%;')); ?></div></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.diploma_awarded', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'style' => 'width:100%;')); ?></div></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.date_graduated', array('required',
-                                                                'label' => false, 'style' => 'width:30%;', 'minYear' =>  date('Y'))); ?></div></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.cgpa_at_graduation', array('class' => "cgpa-input", 'required', 'label' => false, 'placeholder' => 'CGPA', 'type' => 'text', 'onBlur' => 'checkCGPA(this)' )); ?></div></td>
-                                                <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.' . $bk . '.city', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'style' => 'width:100%;', 'label' => false, 'type' => 'text')); ?></div></td>
-                                            </tr>
-                                            <?php
-                                            $count++;
-                                        }
-                                    } else {?>
-                                        <tr>
-                                            <td class="center">1</td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.name', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'placeholder' => 'Name of the Institution..')); ?></div></td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.field_of_study', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'placeholder' => 'Field of Study..')); ?></div></td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.diploma_awarded', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'label' => false, 'placeholder' => 'BSc, MSc, BA, MA..')); ?></div></td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.date_graduated', array('required', 'label' => false, 'style' => 'width:30%;', 'minYear' =>  ( date('Y') - 30), 'maxYear' => (date('Y')))); ?></div></td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.cgpa_at_graduation', array('class' => "cgpa-input", 'required', 'label' => false, 'placeholder' => 'CGPA', 'type' => 'text', 'onBlur' => 'checkCGPA(this)')); ?></div></td>
-                                            <td class="center"><div style="margin-top: 10px;"><?= $this->Form->input('HigherEducationBackground.0.city', array('class' => "otherRequiredText-input", 'required', 'onBlur' => 'checkIsAlpha(this)', 'style' => 'width:100%;', 'label' => false, 'type' => 'text', 'placeholder' => 'City..')); ?></div></td>
-                                        </tr>
-                                        <?php
-                                    } ?>
-                                    </tbody>
-                                </table>
-                                <table cellpadding="0" cellspacing="0" class="table">
-                                    <tr>
-                                        <td colspan=7>
-                                            <div style="padding-top: 10px;padding-bottom: 10px;">
-                                                <input type="button" value="Add Additional Row" onclick="addRow('higher_education_background','HigherEducationBackground',6,'<?= $higher_all_fields; ?>')" />  &nbsp;  &nbsp;  &nbsp;
-                                                <input type="button" value="Delete Last Row" onclick="deleteRow('higher_education_background')" />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
+                                </div>
                             </div>
 
+
                         </fieldset>
+
 
                         <button type="button" class="button radius btnPrevious">Previous</button>
                         <button type="button" class="button radius success btnNext right">Next</button>
@@ -762,36 +638,36 @@
 
     let selectedDepartment = <?= json_encode(!empty($this->request->data['OnlineApplicant']['department_id']) ?
             $this->request->data['OnlineApplicant']['department_id']:'') ?>;
-    $('#campus_id').on('change', function() {
-        const campusId = $(this).val();
+
+    function loadDepartments() {
         const $dept = $('#department_id');
+        const selectedDepartment = $dept.data('selected') || $dept.val();
 
-        if (!campusId) {
-            $dept.html('<option>-- Select Campus First --</option>').prop('disabled', true);
-            return;
-        }
+        $dept.prop('disabled', true).html('<option value="">Loading...</option>');
 
-        $.post('/pages/get_department_combo', $('form').serialize(), function(html) {
+        $.post('/pages/get_department_combo', $('form').serialize(), function (html) {
             $dept.html(html).prop('disabled', false);
 
-            // Restore previously selected department if available
             if (selectedDepartment && $dept.find('option[value="' + selectedDepartment + '"]').length) {
                 $dept.val(selectedDepartment);
             }
-        }).fail(() => {
-            $dept.html('<option>Error loading departments</option>').prop('disabled', true);
+
+            $dept.data('selected', $dept.val());
+        }).fail(function () {
+            $dept
+                .html('<option value="">Error loading departments</option>')
+                .prop('disabled', true);
+        });
+    }
+
+    $(document).ready(function () {
+        loadDepartments();
+
+        $(document).on('change', '#program_type_id, #program_id, #level_id, #semester_id', function () {
+            loadDepartments();
         });
     });
 
-
-    // ──────────────────────────────────────────────────────
-    // 2. Trigger reload when other filters change (optional but recommended)
-    // ──────────────────────────────────────────────────────
-    $('#program_type_id, #academic_year, #semester').on('change', function () {
-        if ($('#campus_id').val()) {
-            $('#campus_id').trigger('change'); // Re-fetch departments with new filters
-        }
-    });
 
     // ──────────────────────────────────────────────────────
     // 3. Photo Preview

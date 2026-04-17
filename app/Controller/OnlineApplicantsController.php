@@ -996,7 +996,10 @@ class OnlineApplicantsController extends AppController
 			$this->paginate['maxLimit'] = $this->request->data['OnlineApplicant']['limit'];
 		}
 
-		$this->paginate['conditions'][]['OnlineApplicant.application_status'] = 0;
+		$this->paginate['conditions'][]=[
+            'OnlineApplicant.approved_by' => null
+        ];
+        $this->paginate['conditions'][]['OnlineApplicant.application_status'] = 0;
 		$this->paginate['conditions'][]['OnlineApplicant.document_submitted'] = 0;
 		$this->Paginator->settings = $this->paginate;
 
