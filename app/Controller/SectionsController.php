@@ -1219,736 +1219,657 @@ class SectionsController extends AppController
 		}
 	}
 
-	public function assign()
-	{
-		if ($this->Session->read('sdata')) {
-			$this->request->data['continue'] = true;
-			$this->request->data = $this->Session->read('sdata');
-		}
-
-		$this->Session->delete('sdata');
-
-		debug($this->request->data);
-
-		if(!empty($this->request->data['Section']['academicyearSearch'])) {
-			$academicyear = $this->request->data['Section']['academicyearSearch'];
-		} else {
-			$academicyear = $this->AcademicYear->current_academicyear();
-		}
-
-		if(!empty($this->request->data['Section']['program_id'])) {
-			$selected_program = $this->request->data['Section']['program_id'];
-		} else {
-			$selected_program = 1;
-		}
-
-		if(!empty($this->request->data['Section']['program_type_id'])) {
-			$selected_program_type = $this->request->data['Section']['program_type_id'];
-		} else {
-			$selected_program_type = 1;
-		}
-
-		//$academicyear = $this->AcademicYear->current_academicyear();
-		$summary_data = $this->Section->getsectionlessstudentsummary($academicyear, $this->college_id, $this->department_id, $this->role_id);
-
-		$curriculum_unattached_student_count = $this->Section->getcurriculumunattachedstudentsummary($academicyear, $this->college_id, $this->department_id, $this->role_id);
-		$programs = $this->Section->Program->find('list');
-		$programTypes = $this->Section->ProgramType->find('list');
-
-		/* if (count($this->college_ids) == 1 && (in_array(14, $this->college_ids) || in_array(15, $this->college_ids))) {
-			$programs = $this->Section->Program->find('list', array('conditions' => array('Program.id'=> PROGRAM_REMEDIAL)));
-		} */
-		
-		$assignment_type_array = array();
-		$assignment_type_array['alphabet'] = "By Alphabet";
-		$assignment_type_array['result'] = "Fairly By Result";
-		
-		if (ROLE_COLLEGE != $this->role_id) {
-			$yearLevels = $this->Section->YearLevel->find('list', array(
-				'conditions' => array(
-					'YearLevel.department_id' => $this->department_id, 
-					'YearLevel.name' => '1st'
-				)
-			));
-			$section_less_total_students = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, $this->department_id, $academicyear, $selected_program, $selected_program_type, null);
-		} else {
-			$section_less_total_students = $section_less_total_students = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, null, $academicyear, $selected_program, $selected_program_type, null);
-		}
-
-		//$section_less_total_students = 0;
-		$isbeforesearch = 1;
-		
-		$collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
-		$departmentname = $this->Section->Department->field('Department.name', array('Department.id' => $this->department_id));
-
-		$this->set(compact(
-			'collegename',
-			'departmentname',
-			'programs',
-			'programTypes',
-			'assignment_type_array',
-			'academicyear',
-			'isbeforesearch',
-			'summary_data',
-			'curriculum_unattached_student_count',
-			'yearLevels',
-			'section_less_total_students'
-		));
-
-		if (!empty($this->request->data) && isset($this->request->data['search'])) {
-
-			if ($this->Session->read('sdata')) {
-				$this->Session->delete('sdata');
-			}
-
-			$isbeforesearch = 0;
-			$academicyear = $this->request->data['Section']['academicyearSearch'];
-			$assignmenttype = $this->request->data['Section']['assignment_type'];
-
-			$selected_program = $this->request->data['Section']['program_id'];
-			$selected_program_name = $this->Section->Program->field('Program.name', array('Program.id' => $selected_program));
-			$selected_program_type = $this->request->data['Section']['program_type_id'];
-
-			//$selected_program_type = $this->Section->ProgramType->field('ProgramType.name', array('ProgramType.id'=>$selected_program_type_id));
-			if (ROLE_COLLEGE != $this->role_id) {
-				$yearlevel = $this->request->data['Section']['year_level_id'];
-				$yearlevelname = $this->Section->YearLevel->field('YearLevel.name', array('YearLevel.id' => $yearlevel));
-			}
-
-			$summary_data = $this->Section->getsectionlessstudentsummary($academicyear, $this->college_id, $this->department_id, $this->role_id);
-			$curriculum_unattached_student_count = $this->Section->getcurriculumunattachedstudentsummary($academicyear, $this->college_id, $this->department_id, $this->role_id);
-			$section_less_total_students = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, $this->department_id, $academicyear, $selected_program, $selected_program_type);
-			
-			//*******check number of curriculum among students in selected criteria and if there is more than one curriculum, the user must selected one curriculum
-			$sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type);
-
-			$curriculum_id = NULL;
-			$curriculum_count = count($sectionlessStudentCurriculum);
-
-			if ($this->Session->read('empty_Curriculum')) {
-				$this->Session->delete('empty_Curriculum');
-			}
-
-			if ($curriculum_count == 1) {
-
-				if (empty($curriculum_id)) {
-					$empty_Curriculum = 1;
-					$this->Session->write('empty_Curriculum', $empty_Curriculum);
-				}
-
-				$curriculum_id = $sectionlessStudentCurriculum[0];
-				$this->request->data['Section']['Curriculum'] = $curriculum_id;
-				$this->Session->write('selected_curriculum', $curriculum_id);
-				$this->request->data['Section']['curriculum_search'] = 1;
-				$this->Session->write('curriculum_search', $this->request->data['Section']['curriculum_search']);
-				$this->request->data['continue'] = true;
-
-			} else if ($curriculum_count > 1) {
-
-				$sectionlessStudentCurriculumArray = array();
-				
-				if (!empty($sectionlessStudentCurriculum)) {
-					foreach ($sectionlessStudentCurriculum as $sscv) {
-						$sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field('Curriculum.curriculum_detail', array('Curriculum.id' => $sscv));
-					}
-				}
-
-				if ($this->Session->read('curriculum_search')) {
-					$this->Session->delete('curriculum_search');
-				}
-
-				$isbeforesearch = 1;
-
-				$this->set(compact(
-					'sectionlessStudentCurriculum',
-					'sectionlessStudentCurriculumArray',
-					'isbeforesearch',
-					'section_less_total_students'
-				));
-			}
-
-			$this->set(compact('isbeforesearch', 'section_less_total_students'));
-			debug($this->request->data);
-		}
-
-		if (!empty($this->request->data) && isset($this->request->data['continue'])) {
-			debug($this->request->data);
-			$empty_Curriculum = 0;
-
-			if ($this->Session->read('empty_Curriculum')) {
-				$empty_Curriculum = $this->Session->read('empty_Curriculum');
-			}
-
-			if (!empty($this->request->data['Section']['Curriculum']) || $empty_Curriculum == 1) {
-				
-				$isbeforesearch = 0;
-				$academicyear = $this->request->data['Section']['academicyearSearch'];
-				$selected_program = $this->request->data['Section']['program_id'];
-				$selected_program_type = $this->request->data['Section']['program_type_id'];
-				$yearlevel = null;
-				
-				if (ROLE_DEPARTMENT == $this->role_id) {
-					$yearlevel = $this->request->data['Section']['year_level_id'];
-				}
-				
-				$assignmenttype = $this->request->data['Section']['assignment_type'];
-				$selected_curriculum = $this->request->data['Section']['Curriculum'];
-				$selected_program_name = $this->Section->Program->field('Program.name', array('Program.id' => $selected_program));
-
-				$this->Session->write('academicyear', $academicyear);
-				$this->Session->write('selected_program', $selected_program);
-				$this->Session->write('selected_program_type', $selected_program_type);
-				$this->Session->write('yearlevel', $yearlevel);
-				$this->Session->write('assignmenttype', $assignmenttype);
-				$this->Session->write('selected_curriculum', $selected_curriculum);
-
-				$sections = $this->Section->getSectionForAssignment($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type, $yearlevel, $selected_curriculum);
-				$current_sections_occupation = $this->Section->currentsectionsoccupation($sections);
-
-				//Find section curriculum for one of section students
-				$sections_curriculum_name = $this->Section->sectionscurriculum($sections);
-				debug($sections_curriculum_name);
-
-				$section_less_total_students = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, $this->department_id, $academicyear, $selected_program, $selected_program_type, $selected_curriculum);
-				debug($section_less_total_students);
-
-				$collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
-				$departmentname = $this->Section->Department->field('Department.name', array('Department.id' => $this->department_id));
-				$yearLevels = $this->Section->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
-
-				if (!isset($this->request->data['Section']['curriculum_search'])) {
-					
-					$sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type);
-					$sectionlessStudentCurriculumArray = array();
-
-					if (!empty($sectionlessStudentCurriculum)) {
-						foreach ($sectionlessStudentCurriculum as $sscv) {
-							$sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field('Curriculum.curriculum_detail', array('Curriculum.id' => $sscv));
-						}
-					}
-
-					$this->set(compact('sectionlessStudentCurriculum', 'sectionlessStudentCurriculumArray'));
-				}
-
-				$this->set(compact(
-					'sections',
-					'section_less_total_students',
-					'isbeforesearch',
-					'summary_data',
-					'curriculum_unattached_student_count',
-					'sections_curriculum_name',
-					'collegename',
-					'departmentname',
-					'yearLevels',
-					'students',
-					'academicyear',
-					'selected_program_name',
-					'current_sections_occupation'
-				));
-
-			} else {
-
-				$this->Flash->error('Please select curriculum.');
-
-				$academicyear = $this->request->data['Section']['academicyearSearch'];
-				$selected_program = $this->request->data['Section']['program_id'];
-				$selected_program_type = $this->request->data['Section']['program_type_id'];
-
-				$section_less_total_students = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, $this->department_id, $academicyear, $selected_program, $selected_program_type);
-				$sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type);
-				$sectionlessStudentCurriculumArray = array();
-
-				if (!empty($sectionlessStudentCurriculum)) {
-					foreach ($sectionlessStudentCurriculum as $sscv) {
-						$sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field('Curriculum.curriculum_detail', array('Curriculum.id' => $sscv));
-					}
-				}
-
-				$this->set(compact('sectionlessStudentCurriculum', 'sectionlessStudentCurriculumArray', 'section_less_total_students'));
-			}
-		}
-
-		$isassign = 0;
-
-		if (isset($this->request->data['assign'])) {
-
-			$academicyear = $this->Session->read('academicyear');
-			$assignmenttype = $this->Session->read('assignmenttype');
-			$selected_program = $this->Session->read('selected_program');
-			$selected_program_type = $this->Session->read('selected_program_type');
-			$selected_curriculum = $this->Session->read('selected_curriculum');
-
-			if (ROLE_COLLEGE != $this->role_id) {
-				$yearlevel = $this->Session->read('yearlevel');
-				$yearlevelname = $this->Section->YearLevel->field('YearLevel.name', array('YearLevel.id' => $yearlevel));
-			}
-
-			$sectionlesstotalstudents = $this->Section->countsectionlessstudents($this->college_id, $this->role_id, $this->department_id, $academicyear, $selected_program, $selected_program_type, $selected_curriculum);
-			$program_type_id = $selected_program_type;
-			$find_the_equvilaent_program_type = unserialize($this->Section->Student->ProgramType->field('ProgramType.equivalent_to_id', array('ProgramType.id' => $selected_program_type)));
-			
-			if (!empty($find_the_equvilaent_program_type)) {
-				$selected_program_type_array = array();
-				$selected_program_type_array[] = $selected_program_type;
-				$program_type_id = array_merge($selected_program_type_array, $find_the_equvilaent_program_type);
-			}
-
-			//Search using by department and year level as well if user role is not college (use role is department)
-			if (ROLE_COLLEGE != $this->role_id) {
-				$conditions = array(
-					'AcceptedStudent.academicyear' => $academicyear,
-					//'Student.college_id' => $this->college_id,
-					'Student.department_id' => $this->department_id, 
-					'Student.program_id' => $selected_program,
-					'Student.program_type_id' => $program_type_id, 
-					'Student.curriculum_id' => $selected_curriculum,
-					'Student.graduated' => 0,
-				);
-			} else {
-				$conditions = array(
-					'AcceptedStudent.academicyear' => $academicyear, 
-					'Student.college_id' => $this->college_id, 
-					'Student.program_id' => $selected_program, 
-					'Student.program_type_id' => $program_type_id,
-					//'Student.curriculum_id' => $selected_curriculum,
-					'Student.curriculum_id IS NULL',
-					'Student.department_id is null',
-					'Student.graduated' => 0,
-				);
-			}
-
-			$selected_assignment_type = $this->request->data['Section']['assignment_type'];
-
-			if ($sectionlesstotalstudents != 0) {
-
-				if ($selected_assignment_type == 'result') {
-					$students = $this->Section->Student->find('all', array(
-						'conditions' => $conditions,
-						'fields' => array(
-							'Student.id', 
-							'Student.full_name', 
-							'Student.studentnumber',
-							'Student.gender',
-							'Student.academicyear'
-						),
-						'contain' => array(
-							'Section' => array(
-								'fields' => array('Section.id', 'Section.name')
-							),
-							'AcceptedStudent' => array(
-								'fields' => array('AcceptedStudent.id')
-							)
-						),
-						'order' => array('AcceptedStudent.EHEECE_total_results' => 'DESC', 'AcceptedStudent.sex' => 'ASC', 'AcceptedStudent.region_id' => 'ASC')
-					));
-
-					$sectionless_student = array();
-
-					if (!empty($students)) {
-						foreach ($students as $k => $v) {
-							$check_student_section = count($v['Section']);
-							if ($check_student_section == 0) {
-								$sectionless_student[] = $v['Student']['id'];
-							} else {
-								$is_pre_student = 1;
-								foreach ($v['Section'] as $psk => $psv) {
-									if (isset($psv['department_id']) && is_numeric($psv['department_id']) && $psv['department_id'] > 0) {
-										$is_pre_student = 0;
-										break;
-									} else {
-										$last_registration_semester = ClassRegistry::init('CourseRegistration')->field('CourseRegistration.semester', array('CourseRegistration.section_id' => $psv['StudentsSection']['section_id']));
-										debug($last_registration_semester);
-										if ($psv['StudentsSection']['archive'] == 0) {
-											$is_pre_student = 0;
-											break;
-										} else {
-											$is_pre_student = 1;
-										}
-									}
-								}
-								if ($is_pre_student == 1) {
-									$sectionless_student[] = $v['Student']['id'];
-								}
-							}
-						}
-					}
-
-					$sectionless_student_count = count($sectionless_student);
-					$data = $this->request->data['Section']['Sections']; //Selected Section array
-					
-					unset($this->request->data['Section']['Sections']);
-					$selected_section_count = count($data);
-					
-					$j = 0; //index for selected student section
-
-					if ($sectionless_student_count > 0 &&  $selected_section_count > 0) {
-						for ($i = 0; $i < $sectionless_student_count; $i++) {
-							if ($j >= $selected_section_count) {
-								$j = $j % $selected_section_count;
-							}
-							//$available_section = $this->request->data['Section'][$data[$j]]['id'];
-							//$student_for_this_section = $sectionless_student[$i];
-
-							$this->request->data['StudentsSection']['section_id'] = $this->request->data['Section'][$data[$j]]['id'];
-							$this->request->data['StudentsSection']['student_id'] = $sectionless_student[$i];
-							$this->Section->StudentsSection->create();
-							$this->Section->StudentsSection->save($this->request->data['StudentsSection']);
-							//$this->Section->habtmAdd('Student', $available_section, $student_for_this_section);
-							$j = $j + 1;
-							$isassign = 1; //used to flash message
-						}
-					}
-
-					if ($isassign) {
-						$this->Flash->success('The section(s) assignment has(have) been completed successfully');
-						return $this->redirect(array('action' => 'display_sections', $this->request->data['StudentsSection']['section_id']));
-					} else {
-						$this->Flash->error('The section(s) assignment could not be completed. Please, try again.');
-					}
-
-				} else {
-
-					if ($this->Section->isSectionAssignedStudentsEqualToTotalNumberofAvaliableStudents($this->request->data['Section'], $sectionlesstotalstudents)) {
-						
-						$students = $this->Section->Student->find('all', array(
-							'conditions' => $conditions,
-							'fields' => array(
-								'Student.id', 
-								'Student.full_name', 
-								'Student.studentnumber',
-								'Student.gender',
-								'Student.academicyear'
-							),
-							'contain' => array(
-								'Section' => array(
-									'fields' => array('Section.id', 'Section.name')
-								),
-								'AcceptedStudent' => array(
-									'fields' => array('AcceptedStudent.id')
-								)
-							),
-							// distribute based on name, sex and region
-							'order' => array('AcceptedStudent.first_name' => 'ASC', 'AcceptedStudent.sex' => 'ASC', 'AcceptedStudent.region_id' => 'ASC', 'AcceptedStudent.EHEECE_total_results' => 'DESC')
-						));
-
-						$sectionless_student = array();
-
-						if (!empty($students)) {
-							foreach ($students as $k => $v) {
-								$check_student_section = count($v['Section']);
-								if ($check_student_section == 0) {
-									$sectionless_student[] = $v['Student']['id'];
-								} else {
-									$is_pre_student = 1;
-									foreach ($v['Section'] as $psk => $psv) {
-										if (!empty($psv['department_id'])) {
-											$is_pre_student = 0;
-											break;
-										} else {
-											if ($psv['StudentsSection']['archive'] == 0) {
-												$is_pre_student = 0;
-												break;
-											} else {
-												$is_pre_student = 1;
-											}
-										}
-									}
-									if ($is_pre_student == 1) {
-										$sectionless_student[] = $v['Student']['id'];
-									}
-								}
-							}
-						}
-						//call participating sections
-						if ($this->role_id == ROLE_COLLEGE) {
-							$yearlevel = 0;
-						}
-
-						$sections = $this->Section->getSectionForAssignment($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type, $yearlevel, $selected_curriculum);
-						$sections_count = count($sections);
-						$student_index = 0;
-						$isassign = 0;
-						$available_section = null;
-
-						if ($sections_count > 0) {
-							for ($i = 0; $i < $sections_count; $i++) {
-								$number_per_section = $this->request->data['Section'][$i]['number'];
-								$available_section = $this->request->data['Section'][$i]['id'];
-								for ($j = 0; $j < $number_per_section; $j++) {
-									//$student_for_this_section = $sectionless_student[$student_index];
-									debug($student_index);
-									debug($sectionless_student);
-									$this->request->data['StudentsSection']['student_id'] = $sectionless_student[$student_index];
-									$this->request->data['StudentsSection']['section_id'] = $available_section;
-									$this->Section->StudentsSection->create();
-									$this->Section->StudentsSection->save($this->request->data['StudentsSection']);
-									//$this->Section->habtmAdd('Student', $available_section, $student_for_this_section);
-
-									$student_index = $student_index + 1;
-									$isassign = 1; //used to flash message
-								}
-							}
-						} else {
-							$this->Flash->error('The no sections found for assignment.');
-							//return $this->redirect(array('action' => 'display_sections', $available_section));
-						}
-
-						if ($isassign) {
-							$this->Flash->success('The section(s) assignment has(have) been completed successfully.');
-							return $this->redirect(array('action' => 'display_sections', $available_section));
-						} else {
-							$this->Flash->error('The section(s) assignment could not be complete. Please, try again.');
-						}
-
-					} else {
-						$error = $this->Section->invalidFields();
-						
-						if (isset($error['section'])) {
-							$this->Flash->error($error['section'][0]);
-						}
-
-						$this->set('academicyear', $this->request->data['Section']['academicyear']);
-						$this->set('section_less_total_students', $sectionlesstotalstudents);
-						$this->request->data['Section']['Curriculum'] = $selected_curriculum;
-						
-						if ($this->Session->read('curriculum_search')) {
-							$this->request->data['Section']['curriculum_search'] = $this->Session->read('curriculum_search');
-						}
-						//$this->Session->write('sdata',$this->request->data);
-						//return $this->redirect(array('action'=>'assign',true));
-					}
-				}
-			} else {
-				$this->Flash->error('There is no Student to assign section in given parameters');
-				$this->set('academicyear', $this->request->data['Section']['academicyear']);
-				$this->set('section_less_total_students', $sectionlesstotalstudents);
-			}
-		}
-
-		$this->set(compact('assignmenttype', 'selected_program_type', 'selected_program'));
-	}
-
-	function display_sections($id = null)
-	{
-		$this->__init_search_sections();
-
-		if (isset($this->request->data['swapStudentSection']) && !empty($this->request->data['swapStudentSection'])) {
-			$rearrangePossible = null;
-			if ($this->role_id == ROLE_COLLEGE) {
-				$rearrangePossible = $this->Section->rearrangeSectionList(
-					$this->request->data['Section']['academicyear'],
-					$this->college_id,
-					$this->request->data['Section']['year_level_id'],
-					$this->request->data['Section']['program_id'],
-					$this->request->data['Section']['program_type_id'],
-					$this->request->data['Section']['swap'],
-					1
-				);
-			} else if ($this->role_id == ROLE_DEPARTMENT) {
-				$rearrangePossible = $this->Section->rearrangeSectionList(
-					$this->request->data['Section']['academicyear'],
-					$this->department_id,
-					$this->request->data['Section']['year_level_id'],
-					$this->request->data['Section']['program_id'],
-					$this->request->data['Section']['program_type_id'],
-					$this->request->data['Section']['swap']
-				);
-			}
-
-			if ($rearrangePossible == 3) {
-				$this->Flash->error('You can not swap students once you published courses. Please delete published courses if grade is not submitted.');
-			} else {
-			}
-			$this->request->data['search'] = true;
-		}
-
-
-		if (!empty($id) && !isset($this->request->data['search'])) {
-
-			$selectedSectionDetails = $this->Section->find('first', array('conditions' => array('Section.id' => $id), 'recursive' => -1));
-
-			debug($selectedSectionDetails);
-
-			if (!empty($selectedSectionDetails)) {
-				$this->request->data['Section'] = $selectedSectionDetails['Section'];
-			} else {
-				$this->request->data['Section']['program_id'] = $this->Section->field('Section.program_id', array('Section.id' => $id));
-				$this->request->data['Section']['program_type_id'] = $this->Section->field('Section.program_type_id', array('Section.id' => $id));
-				if (empty($this->request->data['Section']['academicyear'])) {
-					$this->request->data['Section']['academicyear'] = $this->AcademicYear->current_academicyear();
-				}
-				if (ROLE_COLLEGE != $this->role_id) {
-					$this->request->data['Section']['year_level_id'] = $this->Section->field('Section.year_level_id', array('Section.id' => $id));
-				}
-			}
-
-			$this->request->data['search'] = true;
-
-			$this->__init_clear_session_filters();
-			$this->__init_search_sections();
-		}
-
-		//$programs = $this->Section->Program->find('list');
-		//$programTypes = $this->Section->ProgramType->find('list');
-		//$yearLevels = $this->Section->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
-		
-		$collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
-		$departmentname = $this->Section->Department->field('Department.name', array('Department.id' => $this->department_id));
-		$isbeforesearch = 1;
-		$this->set(compact(/* 'programs', 'programTypes', 'yearLevels', */ 'isbeforesearch', 'collegename', 'departmentname'));
-		
-		if (!empty($this->request->data) && isset($this->request->data['search'])) {
-
-			//debug($this->request->data);
-			$this->__init_clear_session_filters();
-			$this->__init_search_sections();
-			//debug($this->request->data);
-			
-			$isbeforesearch = 0;
-			$selected_program = $this->request->data['Section']['program_id'];
-			$selected_program_type = $this->request->data['Section']['program_type_id'];
-			//$program_type_id = $selected_program_type;
-
-			$program_type_id = $this->Section->getEquivalentProgramTypes($selected_program_type);
-			//debug($program_type_id);
-
-			if (isset($this->request->data['Section']['academicyear']) && !empty($this->request->data['Section']['academicyear'])) {
-				$thisacademicyear = $this->request->data['Section']['academicyear'];
-			} else {
-				$thisacademicyear = $this->request->data['Section']['academicyear'] = $this->AcademicYear->current_academicyear();
-				$this->__init_clear_session_filters();
-				$this->__init_search_sections();
-			}
-
-			////To display each section current hosted students:
-			//Search using by department and year level as well if user role is not college (use role is department)
-			$selected_year_level = null;
-			
-			if (ROLE_COLLEGE != $this->role_id) {
-				$selected_year_level = $this->request->data['Section']['year_level_id'];
-				if (empty($selected_year_level)) {
-					$selected_year_level = '%';
-				}
-
-				$conditions = array(
-					'Section.department_id' => $this->department_id,
-					'Section.archive' => 0, 
-					'Section.program_id' => $selected_program, 
-					'Section.program_type_id' => $program_type_id,
-					'Section.year_level_id' => $selected_year_level, 
-					'Section.academicyear' => $this->request->data['Section']['academicyear']
-				);
-
-				//Get Student in there sections
-				//$this->college_id will be null
-				$studentsections = $this->Section->studentsection(
-					$this->college_id,
-					$this->role_id,
-					$this->department_id,
-					$selected_program,
-					$program_type_id,
-					//$this->request->data['Section']['academicyear'],
-					$thisacademicyear,
-					$selected_year_level
-				);
-
-			} else {
-				$conditions = array(
-					'Section.college_id' => $this->college_id, 
-					'Section.archive' => 0,
-					'Section.program_id' => $selected_program, 
-					'Section.program_type_id' => $program_type_id, 
-					'Section.academicyear' => $thisacademicyear, //$this->request->data['Section']['academicyear'],
-					"OR" => array(
-						"Section.department_id is null", 
-						"Section.department_id = ''"
-					)
-				);
-
-				//Get Student in there sections
-				$studentsections = $this->Section->studentsection(
-					$this->college_id,
-					$this->role_id,
-					$this->department_id,
-					$selected_program,
-					$program_type_id,
-					$thisacademicyear,
-					$selected_year_level
-				);
-			}
-
-			$sections = $this->Section->find('all', array(
-				'conditions' => $conditions, 
-				'fields' => array(
-					'Section.id', 
-					'Section.name', 
-					'Section.year_level_id', 
-					'Section.program_id',
-					'Section.program_type_id', 
-					'Section.academicyear', 
-					'Section.department_id', 
-					'Section.college_id'
-				),
-				'contain' => array(
-					'Student' => array(
-						'fields' => array(
-							'Student.id', 
-							'Student.studentnumber', 
-							'Student.full_name', 
-							'Student.gender',
-							'Student.graduated',
-							'Student.academicyear'
-						),
-						'order' => array('Student.academicyear' => 'DESC', 'Student.studentnumber' => 'ASC',  'Student.id' => 'ASC', 'Student.full_name' => 'ASC'),
-					),
-					'StudentsSection',
-					'Curriculum' => array('id', 'name', 'year_introduced' ,'type_credit', 'active'),
-					'Department' => array(
-						'fields' => array('id', 'name', 'type', 'college_id'),
-						'College' => array('id', 'name', 'type', 'campus_id', 'stream'),
-					),
-					'College' => array('id', 'name', 'type', 'campus_id', 'stream'),
-					'YearLevel' => array('id', 'name'),
-					'Program' => array('id', 'name'),
-					'ProgramType' => array('id', 'name'),
-				)
-			));
-
-			//debug($sections);
-
-			debug($this->Section->updateSectionCurriculumIDFromPublishedCoursesOfTheSection());
-
-			if (!empty($sections)) {
-				foreach ($sections as $key => $section) {
-					if (isset($section['Student']) && count($section['Student']) > 0) {
-						//debug($section['Section']['id']);
-						$this->Section->remove_duplicate_student_sections($section['Section']['id']);
-						$this->Section->updateSectionCurriculumIDFromPublishedCoursesOfTheSection($section['Section']['id']);
-						//$this->Section->updateSectionCurriculumIDFromPublishedCoursesOfTheSection();
-					}
-				}
-			}
-
-			$current_sections_occupation = $this->Section->currentsectionsoccupation($sections);
-			
-			//Find section curriculum for one of section students
-			$sections_curriculum_name = $this->Section->sectionscurriculum($studentsections);
-
-			$this->set(compact(
-				'studentsections',
-				'collegename',
-				'departmentname',
-				'current_sections_occupation',
-				'sections_curriculum_name',
-				'sections',
-				'isbeforesearch'
-			));
-		}
-
-
-		$swapOptions = array('middle_name' => 'Middle Name', 'last_name' => 'Last Name', 'studentnumber' => 'Student ID');
-		$this->set(compact('swapOptions'));
-	}
+
+    public function assign()
+    {
+        if ($this->Session->read('sdata')) {
+            $this->request->data['continue'] = true;
+            $this->request->data = $this->Session->read('sdata');
+        }
+        $this->Session->delete('sdata');
+        $academicyear = null;
+        $academicyear = $this->AcademicYear->current_academicyear();
+        $summary_data = $this->Section->getsectionlessstudentsummary(
+            $academicyear,
+            $this->college_id,
+            $this->department_id,
+            $this->role_id
+        );
+
+        $curriculum_unattached_student_count = $this->Section->getcurriculumunattachedstudentsummary($academicyear, $this->college_id, $this->department_id, $this->role_id);
+        $programs = $this->Section->Program->find('list');
+        $programTypes = $this->Section->ProgramType->find('list');
+        $assignment_type_array = array();
+        $assignment_type_array['alphabet'] = "By Alphabet";
+        $assignment_type_array['result'] = "Fairly By Result";
+        if (ROLE_COLLEGE != $this->role_id) {
+            $yearLevels = $this->Section->YearLevel->find('list', array('conditions' => array(
+                'YearLevel.department_id' => $this->department_id, 'YearLevel.name' => '1st'
+            )));
+        }
+        $section_less_total_students = 0;
+        $isbeforesearch = 1;
+        $this->set(compact(
+            'programs',
+            'programTypes',
+            'assignment_type_array',
+            'academicyear',
+            'isbeforesearch',
+            'summary_data',
+            'curriculum_unattached_student_count',
+            'yearLevels',
+            'section_less_total_students'
+        ));
+
+        if (!empty($this->request->data) && isset($this->request->data['search'])) {
+
+            if ($this->Session->read('sdata')) {
+                $this->Session->delete('sdata');
+            }
+            $isbeforesearch = 0;
+            $academicyear = $this->request->data['Section']['academicyearSearch'];
+            $assignmenttype = $this->request->data['Section']['assignment_type'];
+            $selected_program = $this->request->data['Section']['program_id'];
+            $selected_program_name = $this->Section->Program->field('Program.name', array('Program.id' => $selected_program));
+            $selected_program_type = $this->request->data['Section']['program_type_id'];
+
+
+
+            //$selected_program_type = $this->Section->ProgramType->field('ProgramType.name', array(
+            //                        'ProgramType.id'=>$selected_program_type_id));
+            if (ROLE_COLLEGE != $this->role_id) {
+                $yearlevel = $this->request->data['Section']['year_level_id'];
+                $yearlevelname = $this->Section->YearLevel->field('YearLevel.name', array('YearLevel.id' => $yearlevel));
+            }
+
+            $summary_data = $this->Section->getsectionlessstudentsummary(
+                $academicyear,
+                $this->college_id,
+                $this->department_id,
+                $this->role_id
+            );
+            $curriculum_unattached_student_count = $this->Section->getcurriculumunattachedstudentsummary(
+                $academicyear,
+                $this->college_id,
+                $this->department_id,
+                $this->role_id
+            );
+
+            $section_less_total_students = $this->Section->countsectionlessstudents(
+                $this->college_id,
+                $this->role_id,
+                $this->department_id,
+                $academicyear,
+                $selected_program,
+                $selected_program_type
+            );
+            //*******check number of curriculum among students in selected criteria and
+            //if there is more than one curriculum, the user must selected one curriculum
+            $sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum(
+                $academicyear,
+                $this->college_id,
+                $this->department_id,
+                $this->role_id,
+                $selected_program,
+                $selected_program_type
+            );
+
+            $curriculum_id = NULL;
+            $curriculum_count = count($sectionlessStudentCurriculum);
+            if ($this->Session->read('empty_Curriculum')) {
+                $this->Session->delete('empty_Curriculum');
+            }
+
+            if ($curriculum_count == 1) {
+                if (empty($curriculum_id)) {
+                    $empty_Curriculum = 1;
+                    $this->Session->write('empty_Curriculum', $empty_Curriculum);
+                }
+                $curriculum_id = $sectionlessStudentCurriculum[0];
+                $this->request->data['Section']['Curriculum'] = $curriculum_id;
+                $this->Session->write('selected_curriculum', $curriculum_id);
+                $this->request->data['Section']['curriculum_search'] = 1;
+                $this->Session->write('curriculum_search', $this->request->data['Section']['curriculum_search']);
+                $this->request->data['continue'] = true;
+            } else if ($curriculum_count > 1) {
+                $sectionlessStudentCurriculumArray = array();
+                foreach ($sectionlessStudentCurriculum as $sscv) {
+                    $sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field(
+                        'Curriculum.curriculum_detail',
+                        array('Curriculum.id' => $sscv)
+                    );
+                }
+                if ($this->Session->read('curriculum_search')) {
+                    $this->Session->delete('curriculum_search');
+                }
+                $isbeforesearch = 1;
+                $this->set(compact(
+                    'sectionlessStudentCurriculum',
+                    'sectionlessStudentCurriculumArray',
+                    'isbeforesearch',
+                    'section_less_total_students'
+                ));
+            }
+            $this->set(compact('isbeforesearch', 'section_less_total_students'));
+            debug($this->request->data);
+        }
+
+        if (!empty($this->request->data) && isset($this->request->data['continue'])) {
+            debug($this->request->data);
+            $empty_Curriculum = 0;
+            if ($this->Session->read('empty_Curriculum')) {
+                $empty_Curriculum = $this->Session->read('empty_Curriculum');
+            }
+            if (!empty($this->request->data['Section']['Curriculum']) || $empty_Curriculum == 1) {
+                $isbeforesearch = 0;
+                $academicyear = $this->request->data['Section']['academicyearSearch'];
+                $selected_program = $this->request->data['Section']['program_id'];
+                $selected_program_type = $this->request->data['Section']['program_type_id'];
+                $yearlevel = null;
+                if (ROLE_DEPARTMENT == $this->role_id) {
+                    $yearlevel = $this->request->data['Section']['year_level_id'];
+                }
+                $assignmenttype = $this->request->data['Section']['assignment_type'];
+                $selected_curriculum = $this->request->data['Section']['Curriculum'];
+                $selected_program_name = $this->Section->Program->field('Program.name', array(
+                    'Program.id' => $selected_program
+                ));
+                $this->Session->write('academicyear', $academicyear);
+                $this->Session->write('selected_program', $selected_program);
+                $this->Session->write('selected_program_type', $selected_program_type);
+                $this->Session->write('yearlevel', $yearlevel);
+                $this->Session->write('assignmenttype', $assignmenttype);
+                $this->Session->write('selected_curriculum', $selected_curriculum);
+
+                $sections = $this->Section->getSectionForAssignment($academicyear, $this->college_id, $this->department_id, $this->role_id, $selected_program, $selected_program_type, $yearlevel, $selected_curriculum);
+
+                $current_sections_occupation = $this->Section->currentsectionsoccupation($sections);
+
+                //Find section curriculum for one of section students
+                $sections_curriculum_name = $this->Section->sectionscurriculum($sections);
+                debug($sections_curriculum_name);
+                $section_less_total_students = $this->Section->countsectionlessstudents(
+                    $this->college_id,
+                    $this->role_id,
+                    $this->department_id,
+                    $academicyear,
+                    $selected_program,
+                    $selected_program_type,
+                    $selected_curriculum
+                );
+
+                debug($section_less_total_students);
+                $collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
+                $departmentname = $this->Section->Department->field('Department.name', array('Department.id' =>
+                    $this->department_id));
+                $yearLevels = $this->Section->YearLevel->find('list', array('conditions' =>
+                    array('YearLevel.department_id' => $this->department_id)));
+
+                if (!isset($this->request->data['Section']['curriculum_search'])) {
+                    $sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum(
+                        $academicyear,
+                        $this->college_id,
+                        $this->department_id,
+                        $this->role_id,
+                        $selected_program,
+                        $selected_program_type
+                    );
+
+                    $sectionlessStudentCurriculumArray = array();
+                    foreach ($sectionlessStudentCurriculum as $sscv) {
+                        $sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field(
+                            'Curriculum.curriculum_detail',
+                            array('Curriculum.id' => $sscv)
+                        );
+                    }
+                    $this->set(compact('sectionlessStudentCurriculum', 'sectionlessStudentCurriculumArray'));
+                }
+                $this->set(compact(
+                    'sections',
+                    'section_less_total_students',
+                    'isbeforesearch',
+                    'summary_data',
+                    'curriculum_unattached_student_count',
+                    'sections_curriculum_name',
+                    'collegename',
+                    'departmentname',
+                    'yearLevels',
+                    'students',
+                    'academicyear',
+                    'selected_program_name',
+                    'current_sections_occupation'
+                ));
+            } else {
+                $this->Session->setFlash(__('<span></span> Please select curriculum.'), 'default', array('class' =>
+                    'error-box error-message'));
+                $academicyear = $this->request->data['Section']['academicyearSearch'];
+                $selected_program = $this->request->data['Section']['program_id'];
+                $selected_program_type = $this->request->data['Section']['program_type_id'];
+
+                $section_less_total_students = $this->Section->countsectionlessstudents(
+                    $this->college_id,
+                    $this->role_id,
+                    $this->department_id,
+                    $academicyear,
+                    $selected_program,
+                    $selected_program_type
+                );
+
+                $sectionlessStudentCurriculum = $this->Section->getSectionlessStudentCurriculum(
+                    $academicyear,
+                    $this->college_id,
+                    $this->department_id,
+                    $this->role_id,
+                    $selected_program,
+                    $selected_program_type
+                );
+
+                $sectionlessStudentCurriculumArray = array();
+                foreach ($sectionlessStudentCurriculum as $sscv) {
+                    $sectionlessStudentCurriculumArray[$sscv] = Classregistry::init('Curriculum')->field(
+                        'Curriculum.curriculum_detail',
+                        array('Curriculum.id' => $sscv)
+                    );
+                }
+                $this->set(compact('sectionlessStudentCurriculum', 'sectionlessStudentCurriculumArray', 'section_less_total_students'));
+            }
+        }
+        $isassign = 0;
+        if (isset($this->request->data['assign'])) {
+            $academicyear = $this->Session->read('academicyear');
+            $assignmenttype = $this->Session->read('assignmenttype');
+            $selected_program = $this->Session->read('selected_program');
+            $selected_program_type = $this->Session->read('selected_program_type');
+            $selected_curriculum = $this->Session->read('selected_curriculum');
+
+            if (ROLE_COLLEGE != $this->role_id) {
+                $yearlevel = $this->Session->read('yearlevel');
+                $yearlevelname = $this->Section->YearLevel->field('YearLevel.name', array(
+                    'YearLevel.id' => $yearlevel
+                ));
+            }
+            $sectionlesstotalstudents = $this->Section->countsectionlessstudents(
+                $this->college_id,
+                $this->role_id,
+                $this->department_id,
+                $academicyear,
+                $selected_program,
+                $selected_program_type,
+                $selected_curriculum
+            );
+
+            $program_type_id = $selected_program_type;
+            $find_the_equvilaent_program_type = unserialize($this->Section->Student->ProgramType->field(
+                'ProgramType.equivalent_to_id',
+                array('ProgramType.id' => $selected_program_type)
+            ));
+            if (!empty($find_the_equvilaent_program_type)) {
+                $selected_program_type_array = array();
+                $selected_program_type_array[] = $selected_program_type;
+                $program_type_id = array_merge($selected_program_type_array, $find_the_equvilaent_program_type);
+            }
+            //Search using by department and year level as well if user role is not college (use role is department)
+            if (ROLE_COLLEGE != $this->role_id) {
+                $conditions = array(
+                    'AcceptedStudent.academicyear' => $academicyear,
+                    //'Student.college_id'=>$this->college_id,
+                    'Student.department_id' => $this->department_id, 'Student.program_id' => $selected_program,
+                    'Student.program_type_id' => $program_type_id, 'Student.curriculum_id' => $selected_curriculum
+                );
+            } else {
+                $conditions = array(
+                    'AcceptedStudent.academicyear' => $academicyear, 'Student.college_id' =>
+                        $this->college_id, 'Student.program_id' => $selected_program, 'Student.program_type_id' => $program_type_id,
+                    'Student.curriculum_id' => $selected_curriculum,
+                    "OR" => array("Student.department_id is null", "Student.department_id" => array(0, ''))
+                );
+            }
+            $selected_assignment_type = $this->request->data['Section']['assignment_type'];
+            if ($sectionlesstotalstudents != 0) {
+                if ($selected_assignment_type == 'result') {
+
+                    $students = $this->Section->Student->find('all', array(
+                        'conditions' => $conditions,
+                        'fields' => array('Student.id', 'Student.full_name', 'Student.studentnumber'),
+                        'contain' => array(
+                            'Section' => array('fields' => array('Section.id', 'Section.name')),
+                            'AcceptedStudent' => array('fields' => array('AcceptedStudent.id'))
+                        ),
+                        'order' => 'AcceptedStudent.EHEECE_total_results DESC'
+                    ));
+                    $sectionless_student = array();
+                    foreach ($students as $k => $v) {
+                        $check_student_section = count($v['Section']);
+                        if ($check_student_section == 0) {
+                            $sectionless_student[] = $v['Student']['id'];
+                        } else {
+                            $is_pre_student = 1;
+                            foreach ($v['Section'] as $psk => $psv) {
+                                if (!empty($psv['department_id'])) {
+                                    $is_pre_student = 0;
+                                    break;
+                                } else {
+                                    if ($psv['StudentsSection']['archive'] == 0) {
+                                        $is_pre_student = 0;
+                                        break;
+                                    } else {
+                                        $is_pre_student = 1;
+                                    }
+                                }
+                            }
+                            if ($is_pre_student == 1) {
+                                $sectionless_student[] = $v['Student']['id'];
+                            }
+                        }
+                    }
+                    $sectionless_student_count = count($sectionless_student);
+                    $data = $this->request->data['Section']['Sections']; //Selected Section array
+                    unset($this->request->data['Section']['Sections']);
+                    $selected_section_count = count($data);
+                    $j = 0; //index for selected student section
+                    for ($i = 0; $i < $sectionless_student_count; $i++) {
+                        if ($j >= $selected_section_count) {
+                            $j = $j % $selected_section_count;
+                        }
+                        //$available_section=$this->request->data['Section'][$data[$j]]['id'];
+                        //$student_for_this_section = $sectionless_student[$i];
+                        $this->request->data['StudentsSection']['section_id'] = $this->request->data['Section'][$data[$j]]['id'];
+                        $this->request->data['StudentsSection']['student_id'] = $sectionless_student[$i];
+                        $this->Section->StudentsSection->create();
+                        $this->Section->StudentsSection->save($this->request->data['StudentsSection']);
+                        //$this->Section->habtmAdd('Student', $available_section, $student_for_this_section);
+                        $j = $j + 1;
+                        $isassign = 1; //used to flash message
+                    }
+                    if ($isassign) {
+                        $this->Session->setFlash(__('<span></span> The section(s) assignment has(have) been completed successfully'), 'default', array('class' => 'success-box success-message'));
+                        return $this->redirect(array('action' => 'display_sections', $this->request->data['StudentsSection']['section_id']));
+                    } else {
+                        $this->Session->setFlash(__('<span></span> The section(s) assignment could not be complete. Please, try again.'), 'default', array('class' => 'error-box error-message'));
+                    }
+                } else {
+
+                    if ($this->Section->isSectionAssignedStudentsEqualToTotalNumberofAvaliableStudents(
+                        $this->request->data['Section'],
+                        $sectionlesstotalstudents
+                    )) {
+                        $students = $this->Section->Student->find('all', array(
+                            'conditions' => $conditions,
+                            'fields' => array('Student.id', 'Student.full_name', 'Student.studentnumber'),
+                            'contain' => array(
+                                'Section' => array('fields' => array('Section.id', 'Section.name')),
+                                'AcceptedStudent' => array('fields' => array('AcceptedStudent.id'))
+                            ),
+                            'order' => 'Student.first_name'
+                        ));
+
+                        $sectionless_student = array();
+                        foreach ($students as $k => $v) {
+                            $check_student_section = count($v['Section']);
+                            if ($check_student_section == 0) {
+                                $sectionless_student[] = $v['Student']['id'];
+                            } else {
+                                $is_pre_student = 1;
+                                foreach ($v['Section'] as $psk => $psv) {
+                                    if (!empty($psv['department_id'])) {
+                                        $is_pre_student = 0;
+                                        break;
+                                    } else {
+                                        if ($psv['StudentsSection']['archive'] == 0) {
+                                            $is_pre_student = 0;
+                                            break;
+                                        } else {
+                                            $is_pre_student = 1;
+                                        }
+                                    }
+                                }
+                                if ($is_pre_student == 1) {
+                                    $sectionless_student[] = $v['Student']['id'];
+                                }
+                            }
+                        }
+                        //call participating sections
+                        if ($this->role_id == ROLE_COLLEGE) {
+                            $yearlevel = 0;
+                        }
+
+                        $sections = $this->Section->getSectionForAssignment(
+                            $academicyear,
+                            $this->college_id,
+                            $this->department_id,
+                            $this->role_id,
+                            $selected_program,
+                            $selected_program_type,
+                            $yearlevel,
+                            $selected_curriculum
+                        );
+                        $sections_count = count($sections);
+                        $student_index = 0;
+                        $isassign = 0;
+                        $available_section = null;
+                        for ($i = 0; $i < $sections_count; $i++) {
+                            $number_per_section = $this->request->data['Section'][$i]['number'];
+                            $available_section = $this->request->data['Section'][$i]['id'];
+                            for ($j = 0; $j < $number_per_section; $j++) {
+                                //$student_for_this_section = $sectionless_student[$student_index];
+                                debug($student_index);
+                                debug($sectionless_student);
+                                $this->request->data['StudentsSection']['student_id'] = $sectionless_student[$student_index];
+                                $this->request->data['StudentsSection']['section_id'] = $available_section;
+                                $this->Section->StudentsSection->create();
+                                $this->Section->StudentsSection->save($this->request->data['StudentsSection']);
+                                //$this->Section->habtmAdd('Student', $available_section, $student_for_this_section);
+
+                                $student_index = $student_index + 1;
+                                $isassign = 1; //used to flash message
+                            }
+                        }
+                        if ($isassign) {
+                            $this->Session->setFlash(
+                                __('<span></span>The section(s) assignment has(have) been completed successfully'),
+                                'default',
+                                array('class' => 'success-box success-message')
+                            );
+                            return $this->redirect(array('action' => 'display_sections', $available_section));
+                        } else {
+                            $this->Session->setFlash(
+                                __('<span></span> The section(s) assignment could not be complete. Please, try again.'),
+                                'default',
+                                array('class' => 'error-box error-message')
+                            );
+                        }
+                    } else {
+                        $error = $this->Section->invalidFields();
+                        if (isset($error['section'])) {
+                            $this->Session->setFlash(__('<span></span>' . $error['section'][0]), 'default', array('class' => 'error-box error-message'));
+                        }
+                        $this->set('academicyear', $this->request->data['Section']['academicyear']);
+                        $this->set('section_less_total_students', $sectionlesstotalstudents);
+
+                        $this->request->data['Section']['Curriculum'] = $selected_curriculum;
+                        if ($this->Session->read('curriculum_search')) {
+                            $this->request->data['Section']['curriculum_search'] = $this->Session->read('curriculum_search');
+                        }
+                        //$this->Session->write('sdata',$this->request->data);
+                        //return $this->redirect(array('action'=>'assign',true));
+                    }
+                }
+            } else {
+                $this->Session->setFlash(__('<span></span> There is no Student to assign section in given parameters'), 'default', array('class' => 'error-box error-message'));
+                $this->set('academicyear', $this->request->data['Section']['academicyear']);
+                $this->set('section_less_total_students', $sectionlesstotalstudents);
+            }
+        }
+        $this->set(compact('assignmenttype', 'selected_program_type', 'selected_program'));
+
+        //************************//
+    }
+    function display_sections($id = null)
+    {
+
+        if (isset($this->request->data['swapStudentSection']) && !empty($this->request->data['swapStudentSection'])) {
+            $rearrangePossible = null;
+            if ($this->role_id == ROLE_COLLEGE) {
+                $rearrangePossible = $this->Section->rearrangeSectionList(
+                    $this->request->data['Section']['academicyear'],
+                    $this->college_id,
+                    $this->request->data['Section']['year_level_id'],
+                    $this->request->data['Section']['program_id'],
+                    $this->request->data['Section']['program_type_id'],
+                    $this->request->data['Section']['swap'],
+                    1
+                );
+            } else if ($this->role_id == ROLE_DEPARTMENT) {
+                $rearrangePossible = $this->Section->rearrangeSectionList(
+                    $this->request->data['Section']['academicyear'],
+                    $this->department_id,
+                    $this->request->data['Section']['year_level_id'],
+                    $this->request->data['Section']['program_id'],
+                    $this->request->data['Section']['program_type_id'],
+                    $this->request->data['Section']['swap']
+                );
+            }
+
+            if ($rearrangePossible == 3) {
+                $this->Session->setFlash(__('<span></span>You can not swap students  once you published courses. Please delete published courses if grade is not submitted.'), 'default', array('class' => 'error-box error-message'));
+            } else {
+            }
+            $this->request->data['search'] = true;
+        }
+
+
+        if (!empty($id) && empty($this->request->data['search'])) {
+            $selectedSectionDetails = $this->Section->find('first', array('conditions' => array('Section.id' => $id), 'recursive' => -1));
+
+            debug($selectedSectionDetails);
+
+            if (!empty($selectedSectionDetails)) {
+                $this->request->data['Section'] = $selectedSectionDetails['Section'];
+            } else {
+                $this->request->data['Section']['program_id'] = $this->Section->field('Section.program_id', array('Section.id' => $id));
+                $this->request->data['Section']['program_type_id'] = $this->Section->field('Section.program_type_id', array('Section.id' => $id));
+                if (empty($this->request->data['Section']['academicyear'])) {
+                    $this->request->data['Section']['academicyear'] = $this->AcademicYear->current_academicyear();
+                }
+            }
+
+            if (ROLE_COLLEGE != $this->role_id) {
+                $this->request->data['Section']['year_level_id'] = $this->Section->field('Section.year_level_id', array('Section.id' => $id));
+            }
+            $this->request->data['search'] = true;
+        }
+        $programs = $this->Section->Program->find('list');
+        $programTypes = $this->Section->ProgramType->find('list');
+        $yearLevels = $this->Section->YearLevel->find('list', array('conditions' =>
+            array('YearLevel.department_id' => $this->department_id)));
+        $collegename = $this->Section->College->field('College.name', array('College.id' => $this->college_id));
+        $departmentname = $this->Section->Department->field('Department.name', array('Department.id' =>
+            $this->department_id));
+        $isbeforesearch = 1;
+        $this->set(compact('programs', 'programTypes', 'isbeforesearch', 'yearLevels', 'collegename', 'departmentname'));
+        if (!empty($this->request->data) && isset($this->request->data['search'])) {
+
+            debug($this->request->data);
+            $isbeforesearch = 0;
+            $selected_program = $this->request->data['Section']['program_id'];
+
+            $selected_program_type = $this->request->data['Section']['program_type_id'];
+            $program_type_id = $selected_program_type;
+            $find_the_equvilaent_program_type = unserialize($this->Section->ProgramType->field('ProgramType.equivalent_to_id', array(
+                'ProgramType.id' => $selected_program_type
+            )));
+            if (!empty($find_the_equvilaent_program_type)) {
+                $selected_program_type_array = array();
+                $selected_program_type_array[] = $selected_program_type;
+                $program_type_id = array_merge($selected_program_type_array, $find_the_equvilaent_program_type);
+            }
+            if (
+                isset($this->request->data['Section']['academicyear'])
+                && !empty($this->request->data['Section']['academicyear'])
+            ) {
+                $thisacademicyear = $this->request->data['Section']['academicyear'];
+            } else {
+                $thisacademicyear = $this->AcademicYear->current_academicyear();
+            }
+
+
+            ////To display each section current hosted students:
+            //Search using by department and year level as well if user role is not college (use role is department)
+            $selected_year_level = null;
+            if (ROLE_COLLEGE != $this->role_id) {
+                $selected_year_level = $this->request->data['Section']['year_level_id'];
+                if (empty($selected_year_level)) {
+                    $selected_year_level = '%';
+                }
+
+                $conditions = array(
+                    'Section.department_id' => $this->department_id,
+                    'Section.archive' => 0, 'Section.program_id' => $selected_program, 'Section.program_type_id' => $program_type_id,
+                    'Section.year_level_id' => $selected_year_level, 'Section.academicyear' => $this->request->data['Section']['academicyear']
+                );
+                //Get Student in there sections
+                //$this->college_id will be null
+                $studentsections = $this->Section->studentsection(
+                    $this->college_id,
+                    $this->role_id,
+                    $this->department_id,
+                    $selected_program,
+                    $program_type_id,
+                    $this->request->data['Section']['academicyear'],
+                    $selected_year_level
+                );
+            } else {
+                $conditions = array(
+                    'Section.college_id' => $this->college_id, 'Section.archive' => 0,
+                    'Section.program_id' => $selected_program, 'Section.program_type_id' => $program_type_id, 'Section.academicyear' => $this->request->data['Section']['academicyear'],
+                    "OR" => array("Section.department_id is null", "Section.department_id" => array(0, ''))
+                );
+
+                //Get Student in there sections
+                $studentsections = $this->Section->studentsection(
+                    $this->college_id,
+                    $this->role_id,
+                    $this->department_id,
+                    $selected_program,
+                    $program_type_id,
+                    $thisacademicyear,
+                    $selected_year_level
+                );
+            }
+
+            $sections = $this->Section->find('all', array(
+                'conditions' => $conditions, 'fields' => array(
+                    'Section.id', 'Section.name', 'Section.year_level_id', 'Section.program_id',
+                    'Section.program_type_id', 'Section.academicyear', 'Section.department_id', 'Section.college_id'
+                ),
+                'contain' => array(
+                    'Student' => array('fields' => array('Student.id', 'Student.studentnumber', 'Student.full_name')),
+                    'StudentsSection'
+                )
+            ));
+
+            $current_sections_occupation = $this->Section->currentsectionsoccupation($sections);
+            //Find section curriculum for one of section students
+            $sections_curriculum_name = $this->Section->sectionscurriculum($studentsections);
+
+            $this->set(compact(
+                'studentsections',
+                'collegename',
+                'departmentname',
+                'current_sections_occupation',
+                'sections_curriculum_name',
+                'sections',
+                'isbeforesearch'
+            ));
+        }
+
+
+        $swapOptions = array(
+            'middle_name' => 'Middle Name', 'last_name' => 'Last Name',
+            'studentnumber' => 'Student ID'
+        );
+        $this->set(compact('swapOptions'));
+    }
 	
 	function merge_sections()
 	{
