@@ -358,7 +358,11 @@
 
 											if (!empty($course['PublishedCourse']['CourseInstructorAssignment'])) {
 												$have_instructor_assignment = 1;
-												$instructor_name = '<br><span class="text-gray">Instructor: '. $course['PublishedCourse']['CourseInstructorAssignment'][0]['Staff']['Title']['title'] . '. '. $course['PublishedCourse']['CourseInstructorAssignment'][0]['Staff']['full_name'] . ' (' . $course['PublishedCourse']['CourseInstructorAssignment'][0]['Staff']['Position']['position'] . ')</span>';
+												$instructor_name = '<br><span class="text-gray">Instructor: '.
+                                                        $course['PublishedCourse']['CourseInstructorAssignment'][0]['Staff']['Title']['title'] .
+                                                        '. '. $course['PublishedCourse']['CourseInstructorAssignment'][0]['Staff']['full_name'] .
+                                                        ' (' . $course['PublishedCourse']['CourseInstructorAssignment'][0]
+                                                        ['Staff']['Position']['position'] . ')</span>';
 											}
 											
 											if (!empty($course['CourseInstructorAssignment'])) {
@@ -372,7 +376,7 @@
 												$totalRegisteredCourses++;
 											}
 
-											if (isset($course['CourseRegistration']) && !empty($course['CourseRegistration']['id']) /* (isset($course['CourseRegistration']) && !empty($course['CourseRegistration']['id']) && (!isset($course['Grade']) || empty($course['Grade']))) || (isset($course['Grade']) && !empty($course['Grade']['grade']) && !empty($allowed_grades_for_deletion) && in_array($course['Grade']['grade'], $allowed_grades_for_deletion)) */) {
+											if (isset($course['CourseRegistration']) && !empty($course['CourseRegistration']['id'])) {
 												
 												if ((isset($course['Grade']) && empty($course['Grade']['grade'])) || (isset($course['PublishedCourse']['grade']) && empty($course['PublishedCourse']['grade']['grade']))) {
 													$show_delete_button++;
@@ -433,8 +437,10 @@
 											if (isset($course['PublishedCourse']['grade']['grade']) && !empty($course['PublishedCourse']['grade']['grade']) && !in_array($course['PublishedCourse']['grade']['grade'], $gradeList)) {
 												$gradeScaleError =  'Grade Scale Error: ' . $course['PublishedCourse']['grade']['grade'] . ' Grade is not found in ' . $grade_scale_name;
 											}
+                                            debug($gradeScaleError);
 
-											if ((isset($graduated) && $graduated > 0 ) || !empty($gradeScaleError) || !isset($course['CourseRegistration']['id']) /* || $have_instructor_assignment == 0 */ /* || (!empty($course['Grade']) && !in_array($course['Grade'], $allowed_grades_for_deletion)) */ /*  && $st_count != 1 */) {
+											if ((!empty($graduated) && $graduated > 0 )
+                                                    || !empty($gradeScaleError) || !isset($course['CourseRegistration']['id']) ) {
 												echo '**';
 											} else if (empty($course['Grade'])) {
 												$checkBoxCount++;
@@ -443,7 +449,9 @@
 											} else {
 												echo '<div style="margin-left: 30%;">'. $this->Form->input('CourseRegistration.' . $st_count . '.gp', array('type' => 'checkbox', 'class' => 'checkbox1', 'label' => false, 'id' => 'StudentSelection' . $st_count)) . '</div>';
 												echo $this->Form->input('CourseRegistration.' . $st_count . '.student_id', array('type' => 'hidden', 'value' => $student_academic_profile['BasicInfo']['Student']['id']));
-											} ?>
+											}
+
+                                            ?>
 										</td>
 										<td class="vcenter">
 											<?= $course['Course']['course_title']; ?>

@@ -98,6 +98,8 @@ class EquivalentCoursesController extends AppController
 			$curriculums = array();
 		}
 
+        debug($equivalentCourses);
+
 		$programs = $this->EquivalentCourse->CourseBeSubstitued->Curriculum->Program->find('list', array('conditions' => array('Program.id' => $this->program_ids, 'Program.active' => 1)));
 		
 		$this->set(compact('programs', 'curriculums', 'equivalentCourses', 'isCurriculumApproved'));

@@ -333,8 +333,17 @@
 													}
 												}
 
-												if (isset($showStatusRelatedLinks) && $showStatusRelatedLinks && $this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT || $this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE  || $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR || ($this->Session->read('Auth.User')['role_id'] == ROLE_SYSADMIN && $this->Session->read('Auth.User')['is_admin'] == 1)) {
-													if ($sectionLess && !$graduated && (!$isTheStudentDismissed || $isTheStudentReadmitted) /* && isset($studentAttendedSections) && !empty($studentAttendedSections) */ && ((!empty($student_academic_profile['BasicInfo']['Student']['department_id']) && !empty($student_academic_profile['BasicInfo']['Student']['curriculum_id'])) || (empty($student_academic_profile['BasicInfo']['Student']['department_id']) && empty($student_academic_profile['BasicInfo']['Student']['curriculum_id'])))) { ?>
+												if (isset($showStatusRelatedLinks) && $showStatusRelatedLinks &&
+                                                        $this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT ||
+                                                        $this->Session->read('Auth.User')['role_id'] == ROLE_COLLEGE  ||
+                                                        $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR ||
+                                                        ($this->Session->read('Auth.User')['role_id'] == ROLE_SYSADMIN &&
+                                                                $this->Session->read('Auth.User')['is_admin'] == 1)) {
+													if ($sectionLess && !$graduated && (!$isTheStudentDismissed || $isTheStudentReadmitted)
+                                                            && ((!empty($student_academic_profile['BasicInfo']['Student']['department_id'])
+                                                                            && !empty($student_academic_profile['BasicInfo']['Student']['curriculum_id']))
+                                                                    || (empty($student_academic_profile['BasicInfo']['Student']['department_id'])
+                                                                            && empty($student_academic_profile['BasicInfo']['Student']['curriculum_id'])))) { ?>
 														<tr>
 															<td style="padding-left: 30px;" class="vcenter"><?= $this->Html->link('Add Student To Section', '#', array('data-animation' => "fade", 'data-reveal-id' => 'myModalAdd', 'data-reveal-ajax' => '/sections/add_student_to_section/' . $student_academic_profile['BasicInfo']['Student']['id'])); ?></td>
 															<td></td>
@@ -343,22 +352,31 @@
 													}
 												}
 
-												if (isset($showStatusRelatedLinks) && $showStatusRelatedLinks && $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !$graduated && isset($studentAttendedSections) && !empty($studentAttendedSections)) {
-													if ((!$isTheStudentDismissed || $isTheStudentReadmitted) && !empty($section_ids_with_reg)) { ?>
+												if (isset($showStatusRelatedLinks) && $showStatusRelatedLinks
+                                                        && $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && !$graduated
+                                                        && isset($studentAttendedSections) && !empty($studentAttendedSections)) {
+													if ((!$isTheStudentDismissed || $isTheStudentReadmitted)
+                                                            && !empty($section_ids_with_reg)) { ?>
 														<tr>
 															<td style="padding-left: 30px;" class="vcenter"><?= $this->Html->link('Manage Missing Registration & NG', '#', array('data-animation' => "fade", 'data-reveal-id' => 'myModalReg', 'data-reveal-ajax' => '/courseRegistrations/manage_missing_registration/' . $student_academic_profile['BasicInfo']['Student']['id'])); ?></td>
 															<td></td>
 														</tr>
 														<?php
 													}
-													if (isset($student_academic_profile['BasicInfo']['Student']['department_id']) && !is_null($student_academic_profile['BasicInfo']['Student']['department_id']) && (!$isTheStudentDismissed || $isTheStudentReadmitted) && $student_academic_profile['BasicInfo']['Student']['program_id'] != PROGRAM_REMEDIAL) { ?>
+													if (isset($student_academic_profile['BasicInfo']['Student']['department_id'])
+                                                            && !is_null($student_academic_profile['BasicInfo']['Student']['department_id'])
+                                                            && (!$isTheStudentDismissed || $isTheStudentReadmitted)
+                                                    ) { ?>
 														<tr>
 															<td style="padding-left: 30px;" class="vcenter"><?= $this->Html->link('Add Transferred Courses from other University', '#', array('data-animation' => "fade", 'data-reveal-id' => 'myModalAdd', 'data-reveal-ajax' => '/courseExemptions/add_student_exempted_course/' . $student_academic_profile['BasicInfo']['Student']['id'])); ?></td>
 															<td></td>
 														</tr>
 														<?php
 													} 
-													if (($isTheStudentDismissed || $isTheStudentReadmitted || (isset($isStudentEverReadmitted) && !empty($isStudentEverReadmitted) && $isStudentEverReadmitted > 0)) && $student_academic_profile['BasicInfo']['Student']['program_id'] != PROGRAM_REMEDIAL) { ?>
+													if (($isTheStudentDismissed || $isTheStudentReadmitted ||
+                                                                    (isset($isStudentEverReadmitted)
+                                                                            && !empty($isStudentEverReadmitted)
+                                                                            && $isStudentEverReadmitted > 0))) { ?>
 														<tr>
 															<td style="padding-left: 30px;" class="vcenter"><?= $this->Html->link('Maintain Readmission', '#', array('data-animation' => "fade", 'data-reveal-id' => 'myModalAdd', 'data-reveal-ajax' => '/readmissions/ajax_readmitted_year/' . $student_academic_profile['BasicInfo']['Student']['id'])); ?></td>
 															<td></td>
@@ -377,7 +395,9 @@
 													));
 
 													if (!empty($checkInGraduateList)) {
-														if ($this->Session->read('Auth.User')['role_id'] == ROLE_SYSADMIN || ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1)) { ?>
+														if ($this->Session->read('Auth.User')['role_id'] == ROLE_SYSADMIN
+                                                                || ($this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR
+                                                                        && $this->Session->read('Auth.User')['is_admin'] == 1)) { ?>
 															<tr>
 																<td colspan=2>
 																	<div class="warning-box warning-message" style="font-family: 'Times New Roman', Times, serif; font-weight: bold;">
@@ -450,25 +470,21 @@
 												</tr>
 												<?php
 												if (isset($student_academic_profile['BasicInfo']['Attachment']) && !empty($student_academic_profile['BasicInfo']['Attachment'])) {
-													/* foreach ($student_academic_profile['BasicInfo']['Attachment'] as $ak => $av) {
-														if (!empty($av['dirname']) && !empty($av['basename'])) { */ ?>
-															<?php // echo $this->Media->embed($this->Media->file('s'.DS.$av['dirname'].DS.$av['basename'])); ?>
+													?>
 															<tr>
 																<td class="vcenter" style="background-color: white;">
 																	<?php
 																	if ($this->Media->file($student_academic_profile['BasicInfo']['Attachment'][0]['dirname'] . DS . $student_academic_profile['BasicInfo']['Attachment'][0]['basename'])) {
-																		//echo $this->Media->embed($this->Media->file($av['dirname'] . DS . $av['basename']), array('width' => '144', 'class' => 'profile-picture')); 
+
 																	 	echo $this->Media->embed($this->Media->file($student_academic_profile['BasicInfo']['Attachment'][0]['dirname'] . DS . $student_academic_profile['BasicInfo']['Attachment'][0]['basename']), array('width' => '144', 'class' => 'profile-picture')); 
 																	} else { ?>
-																		<!-- <span class="rejected">Profile deleted or not found</span> <br> -->
 																		<img src="/img/noimage.jpg" width="144" class="profile-picture">
 																		<?php
 																	} ?>
 																</td>
 															</tr>
 															<?php
-														/* }
-													} */
+
 												} else { ?>
 													<tr>
 														<td class="vcenter" style="background-color: white;"><img src="/img/noimage.jpg" width="144" class="profile-picture"></td>
@@ -550,10 +566,6 @@
 											</tbody>
 										</table>
 									</div>
-								<!-- </td>
-							</tr>
-						</table> -->
-					<!-- </div> --> 
 					<!-- end add tab div -->
 					</div>
 					<?php

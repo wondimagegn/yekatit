@@ -54,7 +54,10 @@
 											<td class="center"><?= $st_count; ?></td>
 											<td class="center">
 												<?php
-												if (isset($course['PublishedCourse']['prerequisiteFailed']) && $course['PublishedCourse']['prerequisiteFailed']) {
+                                                debug($course['PublishedCourse']['prerequisiteFailed']);
+                                                debug($course);
+												if (isset($course['PublishedCourse']['prerequisiteFailed'])
+                                                        && $course['PublishedCourse']['prerequisiteFailed']) {
 													echo "**";
 												} else if (($course['PublishedCourse']['mass_added'] && MASS_ADDED_COURSE_IS_ALLOWED_TO_BE_REGISTERED_ON_MANAGE_MISSION_REGISTRATION == 0) || $course['PublishedCourse']['mass_dropped'] || (isset($course['PublishedCourse']['grade']) && $course['PublishedCourse']['grade'] == 'NG' && isset($course['PublishedCourse']['haveAssesmentData']) && $course['PublishedCourse']['haveAssesmentData'])) {
 													echo "x";
