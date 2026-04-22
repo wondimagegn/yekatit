@@ -6862,6 +6862,8 @@ class StudentExamStatus extends AppModel
 
 					$all_ay_s_list = $this->Student->CourseRegistration->ExamGrade->getListOfAyAndSemester($course_registration['Student']['id'], $ay_and_s_list[0]['academic_year'], $ay_and_s_list[0]['semester']);
 
+                    debug($all_ay_s_list);
+
 					if (!empty($ay_and_s_list)) {
 						foreach ($ay_and_s_list as $key => $ay_and_s) {
 							//debug($ay_and_s);

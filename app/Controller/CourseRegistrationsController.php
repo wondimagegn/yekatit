@@ -4358,28 +4358,17 @@ class CourseRegistrationsController extends AppController
 
 			//$exemptedCourses = ClassRegistry::init('CourseExemption')->find('all', array('conditions' => array('CourseExemption.student_id' => $student, 'CourseExemption.registrar_confirm_deny' => 1), 'contain' => array('Course')));
 			$exemptedCoursesCourseIds = ClassRegistry::init('CourseExemption')->find('list', array('conditions' => array('CourseExemption.student_id' => $student, 'CourseExemption.registrar_confirm_deny' => 1), 'fields' => array('CourseExemption.course_id', 'CourseExemption.course_id')));
-			
-			/* if (!empty($exemptedCoursesCourseIds)) {
-				debug($exemptedCoursesCourseIds);
-			} */
 
 			$latest_academic_year['academic_year'] = $academicYear;
 			$latest_academic_year['semester'] = $semester;
 
 			$passed_or_failed = $this->CourseRegistration->Student->StudentExamStatus->get_student_exam_status($student, $academicYear, $semester);
-			//debug($passed_or_failed);
-
-			// remove || $passed_or_failed == 2 to force students must have valid status for registration, Neway, 2 means last semester status is not generated.
 
 			$allow_registration = true;
 
 			if ($passed_or_failed == 2 && ALLOW_COURSE_REGISTRATION_WITHOUT_PREVIOUS_SEMSESTER_STATUS_SYSTEM_WIDE == 0) {
 				$allow_registration = false;
 			}
-			
-			/* if ($passed_or_failed == 2 && ALLOW_COURSE_REGISTRATION_WITHOUT_PREVIOUS_SEMSESTER_STATUS_FOR_REGISTRAR_ADMIN == 1 && $this->Session->read('Auth.User')['role_id'] == ROLE_REGISTRAR && $this->Session->read('Auth.User')['is_admin'] == 1) {
-				$allow_registration = true;
-			} */
 
 			if (($passed_or_failed == 1 || $passed_or_failed == 3 || $passed_or_failed == 2) && $passed_or_failed != DISMISSED_ACADEMIC_STATUS_ID) {
 
@@ -4442,9 +4431,10 @@ class CourseRegistrationsController extends AppController
 						if (!empty($vv['Course']['Prerequisite'])) {
 							foreach ($vv['Course']['Prerequisite'] as $preValue) {
 								
-								$failed = ClassRegistry::init('CourseDrop')->prequisite_taken($student, $preValue['prerequisite_course_id']);
-								//debug($failed);
-								//debug($preValue);
+								$failed = ClassRegistry::init('CourseDrop')->prequisite_taken($student,
+                                    $preValue['prerequisite_course_id']);
+								debug($failed);
+								debug($preValue);
 
 								if ($failed == 0  && $preValue['co_requisite'] != true) {
 									$failedAnyPrerequistie['freq']++;

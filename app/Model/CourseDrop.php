@@ -181,6 +181,7 @@ class CourseDrop extends AppModel
 				//'order' => array('CourseRegistration.created' => 'DESC')
 				'order' => array('CourseRegistration.academic_year' => 'DESC', 'CourseRegistration.semester' => 'DESC', 'CourseRegistration.id' => 'DESC', 'CourseRegistration.created' => 'DESC')
 			));
+            debug($course_registration_ids);
 
 			//debug($course_registration_ids);
 		
@@ -227,6 +228,8 @@ class CourseDrop extends AppModel
 				//'order' => array('CourseAdd.created' => 'DESC')
 				'order' => array('CourseAdd.academic_year' => 'DESC', 'CourseAdd.semester' => 'DESC', 'CourseAdd.id' => 'DESC', 'CourseAdd.created' => 'DESC')
 			));
+
+            debug($course_add_ids);
 
 			if (!empty($course_add_ids)) {
 

@@ -23,7 +23,7 @@
 
 								echo $this->Form->hidden('Course.curriculum_id', array('value' => $this->request->data['Course']['curriculum_id']));
 
-								if ($editCreditDetail == 0 ) {
+								if ($editCreditDetail == 0 || CREDITEDITDISABLE==0) {
                                     echo "<tr><td>" . $this->Form->input('course_title') . "</td></tr>";
 									echo "<tr><td>" . $this->Form->input('course_code', array('id'=>'course_code','required', 'pattern' => 'course_code', 'label' => 'Course Code: <small></small></label><small class="error" style="background: #fff; color:red; border-style: solid; border-width: thin; border-color: red; border-radius: 5px;">Course Code is required and must begin with uppercase letter, followed by 1 to 4 alphabetic characters then a hyphen and ends with 3 to 4 digits. Like: CoSc-1021, SE-726, MAEng-6121</small>')) . "</td></tr>";
 								} else {

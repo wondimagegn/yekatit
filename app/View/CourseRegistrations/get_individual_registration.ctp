@@ -54,8 +54,8 @@
 											<td class="center"><?= $st_count; ?></td>
 											<td class="center">
 												<?php
-                                                debug($course['PublishedCourse']['prerequisiteFailed']);
-                                                debug($course);
+                                              //  debug($course['PublishedCourse']['prerequisiteFailed']);
+                                               // debug($course);
 												if (isset($course['PublishedCourse']['prerequisiteFailed'])
                                                         && $course['PublishedCourse']['prerequisiteFailed']) {
 													echo "**";
