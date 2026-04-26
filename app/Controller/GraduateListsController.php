@@ -800,7 +800,7 @@ class GraduateListsController extends AppController
 						if (isset($this->request->data['GraduateList']['in_service']) && $this->request->data['GraduateList']['in_service']) {
 							$in_service = 1;
 							$this->set(compact('in_service'));
-						} 
+						}
 
 						$this->set(compact('temporary_degree'));
 						$this->response->type('application/pdf');

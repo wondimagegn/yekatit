@@ -30,7 +30,10 @@
             
             
             $pdf->Image($_SERVER['DOCUMENT_ROOT'] . UNIVERSITY_FULL_PAGE_TRANSPARENT_LOGO_FOR_TCPDF, 0, 15, 180, 180, '', '', '', false, 300, 'C', false, false, 0);
-            $pdf->Image($_SERVER['DOCUMENT_ROOT'] . UNIVERSITY_LOGO_HEADER_FOR_TCPDF, '5', '13', 35, 35, '', '', 'N', true, 300, 'C');
+
+            $pdf->Image($_SERVER['DOCUMENT_ROOT'] . UNIVERSITY_LOGO_HEADER_FOR_TCPDF, '5', '35', 35, 35, '', '', 'N', true, 300, 'C');
+
+            /*
 
             $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerifBold.ttf');
             $pdf->SetFont($fontPath, '', 18, '', false);
@@ -38,8 +41,17 @@
 
             $pdf->SetFont($fontPath, 'U', 14, '', false);
             $pdf->MultiCell(157, 7, 'OFFICE OF THE REGISTRAR', 0, 'L', false, 0, 37, 21);
-            
-            
+            */
+
+            $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerifBold.ttf');
+            $pdf->SetFont($fontPath, '', 18, '', false);
+            $pdf->MultiCell(157, 7, strtoupper($temporary_degree['student_detail']['University']['University']['name']), 0, 'C',
+                false, 0, 60, 20);
+            $pdf->SetFont($fontPath, 'U', 14, '', false);
+            $pdf->MultiCell(157, 7, 'OFFICE OF THE REGISTRAR', 0, 'C', false, 0, 60, 30);
+
+
+
             $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerif.ttf');
             $pdf->SetFont($fontPath, '', 13, '', false);
             $pdf->MultiCell(60, 7, 'Tel: '.$temporary_degree['student_detail']['University']['University']['telephone'].'', 0, 'L', false, 0, 210, 15);
@@ -165,15 +177,24 @@
             $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerifBold.ttf');
             //$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
             $pdf->SetFont($fontPath, '', 14, '', true);
-            $pdf->MultiCell(125, '', 'University Registrar', 0, 'L', false, 0, 127, 192);
+            $pdf->MultiCell(125, '', 'College Registrar', 0, 'L', false, 0, 127, 192);
             $pdf->Line(95, 190, 200, 190);
+            /*
 
 
             $pdf->write2DBarcode(BASE_URL_HTTPS.'pages/check_graduate/'.str_replace('/','-',$temporary_degree['student_detail']['Student']['studentnumber']), 'QRCODE,H', 30, 175, 20, 20, $style = array(), 'N');
             $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerif.ttf');
             $pdf->SetFont($fontPath, '', 8, '', true);
             $pdf->Text(30, 197, $temporary_degree['student_detail']['Student']['studentnumber']);
-            
+            */
+            $pdf->write2DBarcode(BASE_URL_HTTPS.'pages/check_graduate/'.str_replace('/','-',
+                    $temporary_degree['student_detail']['Student']['studentnumber']), 'QRCODE,H', 250, 175, 20, 20,
+                $style = array(), 'N');
+            $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerif.ttf');
+            $pdf->SetFont($fontPath, '', 8, '', true);
+            $pdf->Text(250, 197, $temporary_degree['student_detail']['Student']['studentnumber']);
+
+
             // reset pointer to the last page
             $pdf->lastPage();
         }
