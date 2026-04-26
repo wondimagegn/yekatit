@@ -89,7 +89,7 @@
 
             $pre_content = 'This is to certify that '. (strcasecmp(trim($temporary_degree['student_detail']['Student']['gender']), 'male') == 0 ? 'Mr.' : (strcasecmp(trim($temporary_degree['student_detail']['Student']['gender']), 'female') == 0 ? 'Ms./Mrs.' : 'Mr./Ms./Mrs.'));
 
-            $content = 'has graduated from <u style="font-weight:bold;">'.$temporary_degree['student_detail']['College']['name']. '</u> with <u style="font-weight:bold;">' .$temporary_degree['student_detail']['Curriculum']['english_degree_nomenclature'] .'</u>  on <u style="font-weight:bold;">'. $this->Time->format("F j, Y", $temporary_degree['student_detail']['GraduateList']['graduate_date'], NULL, NULL) . '</u>';
+            $content = 'has graduated from <u style="font-weight:bold;">'.$temporary_degree['student_detail']['University']['University']['name']. '</u> with <u style="font-weight:bold;">' .$temporary_degree['student_detail']['Curriculum']['english_degree_nomenclature'] .'</u>  on <u style="font-weight:bold;">'. $this->Time->format("F j, Y", $temporary_degree['student_detail']['GraduateList']['graduate_date'], NULL, NULL) . '</u>';
             //if CGPA is Required.
 
             if ($temporary_degree['student_detail']['Student']['program_id'] == PROGRAM_POST_GRADUATE) {
@@ -175,10 +175,14 @@
 
             $pdf->SetLineStyle(array('width' => 1, 'dash' => 0, 'color' => array(0, 0, 0)));
             $fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'] . '/app/webroot/fonts/FreeSerifBold.ttf');
-            //$fontPath = $pdf->addTTFfont($_SERVER['DOCUMENT_ROOT'].'/app/Vendor/tcpdf/fonts/bookman_old_style.ttf');
             $pdf->SetFont($fontPath, '', 14, '', true);
-            $pdf->MultiCell(125, '', 'College Registrar', 0, 'L', false, 0, 127, 192);
-            $pdf->Line(95, 190, 200, 190);
+            $pdf->MultiCell(125, '', 'Registrar', 0, 'L', false, 0, 30, 192);
+            $pdf->Line(30, 190, 90, 190);
+
+            $pdf->SetFont($fontPath, '', 14, '', true);
+            $pdf->MultiCell(125, '', 'Academic & Research V/P', 0, 'L', false, 0, 150, 192);
+            $pdf->Line(150, 190, 210, 190);
+
             /*
 
 
