@@ -87,7 +87,9 @@
 
             $toWhom = 'To whom it may concern';
 
-            $pre_content = 'This is to certify that '. (strcasecmp(trim($temporary_degree['student_detail']['Student']['gender']), 'male') == 0 ? 'Mr.' : (strcasecmp(trim($temporary_degree['student_detail']['Student']['gender']), 'female') == 0 ? 'Ms./Mrs.' : 'Mr./Ms./Mrs.'));
+            $pre_content = 'This is to certify that Dr./Mr./Ms./Mrs.';
+
+
 
             $content = 'has graduated from <u style="font-weight:bold;">'.$temporary_degree['student_detail']['University']['University']['name']. '</u> with <u style="font-weight:bold;">' .$temporary_degree['student_detail']['Curriculum']['english_degree_nomenclature'] .'</u>  on <u style="font-weight:bold;">'. $this->Time->format("F j, Y", $temporary_degree['student_detail']['GraduateList']['graduate_date'], NULL, NULL) . '</u>';
             //if CGPA is Required.
