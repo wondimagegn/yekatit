@@ -426,7 +426,7 @@
 																						<tr>
 																							<td></td>
 																							<td></td>
-																							<td style="font-weight:bold">Academic Status: Graduated ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
+																							<td style="font-weight:bold">Academic Status:' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
 																							<td></td>
 																							<td></td>
 																							<td></td>
@@ -574,7 +574,7 @@
 																						<tr>
 																							<td></td>
 																							<td></td>
-																							<td style="font-weight:bold">Academic Status: Graduated ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
+																							<td style="font-weight:bold">Academic Status: ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
 																							<td></td>
 																							<td></td>
 																							<td></td>

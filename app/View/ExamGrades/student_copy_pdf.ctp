@@ -304,7 +304,7 @@ style="margin-right:2px;text-align:center">' . $course_code[1] . '</td>
 			$student_copy_content .= '<tr>
 					<td></td>
 					<td></td>
-					<td style="font-weight:bold">Academic Status: Graduated ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
+					<td style="font-weight:bold">Academic Status: ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
 					<td></td>
 					<td></td>
 					<td></td>
@@ -424,7 +424,7 @@ style="margin-right:2px;text-align:center">' . $course_code[1] . '</td>
 			$student_copy_content .= '<tr>
 					<td></td>
 					<td></td>
-					<td style="font-weight:bold">Academic Status: Graduated ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
+					<td style="font-weight:bold">Academic Status: ' . (!empty($student_copy['student_detail']['GraduationStatuse']) ? '<br /><span style="text-align:center">with ' . $student_copy['student_detail']['GraduationStatuse']['status'] . '</span>' : '') . '</td>
 					<td></td>
 					<td></td>
 					<td></td>
