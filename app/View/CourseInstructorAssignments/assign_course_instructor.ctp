@@ -427,12 +427,12 @@
 																					$given_department_idddd = $sv['given_by_department_id'];
 																				} 
 																				
-																				if (empty($sv['assign_instructor'][0])) { ?>
+																				?>
 																					<tr>
 																						<td colspan="4"><?= $this->Form->input('CourseInstructorAssignment.' . $index . '.type', array('id' => 'course_type_' . $index, 'style' => 'width: 50%;', 'label' => 'Type', 'empty' => '[ Select Type ]', 'type' => 'select', 'options' => $course_type_array[$depat][$pk][$ptk][$yk][$section_name][$sk], 'onchange' => 'getInstructorCombo(' . $index . ',"' . $given_department_idddd . '",' . $sv['published_course_id'] . ',' . $isprimary . ',' . $course_split_section_id . ')')); ?></td>
 																					</tr>
 																					<?php
-																				}
+
 																			} ?>
 
 																			<tr>

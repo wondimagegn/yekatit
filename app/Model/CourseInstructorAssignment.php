@@ -114,16 +114,16 @@ class CourseInstructorAssignment extends AppModel
 		)
 	);
 
-	function listOfSectionInstructorAssigned($acadamic_year = null, $semester = null, $instructor_id = null)
+	function listOfSectionInstructorAssigned($acadamic_year = null, $semester = null, $instructor_id = null,$isprimary=1)
 	{
 		$published_course_details = $this->find('all', array(
 			'fields' => array('id'),
 			'conditions' => array(
-				//'CourseInstructorAssignment.type LIKE \'%Lecture%\'',
+
 				'CourseInstructorAssignment.staff_id' => $instructor_id,
 				'CourseInstructorAssignment.academic_year' => $acadamic_year,
 				'CourseInstructorAssignment.semester' => $semester,
-				'CourseInstructorAssignment.isprimary' => 1
+				'CourseInstructorAssignment.isprimary' => $isprimary
 			),
 			'contain' => array('PublishedCourse' => 'section_id')
 		));
@@ -181,6 +181,7 @@ class CourseInstructorAssignment extends AppModel
 					'College', 
 					'Course',
 					'GivenByDepartment',
+                    'CourseInstructorAssignment',
 					'YearLevel' => array('id', 'name'),
 					'ProgramType' => array('id', 'name', 'shortname'), 
 					'Program' => array('id', 'name', 'shortname'),
@@ -212,7 +213,9 @@ class CourseInstructorAssignment extends AppModel
 					'College', 
 					'Course', 
 					'GivenByDepartment',
-					'YearLevel' => array('id', 'name'),
+                    'CourseInstructorAssignment',
+
+                    'YearLevel' => array('id', 'name'),
 					'ProgramType' => array('id', 'name', 'shortname'), 
 					'Program' => array('id', 'name', 'shortname'),
 					'Section' => array(
@@ -230,9 +233,11 @@ class CourseInstructorAssignment extends AppModel
 		return $published_courses_by_section;
 	}
 
-	function listOfCoursesInstructorAssignedBySection($acadamic_year = null, $semester = null, $instructor_id = null, $return_select_box = 0)
+	function listOfCoursesInstructorAssignedBySection($acadamic_year = null, $semester = null, $instructor_id = null,
+        $return_select_box = 0,$isprimary = 1)
 	{
-		$list_of_sections = $this->listOfSectionInstructorAssigned($acadamic_year, $semester, $instructor_id);
+		$list_of_sections = $this->listOfSectionInstructorAssigned($acadamic_year, $semester, $instructor_id,$isprimary);
+
 		$courses_formated = array();
 
 		if (!empty($list_of_sections)) {
@@ -240,7 +245,7 @@ class CourseInstructorAssignment extends AppModel
 				$course_list = $this->find('all', array(
 					'conditions' => array(
 						'CourseInstructorAssignment.staff_id' => $instructor_id,
-						'CourseInstructorAssignment.isprimary' => 1,
+						'CourseInstructorAssignment.isprimary' => $isprimary,
 						'PublishedCourse.academic_year' => $acadamic_year,
 						'PublishedCourse.semester' => $semester,
 						'PublishedCourse.section_id' => $section_id,
@@ -353,9 +358,10 @@ class CourseInstructorAssignment extends AppModel
 		}
 	}
 
-	function listOfAssignedGradeEntryAssignedBySection($acadamic_year = null, $semester = null, $instructor_id = null, $return_select_box = 0)
+	function listOfAssignedGradeEntryAssignedBySection($acadamic_year = null, $semester = null, $instructor_id = null, $return_select_box = 0,
+    $isprimary = 1)
 	{
-		$list_of_sections = $this->listOfSectionInstructorAssigned($acadamic_year, $semester, $instructor_id);
+		$list_of_sections = $this->listOfSectionInstructorAssigned($acadamic_year, $semester, $instructor_id,$isprimary);
 		$courses_formated = array();
 
 		if (!empty($list_of_sections)) {
@@ -363,7 +369,7 @@ class CourseInstructorAssignment extends AppModel
 				$course_list = $this->find('all', array(
 					'conditions' => array(
 						'CourseInstructorAssignment.staff_id' => $instructor_id,
-						'CourseInstructorAssignment.isprimary' => 1,
+						'CourseInstructorAssignment.isprimary' => $isprimary,
 						'PublishedCourse.academic_year' => $acadamic_year,
 						'PublishedCourse.semester' => $semester,
 						'PublishedCourse.section_id' => $section_id,
@@ -406,7 +412,8 @@ class CourseInstructorAssignment extends AppModel
 		}
 	}
 
-	function listOfCoursesSectionsTakingOrgBySection($department_id = null, $acadamic_year = null, $semester = null, $program_id = null, $program_type_id = null, $selectible_section = 0, $yearLevel = null)
+	function listOfCoursesSectionsTakingOrgBySection($department_id = null, $acadamic_year = null, $semester = null,
+        $program_id = null, $program_type_id = null, $selectible_section = 0, $yearLevel = null)
 	{
 		$yearLevelId = null;
 
@@ -440,6 +447,84 @@ class CourseInstructorAssignment extends AppModel
 
 		return $organized_Published_courses_by_sections;
 	}
+
+
+    function listOfCoursesSectionsTakingOrgBySectionHasSecondaryInstructor($department_id = null, $acadamic_year = null, $semester = null,
+        $program_id = null, $program_type_id = null, $selectible_section = 0, $yearLevel = null)
+    {
+        $yearLevelId = null;
+
+        if (!empty($yearLevel) && !empty($department_id)) {
+            $yearLevelId = $this->PublishedCourse->YearLevel->field('id', array(
+                'YearLevel.department_id' => $department_id,
+                'YearLevel.name' => $yearLevel
+            ));
+        }
+
+        $published_courses_by_section = $this->listOfDepartmentSections($department_id, $acadamic_year, $semester, $program_id,
+            $program_type_id, $yearLevelId);
+        debug($published_courses_by_section);
+
+        $organized_Published_courses_by_sections = array();
+
+        if ($selectible_section == 0) {
+            if (!empty($published_courses_by_section)) {
+                foreach ($published_courses_by_section  as $pc_key => $published_course) {
+                    if (!empty($published_course['CourseInstructorAssignment'])) {
+                        foreach($published_course['CourseInstructorAssignment'] as $crassignment=>$crvalue){
+
+                            if(!$crvalue['isprimary']) {
+                                $organized_Published_courses_by_sections[(trim(
+                                    str_replace(
+                                        '  ',
+                                        ' ',
+                                        $published_course['Section']['name']
+                                    )
+                                )) . ' (' . (isset($published_course['Section']['YearLevel']['name']) ?
+                                    $published_course['Section']['YearLevel']['name'] : (isset($published_course['PublishedCourse']['YearLevel']['name']) ?
+                                        $published_course['PublishedCourse']['YearLevel']['name'] :
+                                        ($published_course['Section']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial' : 'Pre/1st'))) . ', ' .
+                                (isset($published_course['Section']['academicyear']) ? $published_course['Section']['academicyear'] :
+                                    $published_course['PublishedCourse']['academic_year']) . ')'][$published_course['PublishedCourse']['id']] =
+                                    ((trim($published_course['Course']['course_title'])) . ' (' . (trim(
+                                            $published_course['Course']['course_code']
+                                        )) . ')');
+                                break 1;
+                            }
+                        }
+
+                    }
+                }
+            }
+        } else {
+            if (!empty($published_courses_by_section)) {
+                foreach ($published_courses_by_section  as $pc_key => $published_course) {
+                    if (!empty($published_course['CourseInstructorAssignment'])) {
+                        foreach ($published_course['CourseInstructorAssignment'] as $crassignment => $crvalue) {
+                            if (!$crvalue['isprimary']) {
+                                $label = (trim(str_replace('  ', ' ', $published_course['Section']['name']))) . ' (' .
+                                    (isset($published_course['Section']['YearLevel']['name']) ? $published_course['Section']['YearLevel']['name'] :
+                                        (isset($published_course['PublishedCourse']['YearLevel']['name']) ?
+                                            $published_course['PublishedCourse']['YearLevel']['name'] :
+                                            ($published_course['Section']['program_id'] == PROGRAM_REMEDIAL ? 'Remedial' : 'Pre/1st'))) . ', ' .
+                                    (isset($published_course['Section']['academicyear']) ? $published_course['Section']['academicyear'] :
+                                        $published_course['PublishedCourse']['academic_year']) . ')';
+                                $organized_Published_courses_by_sections[$label]['s~' . $published_course['Section']['id']] = 'Master Sheet for ' .
+                                    (trim(str_replace('  ', ' ', $published_course['Section']['name'])));
+                                $organized_Published_courses_by_sections[$label][$published_course['PublishedCourse']['id']] =
+                                    (trim($published_course['Course']['course_title'])) . ' (' . (trim(
+                                        $published_course['Course']['course_code']
+                                    )) . ')';
+                                break 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $organized_Published_courses_by_sections;
+    }
 
 	function listOfCollegeFreshmanSections($college_id = null, $acadamic_year = null, $semester = null, $program_id = null, $program_type_id = null, $given_by_department_id = null)
 	{

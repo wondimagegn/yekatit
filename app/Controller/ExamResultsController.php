@@ -314,16 +314,7 @@ class ExamResultsController extends AppController
 
 	public function add($published_course_id = null)
 	{
-		//The following three function calling is for Student Status test and can be deleted at any time
-		//$this->ExamResult->CourseAdd->Student->StudentExamStatus->updateAcdamicStatusByPublishedCourse(211);
-		///$this->ExamResult->CourseAdd->Student->StudentExamStatus->updateAcdamicStatusByPublishedCourse(122);// 2011/12/I 122 2010/11/II 29
-		//$this->ExamResult->CourseAdd->Student->StudentExamStatus->updateAcdamicStatusForGradeChange(199);
-		//$this->ExamResult->CourseAdd->Student->StudentExamStatus->updateAcdamicStatusForGradeChange(217, 'register');
-		//$this->ExamResult->CourseAdd->Student->StudentExamStatus->isStudentPassed(84, '2011/12');
-		//$this->ExamResult->CourseAdd->getCourseAdds(124, array(), 236, 1);
-		//$this->ExamResult->CourseAdd->Student->StudentExamStatus->getAcadamicYearAndSemesterListToGenerateStatus(124, '2011/12', 'I');
 
-		
 
 		if (!empty($published_course_id) && $published_course_id > 0) {
 			$instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id', array('Staff.user_id' => $this->Auth->user('id')));
@@ -339,7 +330,7 @@ class ExamResultsController extends AppController
 			}
 		}
 
-		if (/* !$published_course_id && */!empty($this->request->data)) {
+		if (!empty($this->request->data)) {
 			if (!empty($published_course_id) && isset($this->request->data['ExamResult']['published_course_id']) && !empty($this->request->data['ExamResult']['published_course_id']) && $published_course_id != $this->request->data['ExamResult']['published_course_id']) {
 				$this->redirect(array('action' => 'add', $this->request->data['ExamResult']['published_course_id']));
 			}
@@ -591,7 +582,18 @@ class ExamResultsController extends AppController
 		$view_only = false;
 		$date_grade_submited = date('Y-m-d H:i:s');
 
-		$instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id', array('Staff.user_id' => $this->Auth->user('id')));
+		$instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id',
+            array('Staff.user_id' => $this->Auth->user('id')));
+
+        $assignmentSecondary = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->find('count', array(
+            'conditions' => array(
+                'CourseInstructorAssignment.published_course_id' => $published_course_id,
+                'CourseInstructorAssignment.staff_id' => $instructor_id,
+                'CourseInstructorAssignment.isprimary' => 0
+            ),
+            'recursive' => 0
+        ));
+
 		
 		if (!empty($published_course_id)) {
 			$exam_types = $this->ExamResult->ExamType->find('all', array(
@@ -1105,7 +1107,7 @@ class ExamResultsController extends AppController
 			$publishedCourses = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->listOfCoursesInstructorAssignedBySection($selected_acadamic_year, $selected_semester, $instructor_id);
 		} else if (!empty($this->request->data) || $published_course_id) {
 			
-			if (/* empty($this->request->data) && */ $published_course_id && is_numeric($published_course_id) && $published_course_id > 0) {
+			if ( $published_course_id && is_numeric($published_course_id) && $published_course_id > 0) {
 				
 				$published_course_detail = $this->ExamResult->CourseRegistration->PublishedCourse->find('first', array('conditions' => array('PublishedCourse.id' => $published_course_id), 'recursive' => -1));
 
@@ -1170,7 +1172,11 @@ class ExamResultsController extends AppController
 			$date_grade_submited = date('Y-m-d H:i:s');
 		}
 
-		$this->set(compact('selected_acadamic_year', 'selected_semester', 'gradeStatistics', 'grade_scale', 'lastGradeSubmissionDate', 'published_course_detail', 'course_assignment_detail', 'exam_results', 'published_course_combo_id', 'publishedCourses', 'students', 'exam_types', 'student_adds', 'student_makeup', 'section_detail', 'course_detail', 'display_grade', 'grade_submission_status', 'view_only', 'days_available_for_grade_change', 'total_student_count', 'date_grade_submited'));
+		$this->set(compact('selected_acadamic_year', 'selected_semester', 'gradeStatistics', 'grade_scale',
+            'lastGradeSubmissionDate', 'published_course_detail', 'course_assignment_detail', 'exam_results', 'published_course_combo_id',
+            'publishedCourses', 'students', 'exam_types', 'student_adds', 'student_makeup', 'section_detail', 'course_detail',
+            'display_grade', 'grade_submission_status', 'view_only', 'days_available_for_grade_change', 'total_student_count',
+            'date_grade_submited','assignmentSecondary'));
 		//debug($students);
 	}
 	
@@ -2096,6 +2102,7 @@ class ExamResultsController extends AppController
 		$this->set(compact('selected_acadamic_year', 'selected_semester', 'gradeStatistics', 'grade_scale', 'lastGradeSubmissionDate', 'published_course_detail', 'course_assignment_detail', 'exam_results', 'published_course_combo_id', 'publishedCourses', 'students', 'exam_types', 'student_adds', 'student_makeup', 'section_detail', 'course_detail', 'display_grade', 'grade_submission_status', 'view_only', 'days_available_for_grade_change', 'total_student_count'));
 	}
 
+    /*
 	function get_exam_result_entry_form($published_course_id = null)
 	{
 		$this->layout = 'ajax';
@@ -2113,14 +2120,21 @@ class ExamResultsController extends AppController
 			$show_user_deactivation_link = false;
 
 			if (!empty($published_course_id)) {
-				$instructor_id_for_checking = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->field('CourseInstructorAssignment.staff_id', array('CourseInstructorAssignment.published_course_id' => $published_course_id, 'CourseInstructorAssignment.type LIKE \'%Lecture%\'', 'isprimary' => 1));
-				//Not to block department head his/her own assigned courses
-				$login_instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id', array('Staff.user_id' => $this->Auth->user('id')));
 
-				$assigned_instructor_user_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('Staff.user_id', array('Staff.id' => $instructor_id_for_checking));
-				$active_account = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->User->field('active', array('User.id' => $assigned_instructor_user_id));
-				//Role based checking is removed
-				//if(($this->role_id == 6 || $this->role_id == 5) && $active_account == 1 && $instructor_id_for_checking != $login_instructor_id)
+
+                $login_instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id',
+                    array('Staff.user_id' => $this->Auth->user('id')));
+				$instructor_id_for_checking = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->field(
+                    'CourseInstructorAssignment.staff_id', array('CourseInstructorAssignment.published_course_id' => $published_course_id,
+                        'CourseInstructorAssignment.type LIKE \'%Lecture%\'', 'isprimary' => 1));
+				//Not to block department head his/her own assigned courses
+				$login_instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id',
+                    array('Staff.user_id' => $this->Auth->user('id')));
+
+				$assigned_instructor_user_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('Staff.user_id',
+                    array('Staff.id' => $instructor_id_for_checking));
+				$active_account = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->User->field('active',
+                    array('User.id' => $assigned_instructor_user_id));
 
 				if ($active_account == 1 && $instructor_id_for_checking != $login_instructor_id) {
 					$view_only = true;
@@ -2184,9 +2198,271 @@ class ExamResultsController extends AppController
 				$date_grade_submited = date('Y-m-d H:i:s');
 			}
 
-			$this->set(compact('grade_scale', 'published_course_id', 'students', 'exam_types', 'exam_results', 'section_detail', 'course_detail', 'course_assignment_detail', 'gradeStatistics', 'student_adds', 'student_makeup', 'display_grade', 'grade_submission_status', 'view_only', 'days_available_for_grade_change', 'lastGradeSubmissionDate', 'date_grade_submited', 'show_user_deactivation_link'));
+			$this->set(compact('grade_scale', 'published_course_id', 'students', 'exam_types', 'exam_results',
+                'section_detail', 'course_detail', 'course_assignment_detail', 'gradeStatistics', 'student_adds', 'student_makeup',
+                'display_grade', 'grade_submission_status', 'view_only', 'days_available_for_grade_change', 'lastGradeSubmissionDate',
+                'date_grade_submited', 'show_user_deactivation_link'));
 		} //End of login user cheking
 	}
+    */
+
+
+    function get_exam_result_entry_form($published_course_id = null)
+    {
+        $this->layout = 'ajax';
+        if (!$this->Auth->user('id')) {
+            return;
+        }
+
+        $edit = 0;
+        $exam_types = array();
+        $exam_results = array();
+        $students = array();
+        $student_adds = array();
+        $student_makeup = array();
+        $grade_scale = array();
+        $display_grade = false;
+        $view_only = false;
+        $show_user_deactivation_link = false;
+        $section_detail = array();
+        $course_detail = array();
+        $course_assignment_detail = array();
+        $gradeStatistics = array();
+        $grade_submission_status = array();
+        $loggedPrimaryForTheCourse = false;
+        $loggedInstructorId = 0;
+        $allowDepartmentHeadAllExamTypes = false;
+
+        if (!empty($published_course_id)) {
+            $staffModel = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff;
+            $assignmentModel = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment;
+            $publishedCourseModel = $this->ExamResult->CourseRegistration->PublishedCourse;
+
+            $login_instructor_id = $staffModel->field('id', array(
+                'Staff.user_id' => $this->Auth->user('id')
+            ));
+
+            $loggedInstructorId = $login_instructor_id;
+
+            $instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id',
+                array('Staff.user_id' => $this->Auth->user('id')));
+
+            $assignmentSecondary = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->find('count', array(
+                'conditions' => array(
+                    'CourseInstructorAssignment.published_course_id' => $published_course_id,
+                    'CourseInstructorAssignment.staff_id' => $instructor_id,
+                    'CourseInstructorAssignment.isprimary' => 0
+                ),
+                'recursive' => 0
+            ));
+
+
+            $allInstructorAssignments = $assignmentModel->find('all', array(
+                'conditions' => array(
+                    'CourseInstructorAssignment.published_course_id' => $published_course_id
+                ),
+                'contain' => array(
+                    'Staff' => array(
+                        'User'
+                    )
+                ),
+                'recursive' => 0
+            ));
+
+            $loggedInAssignments = array();
+            $primaryAssignments = array();
+
+            foreach ($allInstructorAssignments as $assignment) {
+                if (
+                    !empty($assignment['CourseInstructorAssignment']['staff_id']) &&
+                    $assignment['CourseInstructorAssignment']['staff_id'] == $login_instructor_id
+                ) {
+                    $loggedInAssignments[] = $assignment;
+                }
+
+                if (!empty($assignment['CourseInstructorAssignment']['isprimary'])) {
+                    $primaryAssignments[] = $assignment;
+                }
+            }
+
+            foreach ($loggedInAssignments as $assignment) {
+                if (!empty($assignment['CourseInstructorAssignment']['isprimary'])) {
+                    $loggedPrimaryForTheCourse = true;
+                    break;
+                }
+            }
+
+            $assignedPrimaryInstructorId = null;
+            $assignedPrimaryInstructorUserId = null;
+            $assignedPrimaryInstructorActive = null;
+
+            if (!empty($primaryAssignments[0]['CourseInstructorAssignment']['staff_id'])) {
+                $assignedPrimaryInstructorId = $primaryAssignments[0]['CourseInstructorAssignment']['staff_id'];
+            }
+
+            if (!empty($primaryAssignments[0]['Staff']['user_id'])) {
+                $assignedPrimaryInstructorUserId = $primaryAssignments[0]['Staff']['user_id'];
+            }
+
+            if (!empty($assignedPrimaryInstructorUserId)) {
+                $assignedPrimaryInstructorActive = $staffModel->User->field('active', array(
+                    'User.id' => $assignedPrimaryInstructorUserId
+                ));
+            }
+
+            $hasAnyInstructorAssignment = !empty($allInstructorAssignments);
+            $hasPrimaryInstructorAssignment = !empty($assignedPrimaryInstructorId);
+            $primaryInstructorIsInactive = (
+                $hasPrimaryInstructorAssignment &&
+                (int)$assignedPrimaryInstructorActive !== 1
+            );
+
+            $pc_given_by_department = $publishedCourseModel->field('given_by_department_id', array(
+                'PublishedCourse.id' => $published_course_id
+            ));
+
+            $isDepartmentHead = (
+                $this->Session->read('Auth.User.role_id') == ROLE_DEPARTMENT &&
+                isset($this->department_id) &&
+                !empty($this->department_id)
+            );
+
+            $isDepartmentResponsibleForCourse = (
+                !empty($pc_given_by_department) &&
+                $isDepartmentHead &&
+                $this->department_id == $pc_given_by_department
+            );
+
+            if (
+                $isDepartmentResponsibleForCourse &&
+                (
+                    !$hasAnyInstructorAssignment ||
+                    !$hasPrimaryInstructorAssignment ||
+                    $primaryInstructorIsInactive
+                )
+            ) {
+                $allowDepartmentHeadAllExamTypes = true;
+            }
+
+            if (
+                $hasPrimaryInstructorAssignment &&
+                !$loggedPrimaryForTheCourse &&
+                !$allowDepartmentHeadAllExamTypes
+            ) {
+                if (
+                    (int)$assignedPrimaryInstructorActive === 1 &&
+                    $assignedPrimaryInstructorId != $login_instructor_id
+                ) {
+                    $view_only = true;
+                    $show_user_deactivation_link = $isDepartmentResponsibleForCourse ? true : false;
+                }
+            }
+
+            $examTypeConditions = array(
+                'ExamType.published_course_id' => $published_course_id
+            );
+
+            if (!$loggedPrimaryForTheCourse && !$allowDepartmentHeadAllExamTypes) {
+                $examTypeConditions['ExamType.staff_id'] = $login_instructor_id;
+            }
+
+            $exam_types = $this->ExamResult->ExamType->find('all', array(
+                'fields' => array(
+                    'ExamType.id',
+                    'ExamType.exam_name',
+                    'ExamType.percent',
+                    'ExamType.order',
+                    'ExamType.staff_id'
+                ),
+                'conditions' => $examTypeConditions,
+                'contain' => array(),
+                'order' => array('ExamType.order' => 'ASC'),
+                'recursive' => -1
+            ));
+
+            $section_and_course_detail = $publishedCourseModel->find('first', array(
+                'conditions' => array(
+                    'PublishedCourse.id' => $published_course_id
+                ),
+                'contain' => array(
+                    'Section',
+                    'Course',
+                    'CourseInstructorAssignment' => array(
+                        'conditions' => array(
+                            'CourseInstructorAssignment.isprimary' => true
+                        ),
+                        'Staff' => array('Title', 'Position')
+                    )
+                )
+            ));
+
+            $section_detail = !empty($section_and_course_detail['Section']) ? $section_and_course_detail['Section'] : array();
+            $course_detail = !empty($section_and_course_detail['Course']) ? $section_and_course_detail['Course'] : array();
+            $course_assignment_detail = !empty($section_and_course_detail['CourseInstructorAssignment']) ? $section_and_course_detail['CourseInstructorAssignment'] : array();
+
+            $student_course_register_and_adds = $publishedCourseModel->getStudentsTakingPublishedCourse(
+                $published_course_id
+            );
+
+            $students = !empty($student_course_register_and_adds['register']) ? $student_course_register_and_adds['register'] : array();
+            $student_adds = !empty($student_course_register_and_adds['add']) ? $student_course_register_and_adds['add'] : array();
+            $student_makeup = !empty($student_course_register_and_adds['makeup']) ? $student_course_register_and_adds['makeup'] : array();
+
+            $grade_submission_status = $this->ExamResult->getExamGradeSubmissionStatus(
+                $published_course_id,
+                $student_course_register_and_adds
+            );
+
+            $grade_scale = $publishedCourseModel->getGradeScaleDetail($published_course_id);
+            $gradeStatistics = $this->ExamResult->CourseRegistration->ExamGrade->getLetterGradeStatistics(
+                $published_course_id
+            );
+        }
+
+        $days_available_for_grade_change = ClassRegistry::init('GeneralSetting')->daysAvaiableForGradeChange(
+            $published_course_id
+        );
+        $lastGradeSubmissionDate = ClassRegistry::init('AcademicCalendar')->getPublishedCourseGradeSubmissionDate(
+            $published_course_id
+        );
+
+        if (!empty($published_course_id)) {
+            $date_grade_submited = $lastGradeSubmissionDate;
+        } else {
+            if (!empty($lastGradeSubmissionDate)) {
+                $date_grade_submited = $lastGradeSubmissionDate;
+            } else {
+                $date_grade_submited = date('Y-m-d H:i:s');
+            }
+        }
+
+        $this->set(
+            compact(
+                'grade_scale',
+                'published_course_id',
+                'students',
+                'exam_types',
+                'exam_results',
+                'section_detail',
+                'course_detail',
+                'course_assignment_detail',
+                'gradeStatistics',
+                'student_adds',
+                'student_makeup',
+                'display_grade',
+                'grade_submission_status',
+                'view_only',
+                'days_available_for_grade_change',
+                'lastGradeSubmissionDate',
+                'date_grade_submited',
+                'show_user_deactivation_link',
+                'loggedPrimaryForTheCourse',
+                'loggedInstructorId',
+                'assignmentSecondary',
+                'allowDepartmentHeadAllExamTypes'
+            )
+        );
+    }
 
 	function get_exam_result_fx_entry_form($published_course_id = null)
 	{
@@ -2426,7 +2702,7 @@ class ExamResultsController extends AppController
 			return "There is no published course.";
 		}
 	}
-
+    /*
 	function autoSaveResult()
 	{
 		$this->autoRender = false;
@@ -2434,7 +2710,8 @@ class ExamResultsController extends AppController
 		$save_is_ok = true;
 		$do_manipulate = false;
 		$published_course_id = $this->request->data['ExamResult']['published_course_id'];
-		$instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id', array('Staff.user_id' => $this->Auth->user('id')));
+		$instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id',
+            array('Staff.user_id' => $this->Auth->user('id')));
 
 		if (!empty($published_course_id)) {
 
@@ -2455,16 +2732,12 @@ class ExamResultsController extends AppController
 			if ($instructor_id_for_checking == $instructor_id) {
 				$do_manipulate = true;
 			}
-
 			$login_instructor_id = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff->field('id', array('Staff.user_id' => $this->Auth->user('id')));
 
 			if ($active_account == 1 && $instructor_id_for_checking != $login_instructor_id) {
 				$do_manipulate = false;
 			}
 		}
-
-		//debug($do_manipulate);
-
 		if ($do_manipulate && isset($this->request->data['ExamResult']) && !empty($this->request->data['ExamResult']) && isset($exam_types) && !empty($exam_types)) {
 			foreach ($this->request->data['ExamResult'] as $key => $exam_result) {
 				$save_is_ok = true;
@@ -2531,6 +2804,252 @@ class ExamResultsController extends AppController
 			}
 		}
 	}
+    */
+
+
+    function autoSaveResult()
+    {
+        $this->autoRender = false;
+
+        $exam_results = array();
+        $save_is_ok = true;
+        $do_manipulate = false;
+        $exam_types = array();
+
+        if (
+            !isset($this->request->data['ExamResult']['published_course_id']) ||
+            empty($this->request->data['ExamResult']['published_course_id'])
+        ) {
+            return;
+        }
+
+        $published_course_id = $this->request->data['ExamResult']['published_course_id'];
+
+        $staffModel = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment->Staff;
+        $assignmentModel = $this->ExamResult->ExamType->PublishedCourse->CourseInstructorAssignment;
+        $publishedCourseModel = $this->ExamResult->CourseRegistration->PublishedCourse;
+
+        $login_instructor_id = $staffModel->field('id', array(
+            'Staff.user_id' => $this->Auth->user('id')
+        ));
+
+        if (empty($login_instructor_id)) {
+            return;
+        }
+
+        $allInstructorAssignments = $assignmentModel->find('all', array(
+            'conditions' => array(
+                'CourseInstructorAssignment.published_course_id' => $published_course_id
+            ),
+            'contain' => array(
+                'Staff' => array('User')
+            ),
+            'recursive' => 0
+        ));
+
+        $loggedPrimaryForTheCourse = false;
+        $loggedSecondaryForTheCourse = false;
+        $allowDepartmentHeadAllExamTypes = false;
+
+        $loggedInAssignments = array();
+        $primaryAssignments = array();
+
+        foreach ($allInstructorAssignments as $assignment) {
+            if (
+                !empty($assignment['CourseInstructorAssignment']['staff_id']) &&
+                $assignment['CourseInstructorAssignment']['staff_id'] == $login_instructor_id
+            ) {
+                $loggedInAssignments[] = $assignment;
+                $loggedSecondaryForTheCourse = true;
+            }
+
+            if (!empty($assignment['CourseInstructorAssignment']['isprimary'])) {
+                $primaryAssignments[] = $assignment;
+            }
+        }
+
+        foreach ($loggedInAssignments as $assignment) {
+            if (!empty($assignment['CourseInstructorAssignment']['isprimary'])) {
+                $loggedPrimaryForTheCourse = true;
+                break;
+            }
+        }
+
+        $assignedPrimaryInstructorId = null;
+        $assignedPrimaryInstructorUserId = null;
+        $assignedPrimaryInstructorActive = null;
+
+        if (!empty($primaryAssignments[0]['CourseInstructorAssignment']['staff_id'])) {
+            $assignedPrimaryInstructorId = $primaryAssignments[0]['CourseInstructorAssignment']['staff_id'];
+        }
+
+        if (!empty($primaryAssignments[0]['Staff']['user_id'])) {
+            $assignedPrimaryInstructorUserId = $primaryAssignments[0]['Staff']['user_id'];
+        }
+
+        if (!empty($assignedPrimaryInstructorUserId)) {
+            $assignedPrimaryInstructorActive = $staffModel->User->field('active', array(
+                'User.id' => $assignedPrimaryInstructorUserId
+            ));
+        }
+
+        $hasAnyInstructorAssignment = !empty($allInstructorAssignments);
+        $hasPrimaryInstructorAssignment = !empty($assignedPrimaryInstructorId);
+        $primaryInstructorIsInactive = (
+            $hasPrimaryInstructorAssignment &&
+            (int)$assignedPrimaryInstructorActive !== 1
+        );
+
+        $pc_given_by_department = $publishedCourseModel->field('given_by_department_id', array(
+            'PublishedCourse.id' => $published_course_id
+        ));
+
+        $isDepartmentHead = (
+            $this->Session->read('Auth.User.role_id') == ROLE_DEPARTMENT &&
+            isset($this->department_id) &&
+            !empty($this->department_id)
+        );
+
+        $isDepartmentResponsibleForCourse = (
+            !empty($pc_given_by_department) &&
+            $isDepartmentHead &&
+            $this->department_id == $pc_given_by_department
+        );
+
+        if (
+            $isDepartmentResponsibleForCourse &&
+            (
+                !$hasAnyInstructorAssignment ||
+                !$hasPrimaryInstructorAssignment ||
+                $primaryInstructorIsInactive
+            )
+        ) {
+            $allowDepartmentHeadAllExamTypes = true;
+        }
+
+        $examTypeConditions = array(
+            'ExamType.published_course_id' => $published_course_id
+        );
+
+        if ($loggedPrimaryForTheCourse || $allowDepartmentHeadAllExamTypes) {
+            $do_manipulate = true;
+        } else {
+            if ($loggedSecondaryForTheCourse) {
+                $do_manipulate = true;
+                $examTypeConditions['ExamType.staff_id'] = $login_instructor_id;
+            }
+        }
+
+        $exam_types = $this->ExamResult->ExamType->find('all', array(
+            'fields' => array(
+                'ExamType.id',
+                'ExamType.exam_name',
+                'ExamType.percent',
+                'ExamType.order',
+                'ExamType.staff_id'
+            ),
+            'conditions' => $examTypeConditions,
+            'contain' => array(),
+            'order' => array('ExamType.order' => 'ASC'),
+            'recursive' => -1
+        ));
+
+        $allowedExamTypesById = array();
+        foreach ($exam_types as $exam_type) {
+            $allowedExamTypesById[$exam_type['ExamType']['id']] = array(
+                'percent' => $exam_type['ExamType']['percent'],
+                'exam_name' => $exam_type['ExamType']['exam_name']
+            );
+        }
+
+        if (
+            $do_manipulate &&
+            isset($this->request->data['ExamResult']) &&
+            !empty($this->request->data['ExamResult']) &&
+            !empty($allowedExamTypesById)
+        ) {
+            foreach ($this->request->data['ExamResult'] as $key => $exam_result) {
+                $save_is_ok = true;
+
+                if (!is_array($exam_result)) {
+                    continue;
+                }
+
+                if (!isset($exam_result['result']) || trim($exam_result['result']) === '') {
+                    continue;
+                }
+
+                $exam_results = $exam_result;
+                $exam_percent = "";
+                $exam_type_id = "";
+                $exam_name = "";
+
+                if (!empty($exam_result['id'])) {
+                    $existingExamResult = $this->ExamResult->find('first', array(
+                        'conditions' => array('ExamResult.id' => $exam_result['id']),
+                        'fields' => array('ExamResult.id', 'ExamResult.exam_type_id'),
+                        'recursive' => -1
+                    ));
+
+                    if (!empty($existingExamResult['ExamResult']['exam_type_id'])) {
+                        $exam_type_id = $existingExamResult['ExamResult']['exam_type_id'];
+                    }
+                } else {
+                    if (!empty($exam_result['exam_type_id'])) {
+                        $exam_type_id = $exam_result['exam_type_id'];
+                    }
+                }
+
+                if (
+                    empty($exam_type_id) ||
+                    !isset($allowedExamTypesById[$exam_type_id])
+                ) {
+                    $save_is_ok = false;
+                } else {
+                    $exam_percent = $allowedExamTypesById[$exam_type_id]['percent'];
+                    $exam_name = $allowedExamTypesById[$exam_type_id]['exam_name'];
+                }
+
+                if ($save_is_ok && (!is_numeric(
+                            $exam_result['result']
+                        ) || $exam_result['result'] < 0 || $exam_result['result'] > $exam_percent)) {
+                    $save_is_ok = false;
+                }
+
+                if ($save_is_ok) {
+                    $data['ExamResult'] = $exam_results;
+
+                    if (!empty($data['ExamResult']['id'])) {
+                        $alreadyRecored = $this->ExamResult->find('first', array(
+                            'conditions' => array('ExamResult.id' => $data['ExamResult']['id']),
+                            'recursive' => -1
+                        ));
+                    } else {
+                        $alreadyRecored = $this->ExamResult->find('first', array(
+                            'conditions' => array(
+                                'ExamResult.exam_type_id' => $data['ExamResult']['exam_type_id'],
+                                'ExamResult.course_registration_id' => $data['ExamResult']['course_registration_id'],
+                                'ExamResult.course_add' => $data['ExamResult']['course_add']
+                            ),
+                            'recursive' => -1
+                        ));
+                    }
+
+                    if (!empty($alreadyRecored)) {
+                        $data['ExamResult']['id'] = $alreadyRecored['ExamResult']['id'];
+                    } else {
+                        $this->ExamResult->create();
+                    }
+
+                    $this->set($data['ExamResult']);
+
+                    if (!$this->ExamResult->save($data)) {
+                        // optional logging here
+                    }
+                }
+            }
+        }
+    }
 
 	public function rollback_grade_submission($published_course_id = null)
 	{

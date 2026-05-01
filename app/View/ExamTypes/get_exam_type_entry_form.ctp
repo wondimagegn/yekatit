@@ -3,9 +3,6 @@
 <?php
 if(!empty($published_course_id)) {
 
-	debug($enable_for_moodle);
-	debug($ac_yearsForMoodle);
-
 	$input_disable = ($grade_submitted ? "disabled" : false);
 	if ($view_only && empty($exam_types)) { ?>
 		<div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>Exam setup is not yet created by the assigned instructor for the published course you selected. If you want to manage the exam setup on belhalf of the instructor, the instructor account should be closed by the system administrator.</div>
@@ -71,10 +68,10 @@ if(!empty($published_course_id)) {
 										</div>
 									</td>
 									<td class="center">
-										<?php 
+										<?php
 										if(!$grade_submitted) { ?>
 											<a href="javascript:deleteSpecificRow('ExamType_<?= $count; ?>')">Delete</a>
-											<?php 
+											<?php
 										} ?>
 									</td>
 								</tr>
@@ -106,9 +103,9 @@ if(!empty($published_course_id)) {
 		<?= $this->Form->submit(__('Submit Exam Setup'), array('div' => false,'class'=>'tiny radius button bg-blue')); ?>
 		<div class='info-box info-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span>Important Note: If a student fail to take any of the mandatory exam/s, the system will automatically give NG to the student.</div>
 		<?php
-		if ($enable_for_moodle) { 
+		if ($enable_for_moodle) {
 
-			$activate = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'Enable Course for Moodle' : 'Disable Course on Moodle'); 
+			$activate = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'Enable Course for Moodle' : 'Disable Course on Moodle');
 			$activateAction = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'enable this course for moodle' : 'delete this course and existing course enrollments from Moodle');
 			$buttonColor = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'blue' : 'red'); ?>
 			<hr>
@@ -125,7 +122,6 @@ if(!empty($published_course_id)) {
 						</div>
 						<div class="large-3 columns">
 							<!-- This buttun is temporarly, it will be replaces when we inject a code to update MoodleUsers Table on password chnage, students, bulk password update, password reset via email etc -->
-							<?php //echo $this->Form->postLink(__('Sync Password Changes'), array('action' => 'sync_user_password_changes_for_moodle', $published_course_department['PublishedCourse']['id']), array('class'=>'tiny radius button bg-blue', 'confirm' => __('Are you sure you want to syncronize very recent user password changes made on SMiS to Moodle Site? Synchronization will only involve for students registered or added %s (%s) course. Please use this option before starting online exams and don\'t when students are taking an online exam and you only want some students passwords to sync.', $published_course_department['Course']['course_title'], $published_course_department['Course']['course_code']))); ?> <!-- <br> -->
 							<?= ($published_course_department['PublishedCourse']['enable_for_moodle'] == 1 ? $this->Form->postLink(__('Sync New Enrollments'), array('action' => 'sync_new_enrollments', $published_course_department['PublishedCourse']['id']), array('class'=>'tiny radius button bg-purple', 'confirm' => __('This will syncronize any changes on SMiS like missing course registrations, course adds or instructor assignments and that aren\'t synced on ' . MOODLE_SITE_URL . '. Do you want to sync the changes? ', $published_course_department['Course']['course_title'], $published_course_department['Course']['course_code']))) : ''); ?> <br>
 						</div>
 
@@ -171,7 +167,7 @@ if(!empty($published_course_id)) {
 	} else if (ALLOW_MOODLE_INTEGRATION_FOR_SUBMITTED_GRADE == 1 && $enable_for_moodle) { ?>
 		<div class='warning-box warning-message' style="font-family: 'Times New Roman', Times, serif; font-weight: bold;"><span style='margin-right: 15px;'></span><i style="color:red;">Grade is partially or fully submitted for the selected course. Your're not advised to enable this course for Moodle unless you have some other reasons.</i></div>
 		<?php
-		$activate = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'Enable Course for Moodle' : 'Disable Course on Moodle'); 
+		$activate = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'Enable Course for Moodle' : 'Disable Course on Moodle');
 		$activateAction = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'enable this course for moodle' : 'delete this course and existing course enrollments from Moodle');
 		$buttonColor = ($published_course_department['PublishedCourse']['enable_for_moodle'] == 0 ? 'blue' : 'red'); ?>
 		<hr>

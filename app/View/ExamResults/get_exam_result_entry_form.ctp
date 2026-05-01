@@ -70,15 +70,49 @@ if (!empty($published_course_id)) {
 
 if ($view_only) { ?>
 	<hr>
-	<div id="flashMessage" class="warning-box warning-message fs15" style="font-family: 'Times New Roman', Times, serif; text-align: justify;"><span style="margin-right: 15px;"></span>To manage this published course exam result and grade, <?= isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0]) ? ' ' . $course_assignment_detail[0]['Staff']['full_name'] . '\'s' : 'the assigned instructor\'s'; ?>  account should be closed by the system administrator first. To achieve this, <?= (isset($show_user_deactivation_link) && $show_user_deactivation_link) ? ' you can initiate a user account deactivation request for ' . (isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0]) ? $course_assignment_detail[0]['Staff']['full_name'] . ' and other staffs in your department' : 'your department stafss')  . ' that are on study leave or left the university permanentyly.<br><br> <a href="/users/deactivate_account/2" target="_blank">Deactivate User Account</a>. <br><br> NB: Any account deactivation request should be confirmed by a system administrator with in 72 hours to be effective else, you have to reinitiate your deactivation request again.' : ((isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0]) ? $course_assignment_detail[0]['Staff']['full_name'] . '\'s department  ' : ' assigned instructor\'s department ') . ' can initiate a user deactivation request in Security > Users > Users > Deactivate user.'); ?></div>
+	<div id="flashMessage" class="warning-box warning-message fs15" style="font-family: 'Times New Roman', Times, serif;
+	text-align: justify;">
+    <span style="margin-right: 15px;"></span>
+        To manage this published course exam result and grade,
+
+        <?php
+        if($assignmentSecondary && $role_id==ROLE_INSTRUCTOR){
+         // assigned as secondary instructor nothing to show
+        } else {
+        ?>
+
+        <?= isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0]) ? ' ' .
+                $course_assignment_detail[0]['Staff']['full_name'] . '\'s' : 'the assigned instructor\'s'; ?>
+        account should be closed by the system administrator first. To achieve this, <?= (isset($show_user_deactivation_link)
+                && $show_user_deactivation_link) ? ' you can initiate a user account deactivation request for ' .
+                (isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0]) ? $course_assignment_detail[0]['Staff']['full_name'] .
+                        ' and other staffs in your department' : 'your department stafss')  .
+                ' that are on study leave or left the university permanentyly.<br><br> <a href="/users/deactivate_account/2" 
+ target="_blank">Deactivate User Account</a>. <br><br> NB: Any account deactivation request should be confirmed by a system administrator with 
+ in 72 hours to be effective else, you have to reinitiate your deactivation request again.' : ((isset($course_assignment_detail[0]) &&
+                !empty($course_assignment_detail[0]) ? $course_assignment_detail[0]['Staff']['full_name'] .
+                        '\'s department  ' : ' assigned instructor\'s department ') . ' can initiate a user deactivation request in Security > 
+                        Users > Users > Deactivate user.'); ?>
 	<hr>
 	<?php
+        }
+        ?>
+        </div>
+        <?php
 }
+?>
+
+<?php
 
 if (count($students) > 0 && !empty($course_detail) && !empty($section_detail) && !empty($exam_types)) {
-	echo '<br><h6 class="fs14 text-gray">' . $course_detail['course_code_title'] . ' exam result entry for ' . $section_detail['name'] . ' section.'. (/* (!$view_only) ||  */(isset($lastGradeSubmissionDate) && $lastGradeSubmissionDate > date('Y-m-d')) || (isset($grade_submission_status) && $grade_submission_status['grade_submited'] == 0) ? '<strong style="color:red;"> The result you type will be automatically saved.</strong>': '' ). '</h6>';
+	echo '<br><h6 class="fs14 text-gray">' . $course_detail['course_code_title'] . ' exam result entry for ' . $section_detail['name'] .
+            ' section.'. ((isset($lastGradeSubmissionDate) && $lastGradeSubmissionDate > date('Y-m-d')) ||
+            (isset($grade_submission_status) && $grade_submission_status['grade_submited'] == 0) ? '<strong style="color:red;"> 
+The result you type will be automatically saved.</strong>': '' ). '</h6>';
 	if (isset($course_assignment_detail[0]) && !empty($course_assignment_detail[0])) {
-		echo '<h6 class="fs14 text-gray">Instructor: ' . $course_assignment_detail[0]['Staff']['Title']['title'] . ' ' . $course_assignment_detail[0]['Staff']['full_name'] . ' (' . $course_assignment_detail[0]['Staff']['Position']['position'] . ')</h6>';
+		echo '<h6 class="fs14 text-gray">Instructor: ' . $course_assignment_detail[0]['Staff']['Title']['title'] . ' ' .
+                $course_assignment_detail[0]['Staff']['full_name'] . ' (' .
+                $course_assignment_detail[0]['Staff']['Position']['position'] . ')</h6>';
 		if (isset($lastGradeSubmissionDate) && $lastGradeSubmissionDate < date('Y-m-d')) {
 			echo '<h6 class="fs14 text-red">Grade submission deadline was ' . $this->Time->timeAgoInWords($lastGradeSubmissionDate, array('format' => 'M j, Y', 'end' => '1 month', 'accuracy' => array('days' => 'days'))) . '  and submission is closed.</h6>';
 		}
@@ -87,10 +121,12 @@ if (count($students) > 0 && !empty($course_detail) && !empty($section_detail) &&
 }
 
 if (empty($published_course_id)) { ?>
-	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>Please Select a Course to get list of students to enter exam result.</div>
+	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>Please Select a Course to get list of students
+        to enter exam result.</div>
 	<?php
 } else if (empty($exam_types) && isset($this->data['ExamResult']['published_course_id']) && !empty($this->data['ExamResult']['published_course_id'])) { ?>
-	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>You need to create Exam Setup before you enter Exam Result.</div>
+	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>
+        You need to create Exam Setup before you enter Exam Result.</div>
 	<?php
 	if ($this->Session->read('Auth.User')['role_id'] == ROLE_DEPARTMENT) {
 		echo "<a href='/examTypes/exam_type_mgt_for_instructor/" . $published_course_id . "' class='tiny radius button bg-blue'>Create Exam Setup</a>";
@@ -98,7 +134,9 @@ if (empty($published_course_id)) { ?>
 		echo "<a href='/examTypes/add/" . $published_course_id . "' class='tiny radius button bg-blue'>Create Exam Setup</a>";
 	}
 } else if (count($students) == 0 && count($student_adds) == 0) { ?>
-	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>The system is unable to find list of students who are registered or added for the course you selected. Please contact your department/registrar for further information.</div>
+	<div id="flashMessage" class="info-box info-message" style="font-family: 'Times New Roman', Times, serif;"><span style="margin-right: 15px;"></span>
+        The system is unable to find list of students who are registered or added for the course you selected.
+        Please contact your department/registrar for further information.</div>
 	<?php
 } else { 
 	//debug($students);
@@ -114,7 +152,11 @@ if (empty($published_course_id)) { ?>
 		$count = 1;
 		$st_count = 0;
 		$this->set(compact('students_process', 'count', 'st_count', 'in_progress', 'makeup_exam'));
-		echo $this->element('exam_sheet');
+        if($loggedPrimaryForTheCourse || $allowDepartmentHeadAllExamTypes){
+            echo $this->element('exam_sheet');
+        }  else {
+            echo $this->element('exam_sheet_secondary_instructor');
+        }
 	}
 
 	if (!empty($exam_types) && count($student_adds) > 0) {
@@ -195,18 +237,13 @@ if (!$view_only && (count($student_makeup) > 0 || count($student_adds) > 0 || co
 					echo $this->Form->submit(__('Submit Grade'), $button_options);
 				}
 
-				/*
-				if ($grade_submission_status['grade_submited_fully']) {
-					echo '<p>All exam grade is submited.</p>';
-				}
-				else */
 
 				if (!($grade_submission_status['grade_submited_fully'] && $grade_submission_status['grade_dpt_rejected'] == 0) && !$display_grade) {
 					echo '<p>Preview exam grade before you submit grade.</p>';
 				} ?>
 			</td>
 			<td style="width:25%">
-				<?php //debug($grade_submission_status);
+				<?php
 				$button_options = array('name' => 'cancelExamGrade', 'div' => false, 'class' => 'tiny radius button bg-blue');
 				if (!$grade_submission_status['grade_submited'] || ($grade_submission_status['grade_submited'] && $grade_submission_status['grade_dpt_approved_fully'])) {
 					$button_options['disabled'] = 'true';
@@ -224,7 +261,7 @@ if (!$view_only && (count($student_makeup) > 0 || count($student_adds) > 0 || co
 			</td>
 			<td style="width:15%">
 				<?php 
-				if (/* isset($students_process) && count($students_process) */ $grade_submission_status['grade_submited']) { 
+				if ($grade_submission_status['grade_submited']) {
 					$button_options = array('name' => 'exportExamGrade', 'div' => false, 'class' => 'tiny radius button bg-blue');
 					$button_options['disabled'] = 'false';
 					echo $this->Form->submit(__('Export MarkSheet', true), $button_options); 
@@ -236,7 +273,7 @@ if (!$view_only && (count($student_makeup) > 0 || count($student_adds) > 0 || co
 	</table>
 	<?php
 } else { 
-	if (/* isset($students_process) &&  */ isset($grade_submission_status['grade_submited']) && $grade_submission_status['grade_submited']) { ?>
+	if ( isset($grade_submission_status['grade_submited']) && $grade_submission_status['grade_submited']) { ?>
 		<hr>
 		<div class="row">
 			<div class="large-2 columns">

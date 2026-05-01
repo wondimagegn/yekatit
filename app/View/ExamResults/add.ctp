@@ -241,18 +241,21 @@
 			//serialize form data
 			$("#flashMessage").remove();
 			var ay = $("#AcadamicYear").val();
-			$("#PublishedCourse").empty();
+            var primary = $("#IsPrimary").is(":checked") ? 1 : 0;
+            $("#IsPrimaryHidden").val($(this).is(":checked") ? 1 : 0);
+            $("#PublishedCourse").empty();
 			$("#AcadamicYear").attr('disabled', true);
 			$("#PublishedCourse").attr('disabled', true);
 			$("#Semester").attr('disabled', true);
 			$("#ExamResultDiv").empty();
 			//$("#ExamResultDiv").append('<p>Loading ...</p>');
 			//get form action
-			var formUrl = '/course_instructor_assignments/get_assigned_courses_of_instructor_by_section_for_combo/' + ay + '/' + $("#Semester").val();
+			var formUrl = '/course_instructor_assignments/get_assigned_courses_of_instructor_by_section_for_combo/' + ay +
+                '/' + $("#Semester").val()+'/0/'+primary;
 			$.ajax({
 				type: 'get',
 				url: formUrl,
-				data: ay,
+				//data: ay,
 				success: function(data, textStatus, xhr) {
 					$("#PublishedCourse").empty();
 					$("#PublishedCourse").append(data);
@@ -366,6 +369,24 @@
 									<?= $this->Form->input('published_course_id', array('id' => 'PublishedCourse', 'label' => 'Assigned Course: ', 'type' => 'select', 'options' => $publishedCourses, 'default' => (isset($published_course_combo_id) && !empty($published_course_combo_id) ? $published_course_combo_id : ''), 'style' => 'width:95%;')); ?>
 								</div>
 							</div>
+                            <div class="row">
+                                <div class="large-12 columns">
+                                    <?php
+
+                                    echo $this->Form->hidden('isprimary', array('id' => 'IsPrimaryHidden', 'value' => 0));
+
+                                    ?>
+                                    <?= $this->Form->input('isprimary', array(
+                                            'class' => 'AYS',
+                                            'id' => 'IsPrimary',
+                                            'label' => 'By default those courses you are assigned as primary instructor will be displayed, if you have secondary 
+                                            instructor assignment and assigned to exam types, uncheck',
+                                            'type' => 'checkbox',
+                                            'checked' => true,
+                                            'value' => 1
+                                    )); ?>
+                                </div>
+                            </div>
 						</fieldset>
 					</div>
 					

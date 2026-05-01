@@ -10,38 +10,10 @@
 
 <table>
 	<tr>
-		<td><div style="margin-bottom: 100px;"><?= $this->Form->input('staff_id', array('label' => 'Instructors', 'id' => 'staff_id', 'type' => 'select', 'class' => 'custom-select', 'options' => $instructors_list, 'onchange' => "this.form.submit();", 'empty' => "[ Select Instructor ]")); ?></div></td>
+		<td><div style="margin-bottom: 100px;"><?= $this->Form->input('staff_id', array('label' => 'Instructors', 'id' => 'staff_id',
+                        'type' => 'select', 'class' => 'custom-select', 'options' => $instructors_list,
+                        'onchange' => "this.form.submit();", 'empty' => "[ Select Instructor ]")); ?></div></td>
 	</tr>
-	<!-- <tr>
-		<td id='show'><a href="javascript:toggle('instructor_course_detail');hideById('show');showBlockById('hide');">Show Experiance Of Instructors</a></td>
-	</tr>
-	<tr>
-		<td id='hide' style='display:none'><a href="javascript:toggle('instructor_course_detail');showBlockById('show');hideById('hide');">Hide Experiance Of Instructors</a></td>
-	</tr>
-
-	<tr>
-		<td id='instructor_course_detail' style='display:none'>
-			<table>
-				<tr>
-					<td colspan=2 class='smallheading'>Instructors Experiance teaching <?php //echo $course_code_title; ?></td>
-				</tr>
-				<tr>
-					<th>Full Name</th>
-					<th>Frequency of Teaching <?php //echo $course_code_title; ?></th>
-				</tr>
-				<?php
-				/* if (!empty($instructors_detail)) {
-					foreach ($instructors_detail as $kk => $vv) { ?>
-						<tr>
-							<td><?= $vv['Staff']['full_name']; ?></td>
-							<td><?= $vv['Experiance']; ?></td>
-						</tr>
-						<?php
-					}
-				} */ ?>
-			</table>
-		</td>
-	</tr> -->
 </table>
 
 <?php

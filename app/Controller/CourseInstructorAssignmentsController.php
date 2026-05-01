@@ -1044,8 +1044,6 @@ class CourseInstructorAssignmentsController extends AppController
 	function assign_instructor_update()
 	{
 
-		//debug($this->request->data);
-
 		$selected_academicyear = $this->request->data['CourseInstructorAssignment']['academic_year'];
 		$this->Session->write('selected_academicyear', $selected_academicyear);
 		$selected_program_id = $this->request->data['CourseInstructorAssignment']['selected_program_id'];
@@ -1062,45 +1060,45 @@ class CourseInstructorAssignmentsController extends AppController
 		$this->Session->write('selected_semester', $selected_semester);
 
 		$count_assign_instructor_for_lecture = 0;
+        $explode_data = explode("+", $this->request->data['CourseInstructorAssignment']['type']);
 
-		if (/* $this->request->data['CourseInstructorAssignment']['isprimary'] == 1 */ 1) {
-			$explode_data = explode("+", $this->request->data['CourseInstructorAssignment']['type']);
-			if ((isset($explode_data[0]) && strcasecmp($explode_data[0], 'Lecture') == 0) || strcasecmp(trim($this->request->data['CourseInstructorAssignment']['type']), 'Lecture') == 0) {
-				$count_assign_instructor_for_lecture = $this->CourseInstructorAssignment->find('count', array(
-					'conditions' => array(
-						'CourseInstructorAssignment.published_course_id' => $this->request->data['CourseInstructorAssignment']['published_course_id'],
-						'CourseInstructorAssignment.section_id' => $this->request->data['CourseInstructorAssignment']['section_id'],
-						'CourseInstructorAssignment.isprimary' => 1,
-						'CourseInstructorAssignment.type LIKE ' => 'Lecture%',
-						'CourseInstructorAssignment.academic_year' => $this->request->data['CourseInstructorAssignment']['academic_year'],
-						'CourseInstructorAssignment.semester' => $this->request->data['CourseInstructorAssignment']['semester'],
-						"OR" => array(
-							"CourseInstructorAssignment.course_split_section_id" => $this->request->data['CourseInstructorAssignment']['course_split_section_id'], 
-							"CourseInstructorAssignment.course_split_section_id is null",
-							"CourseInstructorAssignment.course_split_section_id = 0",
-							"CourseInstructorAssignment.course_split_section_id = ''",
-						)
-					)
-				));
-			} else {
-				$count_assign_instructor_for_lecture = $this->CourseInstructorAssignment->find('count', array(
-					'conditions' => array(
-						'CourseInstructorAssignment.published_course_id' => $this->request->data['CourseInstructorAssignment']['published_course_id'],
-						'CourseInstructorAssignment.section_id' => $this->request->data['CourseInstructorAssignment']['section_id'],
-						//'CourseInstructorAssignment.isprimary' => 1,
-						'CourseInstructorAssignment.type LIKE ' => $this->request->data['CourseInstructorAssignment']['type'] . '%',
-						'CourseInstructorAssignment.academic_year' => $this->request->data['CourseInstructorAssignment']['academic_year'],
-						'CourseInstructorAssignment.semester' => $this->request->data['CourseInstructorAssignment']['semester'],
-						"OR" => array(
-							"CourseInstructorAssignment.course_split_section_id" => $this->request->data['CourseInstructorAssignment']['course_split_section_id'], 
-							"CourseInstructorAssignment.course_split_section_id is null",
-							"CourseInstructorAssignment.course_split_section_id = 0",
-							"CourseInstructorAssignment.course_split_section_id = ''",
-						)
-					)
-				));
-			}
-		}
+        if($this->request->data['CourseInstructorAssignment']['isprimary']==1){
+            $count_assign_instructor_for_lecture = $this->CourseInstructorAssignment->find('count', array(
+                'conditions' => array(
+                    'CourseInstructorAssignment.published_course_id' => $this->request->data['CourseInstructorAssignment']['published_course_id'],
+                    'CourseInstructorAssignment.section_id' => $this->request->data['CourseInstructorAssignment']['section_id'],
+                    'CourseInstructorAssignment.isprimary' => 1,
+                 //   'CourseInstructorAssignment.type LIKE ' => 'Lecture%',
+                    'CourseInstructorAssignment.academic_year' => $this->request->data['CourseInstructorAssignment']['academic_year'],
+                    'CourseInstructorAssignment.semester' => $this->request->data['CourseInstructorAssignment']['semester'],
+                    "OR" => array(
+                        "CourseInstructorAssignment.course_split_section_id" => $this->request->data['CourseInstructorAssignment']['course_split_section_id'],
+                        "CourseInstructorAssignment.course_split_section_id is null",
+                        "CourseInstructorAssignment.course_split_section_id = 0",
+                        "CourseInstructorAssignment.course_split_section_id = ''",
+                    )
+                )
+            ));
+        } else {
+            /*
+            $count_assign_instructor_for_lecture = $this->CourseInstructorAssignment->find('count', array(
+                'conditions' => array(
+                    'CourseInstructorAssignment.published_course_id' => $this->request->data['CourseInstructorAssignment']['published_course_id'],
+                    'CourseInstructorAssignment.section_id' => $this->request->data['CourseInstructorAssignment']['section_id'],
+                    'CourseInstructorAssignment.isprimary' => 0,
+                    //'CourseInstructorAssignment.type LIKE ' => $this->request->data['CourseInstructorAssignment']['type'] . '%',
+                    'CourseInstructorAssignment.academic_year' => $this->request->data['CourseInstructorAssignment']['academic_year'],
+                    'CourseInstructorAssignment.semester' => $this->request->data['CourseInstructorAssignment']['semester'],
+                    "OR" => array(
+                        "CourseInstructorAssignment.course_split_section_id" => $this->request->data['CourseInstructorAssignment']['course_split_section_id'],
+                        "CourseInstructorAssignment.course_split_section_id is null",
+                        "CourseInstructorAssignment.course_split_section_id = 0",
+                        "CourseInstructorAssignment.course_split_section_id = ''",
+                    )
+                )
+            ));
+            */
+        }
 
 		$count_assign_instructor = 0;
 
@@ -1126,7 +1124,7 @@ class CourseInstructorAssignmentsController extends AppController
 				'CourseInstructorAssignment.published_course_id' => $this->request->data['CourseInstructorAssignment']['published_course_id'],
 				'CourseInstructorAssignment.staff_id' => $this->request->data['CourseInstructorAssignment']['staff_id'],
 				'CourseInstructorAssignment.section_id' => $this->request->data['CourseInstructorAssignment']['section_id'],
-				//'CourseInstructorAssignment.isprimary' => $this->request->data['CourseInstructorAssignment']['isprimary'],
+				'CourseInstructorAssignment.isprimary' => $this->request->data['CourseInstructorAssignment']['isprimary'],
 				'CourseInstructorAssignment.academic_year' => $this->request->data['CourseInstructorAssignment']['academic_year'],
 				'CourseInstructorAssignment.semester' => $this->request->data['CourseInstructorAssignment']['semester'],
 				"OR" => array(
@@ -1191,7 +1189,7 @@ class CourseInstructorAssignmentsController extends AppController
 			}
 		}
 
-		if ((/* $this->request->data['CourseInstructorAssignment']['isprimary'] == 1 */ 1) && ($count_assign_instructor_for_lecture > 0)) {
+		if ($count_assign_instructor_for_lecture > 0) {
 			$this->Flash->warning(__( $instructor_name . ' is already assigned for '. (!empty($assignment_type) ? $assignment_type : 'Lecture or Lecture.+Lab') . ' for the course ' . $this->request->data['CourseInstructorAssignment']['course_code_title'] . ' for ' . $assigned_section_name .  ' as ' . ($is_primary_instructor ? 'primary instructor' : 'secondary instructor'). '. To change assignment to different instructor, please discard the previous assignment first or change the assignment type different from ' . $this->request->data['CourseInstructorAssignment']['type'] . '.'));
 			return $this->redirect(array('action' => 'assign_course_instructor', $for_assign_instructor));
 		} else if ($check_for_duplicate_instructor_assignment > 0) {
@@ -1216,19 +1214,18 @@ class CourseInstructorAssignmentsController extends AppController
 		}
 	}
 
-	function get_assigned_courses_of_instructor_by_section_for_combo($acadamic_year1 = null, $acadamic_year2 = null, $semester = null, $instructor_id = null)
+	function get_assigned_courses_of_instructor_by_section_for_combo($acadamic_year1 = null, $acadamic_year2 = null,
+        $semester = null, $instructor_id = null,$isprimary=1)
 	{
 		$this->layout = 'ajax';
-		//debug($acadamic_year1.'/'.$acadamic_year2);
-		//debug($semester);
 
 		if (empty($instructor_id)) {
 			$instructor_id = $this->Auth->user('id');
 		}
 
 		$instructor_id = $this->CourseInstructorAssignment->Staff->field('id', array('user_id' => $this->Auth->user('id')));
-		$publishedCourses = $this->CourseInstructorAssignment->listOfCoursesInstructorAssignedBySection($acadamic_year1 . '/' . $acadamic_year2, $semester, $instructor_id);
-		//debug($publishedCourses);
+		$publishedCourses = $this->CourseInstructorAssignment->listOfCoursesInstructorAssignedBySection($acadamic_year1 . '/' .
+            $acadamic_year2, $semester, $instructor_id,0,$isprimary);
 		$this->set(compact('publishedCourses'));
 	}
 
@@ -1832,8 +1829,6 @@ class CourseInstructorAssignmentsController extends AppController
 		}
 
 		if ($this->role_id == ROLE_COLLEGE) {
-			$yearLevels['0'] = 'Pre/Freshman/Remedial';
-			
 			$programTypesAllowed = Configure::read('program_types_available_for_registrar_college_level_permissions');
 		
 			if (isset($programTypesAllowed[PROGRAM_TYPE_ADVANCE_STANDING])) {
@@ -1845,8 +1840,6 @@ class CourseInstructorAssignmentsController extends AppController
 
 			ksort($programTypesAllowed);
 
-			//debug($programTypesAllowed);
-
 			$programTypes = $this->CourseInstructorAssignment->PublishedCourse->ProgramType->find('list', array('conditions' => array('ProgramType.id' => $programTypesAllowed)));
 
 			if (count($this->college_ids) == 1 && $this->role_id == ROLE_COLLEGE && (in_array(REMEDIAL_PROGRAM_NATURAL_COLLEGE_ID, $this->college_ids) || in_array(REMEDIAL_PROGRAM_SOCIAL_COLLEGE_ID, $this->college_ids))) {
@@ -1857,7 +1850,6 @@ class CourseInstructorAssignmentsController extends AppController
 		} else if ($this->role_id == ROLE_DEPARTMENT) {
 			
 			$yearLevels = $this->CourseInstructorAssignment->PublishedCourse->YearLevel->find('list', array('conditions' => array('YearLevel.department_id' => $this->department_id)));
-			$yearLevels['0'] = 'Pre/Freshman/Remedial';
 			$programs = $this->CourseInstructorAssignment->PublishedCourse->Program->find('list', array('conditions' => array('Program.active' => 1)));
 			$programTypes = $this->CourseInstructorAssignment->PublishedCourse->ProgramType->find('list', array('conditions' => array('ProgramType.active' => 1)));
 
@@ -1879,10 +1871,6 @@ class CourseInstructorAssignmentsController extends AppController
 			}
 		}
 
-
-		//$programs = $this->CourseInstructorAssignment->PublishedCourse->Program->find('list', array('conditions' => array('Program.active' => 1)));
-		//$programTypes = $this->CourseInstructorAssignment->PublishedCourse->ProgramType->find('list', array('conditions' => array('ProgramType.active' => 1)));
-		
 		$departments = $this->CourseInstructorAssignment->PublishedCourse->Department->find('list', array('conditions' => array('Department.active' => 1)));
 		$colleges = $this->CourseInstructorAssignment->PublishedCourse->College->find('list', array('conditions' => array('College.active' => 1)));
 		
