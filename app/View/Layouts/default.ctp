@@ -470,6 +470,20 @@
     ?>
     <?= $this->fetch('script'); ?>
     <?= $this->element('sql_dump'); ?>
+
+    <div class="row">
+        <div class="large-12 columns">
+            <div id="myModalChangeName" class="reveal-modal" data-reveal>
+
+            </div>
+
+            <div id="myModalCorrectName" class="reveal-modal" data-reveal>
+
+            </div>
+
+
+        </div>
+    </div>
 </body>
 
 </html>
