@@ -38,6 +38,8 @@ class ExamTypesController extends AppController
 		);
         */
 
+        $this->Auth->Allow('get_exam_type_entry_form');
+
 		if ($this->Session->check('Message.auth')) {
 			$this->Session->delete('Message.auth');
 		}
