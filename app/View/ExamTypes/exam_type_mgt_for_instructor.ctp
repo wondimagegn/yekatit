@@ -75,6 +75,8 @@
             } else if (fieldName == 'staff_id') {
                 element = buildStaffSelect("data[" + model + "][" + rowCount + "][staff_id]");
             } else if (fieldName == 'edit') {
+                alert("Hello");
+                alert(totalRow);
                 element = document.createElement("a");
                 element.innerText = "Delete";
                 element.textContent = "Delete";
@@ -109,8 +111,9 @@
     function deleteSpecificRow(id) {
         try {
             var row = document.getElementById(id);
+
             var table = row.parentNode;
-            if (table.rows.length > 2) {
+            if (table.rows.length > 1) {
                 row.parentNode.removeChild(row);
                 updateSequence('exam_setup');
             } else {
