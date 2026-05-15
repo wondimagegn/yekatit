@@ -127,6 +127,9 @@
 				var element = document.createElement("input");
 				element.size = "4";
 				element.type = "number";
+                element.step = "0.01";
+                element.min = "0";
+
 			} else if (elementArray[j - 1] == "pass_grade") {
 				var element = document.createElement("input");
 				element.type = "checkbox";
