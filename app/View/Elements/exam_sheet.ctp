@@ -613,8 +613,8 @@ if (!isset($grade_view_only)) {
 									} else if (!$student['AnyExamGradeIsOnProcess'] && isset($days_available_for_grade_change) && ((!isset($student['MakeupExam']) && isset($student['ExamGrade']) && !empty($student['ExamGrade']) && $student['ExamGrade'][0]['registrar_approval'] == 1) || (isset($student['MakeupExam']) && !empty($student['ExamGradeChange']) && ($student['ExamGradeChange'][0]['registrar_approval'] == 1 || $student['ExamGradeChange'][0]['makeup_exam_result'] == null)))) {
 										//debug($student);
 										//debug($student['Student']['graduated']);
-										if (strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'NG') == '0' || strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'I') == '0' || strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'DO') == '0' || strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'W') == '0' ) { ?>
-											<div id="flashMessage" class="warning-box warning-message" style="font-family: 'Times New Roman', Times, serif; font-weight: normal;"><span style="margin-right: 15px;"></span>Grade change is not available for NG, I , W, DO Grades.</div>
+										if (strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'I') == '0' || strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'DO') == '0' || strcasecmp($latest_grade_detail['ExamGrade']['grade'], 'W') == '0' ) { ?>
+											<div id="flashMessage" class="wtrcasecmp($latest_grade_detail['ExamGrade']['grade'], 'NG') == '0' || arning-box warning-message" style="font-family: 'Times New Roman', Times, serif; font-weight: normal;"><span style="margin-right: 15px;"></span>Grade change is not available for NG, I , W, DO Grades.</div>
 											<?php
 										} else if ($student['Student']['graduated']) { ?>
 											<div id="flashMessage" class="warning-box warning-message" style="font-family: 'Times New Roman', Times, serif; font-weight: normal;"><span style="margin-right: 15px;"></span>Grade change is not available for graduated student.</div>
