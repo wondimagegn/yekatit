@@ -55,7 +55,11 @@
 													<tr>
 														<td><?= $count++; ?></td>
 														<td><?= $this->Form->input('Grade.' . $bk . '.grade', array('type' => 'text', 'value' => (isset($this->request->data['Grade'][$bk]['grade']) ? $this->request->data['Grade'][$bk]['grade'] : ''), 'label' => false, 'div' => false, 'size' => 4 )); ?></td>
-														<td><?= $this->Form->input('Grade.' . $bk . '.point_value', array('type' => 'number','value' => (isset($this->request->data['Grade'][$bk]['point_value']) ? $this->request->data['Grade'][$bk]['point_value'] : ''), 'label' => false, 'div' => false, 'size' => 4 )); ?></td>
+														<td><?= $this->Form->input('Grade.' . $bk . '.point_value', array('type' => 'number',
+                                                                    'value' => (isset($this->request->data['Grade'][$bk]['point_value']) ? $this->request->data['Grade'][$bk]['point_value'] : ''),
+                                                                    'label' => false, 'div' => false,
+                                                                    'step' => '0.01',
+                                                                    'min' => '0', 'size' => 4 )); ?></td>
 														<td><?= $this->Form->input('Grade.' . $bk . '.pass_grade', array('type' => 'checkbox', (isset($this->request->data['Grade'][$bk]['pass_grade']) && ($this->request->data['Grade'][$bk]['pass_grade'] == 1 ||  $this->request->data['Grade'][$bk]['pass_grade'] == 'on') ? 'checked': ''), 'label' => false, 'div' => false)); ?></td>
 														<td><?= $this->Form->input('Grade.' . $bk . '.allow_repetition', array('type' => 'checkbox', (isset($this->request->data['Grade'][$bk]['allow_repetition']) && ($this->request->data['Grade'][$bk]['allow_repetition'] == 1 ||  $this->request->data['Grade'][$bk]['allow_repetition'] == 'on') ? 'checked': ''), 'label' => false, 'div' => false)); ?></td>
 													</tr>
@@ -65,7 +69,10 @@
 												<tr>
 													<td>1</td>
 													<td><?= $this->Form->input('Grade.0.grade', array('type' => 'text', 'label' => false, 'div' => false, 'size' => 4 )); ?></td>
-													<td><?= $this->Form->input('Grade.0.point_value', array('type' => 'number', 'label' => false, 'div' => false, 'size' => 4)); ?></td>
+													<td><?= $this->Form->input('Grade.0.point_value', array('type' => 'number',
+                                                                'label' => false, 'div' => false,
+                                                                'step' => '0.01',
+                                                                'min' => '0', 'size' => 4)); ?></td>
 													<td><?= $this->Form->input('Grade.0.pass_grade', array('type' => 'checkbox', 'checked', 'label' => false, 'div' => false)); ?></td>
 													<td><?= $this->Form->input('Grade.0.allow_repetition', array('type' => 'checkbox', 'label' => false, 'div' => false)); ?></td>
 												</tr>
