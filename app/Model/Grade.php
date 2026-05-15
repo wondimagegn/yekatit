@@ -187,7 +187,7 @@ class Grade extends AppModel
                     
                     debug($point_value_count);
                     $how_many_timesPV = array_count_values($point_value_count);
-
+                    /*
                     if (count($how_many_timesPV) > 0) {
                         foreach ($how_many_timesPV as $point_value => $frequencyPV) {
                             if ($frequencyPV > 1) {
@@ -196,6 +196,7 @@ class Grade extends AppModel
                             }
                         }
                     }
+                    */
                 }
 
                 return true;
